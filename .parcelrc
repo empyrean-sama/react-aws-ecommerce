@@ -1,0 +1,7 @@
+{
+  "extends": "@parcel/config-default",
+  "transformers": {
+    "*.mts": ["@parcel/transformer-typescript-tsc"],
+    "*.png": ["@parcel/transformer-inline-string", "..."]
+  }
+}

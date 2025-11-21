@@ -1,0 +1,5 @@
+# Generated folders while building the project
+node_modules
+parcel-debug-cache
+public
+.parcel-cache
