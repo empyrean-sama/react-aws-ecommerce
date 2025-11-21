@@ -2,90 +2,231 @@ import React from "react";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 
 export default function AppThemeProvider(props: React.PropsWithChildren) {
-    
+
     const theme = createTheme({
         palette: {
             primary: {
                 main: '#030303',
-                contrastText: '#fff'
+                light: '#333333',          
+                dark: '#000000',
+                contrastText: '#ffffff',   
+            },
+            secondary: {
+                main: '#666666',
+                contrastText: '#ffffff',
             },
             background: {
-                default: '#f7f7f7'
-            }
+                default: '#f7f7f7',
+                paper: '#ffffff',
+            },
+            text: {
+                primary: '#030303',
+                secondary: '#666666',
+            },
+            divider: '#666666',
+            error: {
+                main: '#d32f2f',
+            },
+            warning: {
+                main: '#f57c00',
+            },
+            info: {
+                main: '#1976d2',
+            },
+            success: {
+                main: '#388e3c',
+            },
         },
         typography: {
-            fontFamily: "Karla, sans-serif",
+            fontFamily: 'Karla, sans-serif',
+            
             h1: {
-                fontFamily: "Asul, serif",
+                fontFamily: 'Asul, serif',
+                fontSize: '36px',
                 fontWeight: 400,
-                fontSmooth: "antialiased",
-                fontSize: '30px',
-                marginBottom: '18.75px',
-                [createTheme().breakpoints.up('md')]: {
-                    fontSize: '36px',
-                    marginBottom: '22.5px'
-                },
+                lineHeight: 1.2,
+                letterSpacing: 'normal',
+                color: '#030303',
             },
             h2: {
-                fontWeight: 700,
-                fontSmooth: "antialiased",
+                fontFamily: 'Asul, serif',
                 fontSize: '30px',
-                marginBottom: '18.75px',
+                fontWeight: 400,
+                lineHeight: 1.3,
+                color: '#030303',
             },
             h3: {
-                fontFamily: "Asul, serif",
-                fontSize: "26px",
+                fontFamily: 'Asul, serif',
+                fontSize: '26px',
                 fontWeight: 400,
-                fontSmooth: "antialiased",
-                lineHeight: "35.75px",
+                lineHeight: 1.4,
+                color: '#030303',
+            },
+            h4: {
+                fontSize: '22px',
+                fontWeight: 400,
+                lineHeight: 1.4,
+            },
+            h5: {
+                fontSize: '18px',
+                fontWeight: 400,
+                lineHeight: 1.5,
             },
             h6: {
-                fontWeight: 700,
-                fontSmooth: "antialiased",
-                fontSize: '18px',
-                lineHeight: 1.2,
-                letterSpacing: '0.2px',
-                marginBottom: 0,
-                [createTheme().breakpoints.up('md')]: {
-                    fontSize: '20px'
-                }
+                fontSize: '16px',
+                fontWeight: 400,
+                lineHeight: 1.6,
+            },
+            body1: {
+                fontSize: '16px',
+                fontWeight: 400,
+                lineHeight: 1.6,
+                letterSpacing: 'normal',
+            },
+            body2: {
+                fontSize: '14px',
+                fontWeight: 400,
+                lineHeight: 1.5,
+            },
+            button: {
+                fontSize: '16px',
+                fontWeight: 400,
+                lineHeight: 1.75,
+                letterSpacing: 'normal',
+                textTransform: 'none',
+            },
+            caption: {
+                fontSize: '12px',
+                lineHeight: 1.66,
             },
         },
+        shape: {
+            borderRadius: 0,
+        },
+        spacing: 8,
+        
         components: {
             MuiButton: {
                 styleOverrides: {
                     root: {
-                        fontFamily: "Karla, sans-serif",
-                        fontWeight: 700,
-                        fontSmooth: "antialiased",
-                        fontSize: '13px',
-                        padding: '15px 45px',
-                        letterSpacing: '1.95px'
+                        borderRadius: '0px',
+                        padding: '0px 20px',
+                        fontSize: '16px',
+                        fontWeight: 400,
+                        letterSpacing: 'normal',
+                        textTransform: 'none',
+                        boxShadow: 'none',
+                        '&:hover': {
+                            boxShadow: 'none',
+                        },
+                    },
+                    contained: {
+                        backgroundColor: 'transparent',
+                        color: '#666666',
+                        border: '1px solid #666666',
+                        '&:hover': {
+                            backgroundColor: '#f5f5f5',
+                            borderColor: '#666666',
+                        },
+                    },
+                    outlined: {
+                        borderColor: '#666666',
+                        color: '#666666',
+                        '&:hover': {
+                            borderColor: '#333333',
+                            backgroundColor: 'rgba(0,0,0,0.04)',
+                        },
+                    },
+                    sizeLarge: {
+                        padding: '0px 30px',
+                        fontSize: '16px',
                     },
                     sizeSmall: {
-                        fontSize: '12px',
-                        padding: '6px 10px',
-                        letterSpacing: '0.5px',
-                        minHeight: '28px'
-                    }
+                        padding: '0px 15px',
+                        fontSize: '14px',
+                    },
+                },
+            },
+            MuiCard: {
+                styleOverrides: {
+                    root: {
+                        borderRadius: '0px',
+                        boxShadow: 'none',
+                        border: '1px solid #666666',
+                        backgroundColor: 'transparent',
+                        '&:hover': {
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                        },
+                    },
                 },
             },
             MuiCardContent: {
                 styleOverrides: {
                     root: {
-                        padding: '30px',
-                        [createTheme().breakpoints.up('md')]: {
-                            padding: '45px'
+                        padding: '0px',
+                        '&:last-child': {
+                            paddingBottom: '0px',
                         },
-                        ":last-child": {
-                            padding: '30px',
-                            [createTheme().breakpoints.up('md')]: {
-                                padding: '45px'
-                            },
-                        }
                     },
                 },
-            }
+            },
+            MuiAppBar: {
+                styleOverrides: {
+                    root: {
+                        backgroundColor: '#ffffff',
+                        color: '#240303',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    },
+                },
+            },
+            MuiTextField: {
+                styleOverrides: {
+                    root: {
+                        '& .MuiOutlinedInput-root': {
+                            borderRadius: '0px',
+                            '& fieldset': {
+                                borderColor: '#666666',
+                            },
+                            '&:hover fieldset': {
+                                borderColor: '#333333',
+                            },
+                            '&.Mui-focused fieldset': {
+                                borderColor: '#000000',
+                            },
+                        },
+                    },
+                },
+            },
+            MuiLink: {
+                styleOverrides: {
+                    root: {
+                        color: '#000000',
+                        textDecoration: 'none',
+                        '&:hover': {
+                            color: '#666666',
+                            textDecoration: 'underline',
+                        },
+                    },
+                },
+            },
+            MuiChip: {
+                styleOverrides: {
+                    root: {
+                        borderRadius: '0px',
+                        fontSize: '12px',
+                    },
+                },
+            },
+            MuiPaper: {
+                styleOverrides: {
+                    root: {
+                        borderRadius: '0px',
+                    },
+                    elevation1: {
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    },
+                },
+            },
         },
     });
     
