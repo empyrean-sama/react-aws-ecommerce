@@ -25,14 +25,16 @@ export default function SearchBar({ placeholder = "Search…", sx }: SearchBarPr
                 width: '100%',
                 ...sx
             }}>
-            <Box sx= {{
-                padding: theme.spacing(0, 2),
-                height: '100%',
-                position: 'absolute',
-                pointerEvents: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+            <Box
+                component="div"
+                sx= {{
+                    padding: theme.spacing(0, 2),
+                    height: '100%',
+                    position: 'absolute',
+                    pointerEvents: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
             }}>
                 <SearchIcon />
             </Box>
