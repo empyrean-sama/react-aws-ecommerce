@@ -1,7 +1,8 @@
 import React, {PropsWithChildren, useEffect} from "react";
 import Box from "@mui/material/Box/Box";
-import SearchBar from "./SearchBar";
+import SearchBar from "../ui/SearchBar";
 import { useTheme } from "@mui/material";
+import Constants from "../../Constants";
 
 export interface AppDrawerProps {
     isDrawerOpen: boolean;
@@ -14,9 +15,7 @@ export interface AppDrawerProps {
  * @returns a JSX.Element representing the AppDrawer.
  */
 export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen, children }: PropsWithChildren<AppDrawerProps>) {
-    
-    const drawerWidth: string = "80dvw";
-     const theme = useTheme();
+    const theme = useTheme();
 
     // Must listen for escape key to close drawer
     useEffect(() => {
@@ -45,9 +44,9 @@ export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen, children }: P
                     top: 0, 
                     left: 0, 
                     zIndex: 2000, 
-                    width: drawerWidth, 
-                    height: "100dvh", 
-                    transform: isDrawerOpen ? "translateX(0)" : `translateX(-${drawerWidth})`, 
+                    width: {xs: Constants.DRAWER_WIDTH_MOBILE, sm: Constants.DRAWER_WIDTH_TABLET}, 
+                    height: "100dvh",
+                    transform: isDrawerOpen ? "translateX(0)" : {xs: `translateX(-${Constants.DRAWER_WIDTH_MOBILE})`, sm: `translateX(-${Constants.DRAWER_WIDTH_TABLET})`},
                     transition: "inherit", 
                     willChange: "transform",
                     display: 'flex',
@@ -55,7 +54,7 @@ export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen, children }: P
                     gap: 2,
                 }}
             >
-                <SearchBar placeholder="Search products..." sx={{ backgroundColor: theme.palette.background.default, marginLeft: 1, width: `calc(${drawerWidth} - ${theme.spacing(1)}px)` }}/>
+                <SearchBar placeholder="Search products..." sx={{ backgroundColor: theme.palette.background.default, marginLeft: 1, width: {xs: `calc(${Constants.DRAWER_WIDTH_MOBILE} - ${theme.spacing(1)}px)`, sm: `calc(${Constants.DRAWER_WIDTH_TABLET} - ${theme.spacing(1)}px)`} }}/>
                 <Box sx={{backgroundColor: theme.palette.background.paper, flexGrow: 1}}>
                     {children}
                 </Box>
