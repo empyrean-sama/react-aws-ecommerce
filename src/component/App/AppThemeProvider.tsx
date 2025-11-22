@@ -121,12 +121,10 @@ export default function AppThemeProvider(props: React.PropsWithChildren) {
                         },
                     },
                     contained: {
-                        backgroundColor: 'transparent',
-                        color: '#666666',
-                        border: '1px solid #666666',
+                        backgroundColor: '#030303',
+                        color: '#ffffff',
                         '&:hover': {
-                            backgroundColor: '#f5f5f5',
-                            borderColor: '#666666',
+                            backgroundColor: '#444444',  
                         },
                     },
                     outlined: {
@@ -138,7 +136,7 @@ export default function AppThemeProvider(props: React.PropsWithChildren) {
                         },
                     },
                     sizeLarge: {
-                        padding: '0px 30px',
+                        padding: '12px 30px',
                         fontSize: '16px',
                     },
                     sizeSmall: {
@@ -149,15 +147,23 @@ export default function AppThemeProvider(props: React.PropsWithChildren) {
             },
             MuiCard: {
                 styleOverrides: {
-                    root: {
+                    root: ({ theme }) => ({
                         borderRadius: '0px',
                         boxShadow: 'none',
-                        border: '1px solid #666666',
-                        backgroundColor: 'transparent',
+                        padding: '0',
+                        backgroundColor: '#ffffff',
                         '&:hover': {
                             boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                         },
-                    },
+                        [theme.breakpoints.up('xs')]: {
+                            paddingTop: '32px',
+                            paddingBottom: '32px'
+                        },
+                        [theme.breakpoints.up('sm')]: {
+                            paddingLeft: '16px',
+                            paddingRight: '16px',
+                        },
+                    }),
                 },
             },
             MuiCardContent: {
