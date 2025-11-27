@@ -27,11 +27,11 @@ export default class AuthStack extends Stack {
                 requireDigits: true,
             },
             standardAttributes: {
-                fullname: {
+                givenName: {
                     required: true,
                     mutable: true
                 },
-                birthdate: {
+                familyName: {
                     required: true,
                     mutable: true
                 }
