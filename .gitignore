@@ -3,3 +3,7 @@ node_modules
 parcel-debug-cache
 public
 .parcel-cache
+cdk.out
+
+# Master specific ignores
+outputs.json
