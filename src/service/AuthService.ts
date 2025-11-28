@@ -55,14 +55,17 @@ export default class AuthService {
                 family_name: input.familyName
             }
         }
-        if(isEmailValid(input.username).isValid) {
-            options.userAttributes.email = input.username;
-        }
-        else if(isPhoneValid(input.username).isValid) {
-            options.userAttributes.phone_number = input.username;
-        } else {
-            throw new Error("Invalid username format");
-        }
+            const emailCheck = isEmailValid(input.username);
+            const phoneCheck = isPhoneValid(input.username);
+            if(emailCheck.isValid) {
+                options.userAttributes.email = input.username;
+            }
+            else if(phoneCheck.isValid) {
+                options.userAttributes.phone_number = input.username;
+            }
+            else {
+                throw new Error("Invalid username. Must be a valid email or phone number.");
+            }
 
         // Proceed with sign up once attributes are set
         return await signUp({
