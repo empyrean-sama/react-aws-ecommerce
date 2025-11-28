@@ -7,6 +7,7 @@ import NotFound from "../pages/Error/NotFound";
 
 import Account from '../pages/User/Account';
 import Login from '../pages/User/Login';
+import SignUp from '../pages/User/SignUp';
 
 export default function AppLayout() {
     const router = createBrowserRouter(createRoutesFromElements(
@@ -14,6 +15,7 @@ export default function AppLayout() {
             <Route index element={<Home />} />
             <Route path="account" element={<Account />}>
                 <Route path="login" element={<Login />} />
+                <Route path="signup" element={<SignUp />} />
             </Route>
             <Route path="*" element={<NotFound />} />
         </Route>
