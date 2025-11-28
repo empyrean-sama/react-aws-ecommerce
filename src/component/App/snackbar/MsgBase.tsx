@@ -1,11 +1,24 @@
-import React from "react";
-import { Box, LinearProgress } from "@mui/material";
-import { CustomContentProps } from "notistack";
+import React, { forwardRef } from "react";
+import { Box, LinearProgress, IconButton, Typography } from "@mui/material";
+import { CustomContentProps, closeSnackbar } from "notistack";
 import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
 
-export default function MsgBase(props: React.PropsWithChildren<CustomContentProps>) {
+import CloseIcon from '@mui/icons-material/Close';
+import InfoIcon from '@mui/icons-material/Info';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
+import ErrorIcon from '@mui/icons-material/Error';
+
+const MsgBase = forwardRef<HTMLDivElement, CustomContentProps>((props, ref) => {
     const duration = props.autoHideDuration || null;
     const [progress, setProgress] = React.useState(duration ? 100 : 0);
+
+    const IconComponent = {
+        info: InfoIcon,
+        success: CheckCircleIcon,
+        warning: WarningIcon,
+        error: ErrorIcon,
+    }[props.variant as ESnackbarMsgVariant];
 
     React.useEffect(() => {
         if (duration != null) {
@@ -26,6 +39,7 @@ export default function MsgBase(props: React.PropsWithChildren<CustomContentProp
 
     return (
         <Box
+            ref={ref}
             sx={(theme) => ({ 
                 backgroundColor: theme.palette[props.variant as ESnackbarMsgVariant].main,
                 color: theme.palette[props.variant as ESnackbarMsgVariant].contrastText, 
@@ -40,7 +54,16 @@ export default function MsgBase(props: React.PropsWithChildren<CustomContentProp
                 boxShadow: '0px 3px 5px -1px rgba(0,0,0,0.2), 0px 6px 10px 0px rgba(0,0,0,0.14), 0px 1px 18px 0px rgba(0,0,0,0.12)'
             })}
         >
-            {props.children}
+            <IconComponent />
+            <Typography sx={{ flex: 1 }}>{props.message}</Typography>
+            <IconButton 
+                size="small" 
+                color="inherit" 
+                aria-label="close notification" 
+                onClick={() => closeSnackbar(props.id)}
+            >
+                <CloseIcon fontSize="small" />
+            </IconButton>
             <LinearProgress
                 variant="determinate"
                 value={progress}
@@ -58,4 +81,6 @@ export default function MsgBase(props: React.PropsWithChildren<CustomContentProp
             />
         </Box>
     );
-}
+})
+MsgBase.displayName = 'MsgBase';
+export default MsgBase;

@@ -23,7 +23,7 @@ export default function SignUp() {
     const handleSignUp = async () => {
         console.log("Sign up button clicked");
 
-        showMessage("Sign up successful", ESnackbarMsgVariant.info, null);
+        showMessage("Sign up successful", ESnackbarMsgVariant.error, 3000);
 
         // setError("");
 
