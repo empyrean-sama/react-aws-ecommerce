@@ -16,16 +16,16 @@ export default function CountryPhoneCodeSelect(props: ICountryPhoneCodeSelectPro
     const menuItems = React.useMemo(() =>Object.entries(DialCodeMap).map(([cca2, {name, dial}]) => {
         return (
             <MenuItem value={dial} key={cca2}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', overflow: 'hidden' }}>
                     <Box 
                         component="img"
                         alt={cca2}
                         loading="lazy"
                         src={`https://flagcdn.com/w40/${cca2.toLowerCase()}.webp`}   
-                        sx={{ width: 24, height: 16, mr: 1 }}
+                        sx={{ width: 24, height: 16, mr: 1, flexShrink: 0 }}
                     />
-                    <Typography component="span" sx={{ mr: 1 }}>{name}</Typography>
-                    <Typography component="span">{dial}</Typography>
+                    <Typography component="span" sx={{ mr: 1, flexGrow: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</Typography>
+                    <Typography component="span" sx={{ flexShrink: 0 }}>{dial}</Typography>
                 </Box>
             </MenuItem>
         );
