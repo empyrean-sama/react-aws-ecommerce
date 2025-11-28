@@ -4,7 +4,7 @@ import { FormControl, InputLabel, Select, MenuItem, SelectProps, Typography, Box
 
 export interface ICountryPhoneCodeSelectProps {
     selectedDialCode: string;
-    onSelectionChange: React.Dispatch<React.SetStateAction<string>>;
+    onSelectionChange: (newSelection: string) => void;
     selectProps?: SelectProps<string>;
 }
 
