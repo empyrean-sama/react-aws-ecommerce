@@ -9,8 +9,11 @@
     "destroy:backend": "cdk destroy --all"
   },
   "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.940.0",
+    "@aws-sdk/util-dynamodb": "^3.940.0",
     "@mui/types": "^7.4.8",
     "@parcel/transformer-typescript-tsc": "^2.16.1",
+    "@types/aws-lambda": "^8.10.159",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
     "aws-cdk": "^2.1033.0",

@@ -1,7 +1,12 @@
-import { CfnOutput, Stack, StackProps } from "aws-cdk-lib"; 
 import * as Cognito from 'aws-cdk-lib/aws-cognito'; 
-import { Construct } from 'constructs';
+import * as IAM from 'aws-cdk-lib/aws-iam';
+import * as Lambda from 'aws-cdk-lib/aws-lambda';
+import * as path from 'path';
+import * as DynamoDB from 'aws-cdk-lib/aws-dynamodb';
 
+import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"; 
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Construct } from 'constructs';
 import Constants from "../Constants";
 
 export default class AuthStack extends Stack {
@@ -68,5 +73,33 @@ export default class AuthStack extends Stack {
             userPoolId: this._userPool.userPoolId,
             groupName: Constants.userPoolAdminGroupName
         });
+
+        // Create the Profile DynamoDB table
+        const profilesTable = new DynamoDB.Table(this, Constants.profilesTableId, {
+            tableName: Constants.profilesTableName,
+            partitionKey: { name: 'userId', type: DynamoDB.AttributeType.STRING },
+            billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+            removalPolicy: RemovalPolicy.DESTROY, //TODO: Change to RETAIN for production
+        });
+
+        const createProfileFunction = new NodejsFunction(this, 'CreateProfileFunction', {
+            entry: path.join(__dirname, '../lambda/CreateProfile.ts'),
+            handler: 'Handler',
+            runtime: Lambda.Runtime.NODEJS_22_X,
+            environment: {
+                PROFILES_TABLE: profilesTable.tableName,
+            },
+            bundling: { minify: true, sourceMap: true, target: 'node22' },
+        });
+        profilesTable.grantWriteData(createProfileFunction);
+
+        // // Grant the lambda function permission to write to the profiles table
+        // createProfileFunction.addToRolePolicy(new IAM.PolicyStatement({
+        //     actions: ['dynamodb:PutItem'],
+        //     resources: [`arn:aws:dynamodb:*:*:table/${Constants.profilesTableName}`],
+        // }));
+
+        // Add post-confirmation trigger to User Pool
+        this._userPool.addTrigger(Cognito.UserPoolOperation.POST_CONFIRMATION, createProfileFunction);
     }
 }
