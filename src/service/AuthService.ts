@@ -58,8 +58,10 @@ export default class AuthService {
         }
             const emailCheck = isEmailValid(input.username);
             const phoneCheck = isPhoneValid(input.username);
+            // Normalize email usernames to lowercase to ensure case-insensitive handling
+            const normalizedUsername = emailCheck.isValid ? input.username.trim().toLowerCase() : input.username.trim();
             if(emailCheck.isValid) {
-                options.userAttributes.email = input.username;
+                options.userAttributes.email = normalizedUsername;
             }
             else if(phoneCheck.isValid) {
                 options.userAttributes.phone_number = input.username;
@@ -71,7 +73,7 @@ export default class AuthService {
         // Proceed with sign up once attributes are set
         try{
             return await signUp({
-                username: input.username,
+                username: normalizedUsername,
                 password: input.password,
                 options: options
             });
@@ -92,7 +94,9 @@ export default class AuthService {
      * @throws Error for any errors encountered during confirmation
      */
     public async verifyUserAccount(username: string, code: string): Promise<void> {
-        await confirmSignUp({ username, confirmationCode: code });
+        const emailCheck = isEmailValid(username);
+        const normalizedUsername = emailCheck.isValid ? username.trim().toLowerCase() : username.trim();
+        await confirmSignUp({ username: normalizedUsername, confirmationCode: code });
     }
 
     /**
@@ -103,7 +107,9 @@ export default class AuthService {
      * @throws Error for any errors encountered during resending the verification code
      */
     public async resendVerificationCode(username: string): Promise<void> {
-        await resendSignUpCode({ username });
+        const emailCheck = isEmailValid(username);
+        const normalizedUsername = emailCheck.isValid ? username.trim().toLowerCase() : username.trim();
+        await resendSignUpCode({ username: normalizedUsername });
     }
 
     /**
@@ -114,7 +120,9 @@ export default class AuthService {
      * @throws Error for any other errors encountered during sign-in
      */
     public async signIn(username: string, password: string): Promise<IUserDetails> {
-        await signIn({ username, password });
+        const emailCheck = isEmailValid(username);
+        const normalizedUsername = emailCheck.isValid ? username.trim().toLowerCase() : username.trim();
+        await signIn({ username: normalizedUsername, password });
         return await this.generateUserDetailsFromSession();
     }
 
@@ -186,7 +194,9 @@ export default class AuthService {
      * @param username: the username (email or phone) of the user to reset password for
      */
     public async resetPassword(username: string): Promise<void> {
-        await resetPassword({username});
+        const emailCheck = isEmailValid(username);
+        const normalizedUsername = emailCheck.isValid ? username.trim().toLowerCase() : username.trim();
+        await resetPassword({username: normalizedUsername});
     }
 
     /**
@@ -196,7 +206,9 @@ export default class AuthService {
      * @param newPassword: the new password to set
      */
     public async confirmResetPassword(username: string, verificationCode: string, newPassword: string): Promise<void> {
-        await confirmResetPassword({username, newPassword, confirmationCode: verificationCode});
+        const emailCheck = isEmailValid(username);
+        const normalizedUsername = emailCheck.isValid ? username.trim().toLowerCase() : username.trim();
+        await confirmResetPassword({username: normalizedUsername, newPassword, confirmationCode: verificationCode});
     }
 
     /**
