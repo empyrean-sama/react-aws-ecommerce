@@ -42,9 +42,10 @@ export default function Login() {
                 const loginDetails = await authService.signIn(email, password);
                 showMessage("Login successful", ESnackbarMsgVariant.success);
                 setLoggedInDetails(loginDetails);
-                if(location.state?.from) {
-                    console.log(location.state.from)
-                    navigate(location.state.from, {replace: true}); //If login was redirected, go back to original page
+                if(location.state?.from && !location.state.from.startsWith("/account")) {
+                    // TODO: replace the above check with a positive check. like navigate back only if coming from collections or product pages 
+                    //If login was redirected, go back to original page. don't go back to account pages
+                    navigate(location.state.from, {replace: true}); 
                 }
                 else {
                     navigate("/account", {replace: true}); //Else go to account page
