@@ -93,12 +93,6 @@ export default class AuthStack extends Stack {
         });
         profilesTable.grantWriteData(createProfileFunction);
 
-        // // Grant the lambda function permission to write to the profiles table
-        // createProfileFunction.addToRolePolicy(new IAM.PolicyStatement({
-        //     actions: ['dynamodb:PutItem'],
-        //     resources: [`arn:aws:dynamodb:*:*:table/${Constants.profilesTableName}`],
-        // }));
-
         // Add post-confirmation trigger to User Pool
         this._userPool.addTrigger(Cognito.UserPoolOperation.POST_CONFIRMATION, createProfileFunction);
     }
