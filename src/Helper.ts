@@ -136,3 +136,108 @@ export function isUsernameValid(username: string): {isValid: boolean, errorMessa
     };
 }
 
+/**
+ * function to validate first name (given name)
+ * @param firstName the first name to validate
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
+export function isFirstNameValid(firstName: string): {isValid: boolean, errorMessage: string} {
+    if (!firstName || firstName.trim() === "") {
+        return {isValid: false, errorMessage: "First name is required"};
+    }
+
+    const trimmedFirstName = firstName.trim();
+
+    if (trimmedFirstName.length < 1) {
+        return {isValid: false, errorMessage: "First name cannot be empty"};
+    }
+
+    if (trimmedFirstName.length > 128) {
+        return {isValid: false, errorMessage: "First name is too long (maximum 128 characters)"};
+    }
+
+    // Allow letters, spaces, hyphens, and apostrophes (common in names)
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+    if (!nameRegex.test(trimmedFirstName)) {
+        return {isValid: false, errorMessage: "First name can only contain letters, spaces, hyphens, and apostrophes"};
+    }
+
+    // Check for consecutive spaces or special characters
+    if (/\s{2,}/.test(trimmedFirstName)) {
+        return {isValid: false, errorMessage: "First name cannot contain consecutive spaces"};
+    }
+
+    if (/[-']{2,}/.test(trimmedFirstName)) {
+        return {isValid: false, errorMessage: "First name cannot contain consecutive hyphens or apostrophes"};
+    }
+
+    return {isValid: true, errorMessage: ""};
+}
+
+/**
+ * function to validate last name (family name)
+ * @param lastName the last name to validate
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
+export function isLastNameValid(lastName: string): {isValid: boolean, errorMessage: string} {
+    if (!lastName || lastName.trim() === "") {
+        return {isValid: false, errorMessage: "Last name is required"};
+    }
+
+    const trimmedLastName = lastName.trim();
+
+    if (trimmedLastName.length < 1) {
+        return {isValid: false, errorMessage: "Last name cannot be empty"};
+    }
+
+    if (trimmedLastName.length > 128) {
+        return {isValid: false, errorMessage: "Last name is too long (maximum 128 characters)"};
+    }
+
+    // Allow letters, spaces, hyphens, and apostrophes (common in names)
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+    if (!nameRegex.test(trimmedLastName)) {
+        return {isValid: false, errorMessage: "Last name can only contain letters, spaces, hyphens, and apostrophes"};
+    }
+
+    // Check for consecutive spaces or special characters
+    if (/\s{2,}/.test(trimmedLastName)) {
+        return {isValid: false, errorMessage: "Last name cannot contain consecutive spaces"};
+    }
+
+    if (/[-']{2,}/.test(trimmedLastName)) {
+        return {isValid: false, errorMessage: "Last name cannot contain consecutive hyphens or apostrophes"};
+    }
+
+    return {isValid: true, errorMessage: ""};
+}
+
+/**
+ * function to validate password according to Cognito password policy
+ * Requirements: min 8 chars, at least 1 lowercase, 1 uppercase, 1 digit
+ * @param password the password to validate
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
+export function isPasswordValid(password: string): {isValid: boolean, errorMessage: string} {
+    if (!password || password.trim() === "") {
+        return {isValid: false, errorMessage: "Password is required"};
+    }
+
+    if (password.length < 8) {
+        return {isValid: false, errorMessage: "Password must be at least 8 characters long"};
+    }
+
+    if (!/[a-z]/.test(password)) {
+        return {isValid: false, errorMessage: "Password must contain at least one lowercase letter"};
+    }
+
+    if (!/[A-Z]/.test(password)) {
+        return {isValid: false, errorMessage: "Password must contain at least one uppercase letter"};
+    }
+
+    if (!/\d/.test(password)) {
+        return {isValid: false, errorMessage: "Password must contain at least one digit"};
+    }
+
+    return {isValid: true, errorMessage: ""};
+}

@@ -1,23 +1,25 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Button, ButtonGroup, SxProps,  } from "@mui/material";
 import { Theme } from "@emotion/react";
 import { useNavigate } from "react-router";
+import { appGlobalStateContext } from "../App/AppGlobalStateProvider";
+import IAppGlobalStateContextAPI from "../../interface/IAppGlobalStateContextAPI";
 
 export interface AccountButtonProps {
-    isLoggedIn: boolean;
-    setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
     sx?: SxProps<Theme>;
 }
 
-export default function AccountButtons({ isLoggedIn, setIsLoggedIn, sx }: AccountButtonProps) {
+export default function AccountButtons({ sx }: AccountButtonProps) {
     const navigateTo = useNavigate();
-
+    const { getLoggedInDetails, logout } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const isLoggedIn = getLoggedInDetails() !== null;
+    
     return (
         <ButtonGroup variant="text" color="inherit" sx={sx}>
-            {isLoggedIn ? null : <Button onClick={() => navigateTo("/account/login")}>Login</Button>}
-            {isLoggedIn ? null : <Button>Register</Button>}
-            {isLoggedIn ? <Button>Account</Button> : null}
-            {isLoggedIn ? <Button>Logout</Button> : null}
+            {isLoggedIn ? null : <Button onClick={() => navigateTo("/account/login", {state: { from: window.location.pathname }})}>Login</Button>}
+            {isLoggedIn ? null : <Button onClick={() => navigateTo("/account/signup")}>Register</Button>}
+            {isLoggedIn ? <Button onClick={() => navigateTo("/account")}>Account</Button> : null}
+            {isLoggedIn ? <Button onClick={logout}>Logout</Button> : null}
         </ButtonGroup>
     );
 }

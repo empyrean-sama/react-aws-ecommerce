@@ -1,4 +1,5 @@
 import ESnackbarMsgVariant from "../enum/ESnackbarMsgVariant";
+import IUserDetails from "./IUserDetails";
 
 export default interface IAppGlobalStateContextAPI {
     /**
@@ -9,4 +10,23 @@ export default interface IAppGlobalStateContextAPI {
      * @returns nothing
      */
     showMessage: (msg: string, variant?: ESnackbarMsgVariant, autoHideDuration?: number | null) => void;
+
+    /**
+     * This method should be called to notify the app of the currently logged in user details
+     * @param userDetails The user details to set as logged in details
+     * @returns The logged in user details or null if no user is logged in
+     */
+    setLoggedInDetails: (userDetails: IUserDetails | null) => void;
+
+    /**
+     * This method gets the currently logged in user details
+     * @returns The logged in user details or null if no user is logged in
+     */
+    getLoggedInDetails: () => IUserDetails | null;
+
+    /**
+     * Logs out the current user
+     * @returns A promise that resolves when the logout process is complete
+     */
+    logout: () => Promise<void>;
 }

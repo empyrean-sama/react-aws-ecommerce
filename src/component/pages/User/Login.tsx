@@ -1,19 +1,73 @@
-import { Typography, Box, Button, TextField } from "@mui/material";
 import React, { useState } from "react";
+import AuthService from "../../../service/AuthService";
+import { Link, useLocation, useNavigate } from "react-router";
+
+import { Typography, Box, Button, TextField } from "@mui/material";
 import PageShell from "./PageShell";
 
 import GoogleSharpIcon from "../../ui/icons/GoogleSharpIcon";
 import FacebookSharpIcon from '../../ui/icons/FacebookSharpIcon';
 
-import { Link } from "react-router";
+import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
+import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
+import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
+import { isEmailValid, isPasswordValid } from "../../../Helper";
+import UserNotVerifiedException from "../../../error/UserNotVerifiedException";
 
 export default function Login() {
+    
+    // State variables
     const [email, setEmail] = useState("");
+    const [emailError, setEmailError] = useState("");
     const [password, setPassword] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = () => {
-        console.log("Login clicked", { email, password });
-    };
+    // Global API
+    const { showMessage, setLoggedInDetails } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const navigate = useNavigate();
+    const location = useLocation();
+    const authService = AuthService.getInstance()
+
+    // Private routines
+    async function handleLogin() {
+        setLoading(true);
+        const emailValidity = isEmailValid(email);
+        const passwordValidity = isPasswordValid(password);
+        setEmailError(emailValidity.errorMessage);
+        setPasswordError(passwordValidity.errorMessage);
+
+        if(emailValidity.isValid && passwordValidity.isValid) {
+            try {
+                const loginDetails = await authService.signIn(email, password);
+                showMessage("Login successful", ESnackbarMsgVariant.success);
+                setLoggedInDetails(loginDetails);
+                if(location.state?.from) {
+                    console.log(location.state.from)
+                    navigate(location.state.from, {replace: true}); //If login was redirected, go back to original page
+                }
+                else {
+                    navigate("/account", {replace: true}); //Else go to account page
+                }
+            } catch (error) {
+                if(error instanceof UserNotVerifiedException) {
+                    showMessage("Your account is not verified. Please verify your account before logging in.", ESnackbarMsgVariant.error);
+                    navigate("/account/verify-username", {state: {username: email, password: password, from: location.state?.from || null}, replace: true});
+                }
+                else if (error instanceof Error) {
+                    setPasswordError(error.message);
+                }
+                else {
+                    throw error; //not sure when this will get triggered, but just in case
+                }
+            } finally {
+                setLoading(false);
+            }
+        }
+        else {
+            setLoading(false);
+        }
+    }
 
     return (
         <PageShell pageLabel="Login">
@@ -26,7 +80,10 @@ export default function Login() {
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    error={!!emailError}
+                    helperText={emailError}
                     variant="outlined"
+                    disabled={loading}
                 />
                 <TextField
                     fullWidth
@@ -37,6 +94,9 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     variant="outlined"
+                    disabled={loading}
+                    error={!!passwordError}
+                    helperText={passwordError}
                 />
                 <Button 
                     variant="contained" 
@@ -44,6 +104,7 @@ export default function Login() {
                     size="large" 
                     onClick={handleLogin}
                     fullWidth
+                    disabled={loading}
                 >
                     Sign In
                 </Button>
@@ -58,7 +119,7 @@ export default function Login() {
                         variant="outlined"
                         color="inherit"
                         sx={{ flex: { xs: '1 1 100%', sm: '0 1 auto' }, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: .5 }}
-                        disabled={true}
+                        disabled={true || loading}
                     >
                         <GoogleSharpIcon />
                         Google
@@ -67,7 +128,7 @@ export default function Login() {
                         variant="outlined"
                         color="inherit"
                         sx={{ flex: { xs: '1 1 100%', sm: '0 1 auto' }, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: .5 }}
-                        disabled={true}
+                        disabled={true || loading}
                     >
                         <FacebookSharpIcon />
                         Facebook

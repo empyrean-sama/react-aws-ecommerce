@@ -1,9 +1,10 @@
 import React from "react";
+import { Outlet } from "react-router";
 
 export default function Account() {
     return (
         <>
-            <h1>Account Page</h1>
+            <Outlet />
         </>
     );
 }

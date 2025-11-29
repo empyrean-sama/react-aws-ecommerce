@@ -9,6 +9,7 @@ import ISignUpOptions from "../interface/ISignUpOptions";
 import IUserDetails from "../interface/IUserDetails";
 
 import UserNotVerifiedException from "../error/UserNotVerifiedException";
+import UserAlreadyExistsException from "../error/UserAlreadyExistsException";
 export default class AuthService {
 
     private static _instance: AuthService;
@@ -68,11 +69,19 @@ export default class AuthService {
             }
 
         // Proceed with sign up once attributes are set
-        return await signUp({
-            username: input.username,
-            password: input.password,
-            options: options
-        });
+        try{
+            return await signUp({
+                username: input.username,
+                password: input.password,
+                options: options
+            });
+        }
+        catch(error) {
+            if (error instanceof Error && error.message.includes("User already exists")) {
+                throw new UserAlreadyExistsException();
+            }
+            throw error;
+        }
     }
 
     /**
@@ -87,7 +96,7 @@ export default class AuthService {
     }
 
     /**
-     * todo: see if something needs to change for handling phone number verification
+     * TODO: see if something needs to change for handling phone number verification
      * resend's the verification code to the user's email.
      * @param username string - user's email address
      * @returns Promise<void>
@@ -99,18 +108,34 @@ export default class AuthService {
 
     /**
      * Signs in a user with the given credentials.
-     * @param username: string - user's email address
+     * @param username: string - username (email or phone)
      * @param password: string - user's password
-     * @returns Promise<void>
-     * @throws UserNotVerifiedException if the user has not verified their account
+     * @returns Promise<IUserDetails> - user details object upon successful sign-in
      * @throws Error for any other errors encountered during sign-in
      */
-    public async signIn(username: string, password: string): Promise<void> {
+    public async signIn(username: string, password: string): Promise<IUserDetails> {
         await signIn({ username, password });
-        const userDetails = await this.getCurrentUser();
-        if(!userDetails) {
-            throw new UserNotVerifiedException(`the user with username: ${username} and password ${password} is not verified`);
+        return await this.generateUserDetailsFromSession();
+    }
+
+    /**
+     * Checks if the username (email or phone) is verified.
+     * @returns boolean indicating if the username (email or phone) is verified
+     * @throws Error for any errors encountered during the check
+     */
+    public async getUsernameVerificationStatus(): Promise<boolean> {
+        const session = await fetchAuthSession();
+        const idToken = session.tokens?.idToken;
+
+        if (!idToken) {
+            throw new Error("Failed to retrieve authentication session");
         }
+
+        // Check if email is verified
+        const emailVerified = idToken.payload.email_verified as boolean | undefined;
+        const phoneVerified = idToken.payload.phone_number_verified as boolean | undefined;
+
+        return emailVerified === true || phoneVerified === true;
     }
 
     /**
@@ -172,5 +197,30 @@ export default class AuthService {
      */
     public async confirmResetPassword(username: string, verificationCode: string, newPassword: string): Promise<void> {
         await confirmResetPassword({username, newPassword, confirmationCode: verificationCode});
+    }
+
+    /**
+     * Generates the user details from the current authentication session.
+     * @returns the user details object
+     * @throws Error if unable to retrieve the authentication session
+     */
+    private async generateUserDetailsFromSession(): Promise<IUserDetails> {
+        const session = await fetchAuthSession();
+        const idToken = session.tokens?.idToken;
+        if (!idToken) {
+            throw new UserNotVerifiedException("The user is not verified.");
+        }
+        // Generate user details object
+        const userDetails: IUserDetails = {
+            userId: idToken.payload.sub as string,
+            username: idToken.payload["cognito:username"] as string,
+            email: idToken.payload.email as string | undefined,
+            emailVerified: idToken.payload.email_verified as boolean | undefined,
+            phoneNumber: idToken.payload.phone_number as string | undefined,
+            phoneNumberVerified: idToken.payload.phone_number_verified as boolean | undefined,
+            givenName: idToken.payload.given_name as string | undefined,
+            familyName: idToken.payload.family_name as string | undefined,
+        };
+        return userDetails;
     }
 }
