@@ -83,7 +83,7 @@ export default function SignUp() {
     };
 
     return (
-        <PageShell pageLabel="Sign Up">
+        <PageShell pageLabel="Sign Up" showBackButton backTo="/account/login">
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <GetNameComponent 
                     firstName={firstName} setFirstName={setFirstName} firstNameError={firstNameError} 

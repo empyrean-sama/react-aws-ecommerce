@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AuthService from "../../../service/AuthService";
 import { Link, useLocation, useNavigate } from "react-router";
 
@@ -24,10 +24,19 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
 
     // Global API
-    const { showMessage, setLoggedInDetails } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { showMessage, setLoggedInDetails, getLoggedInDetails } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const navigate = useNavigate();
     const location = useLocation();
     const authService = AuthService.getInstance()
+
+    // Effects
+    useEffect(() => {
+        // Don't allow access to login page if already logged in
+        const loggedInDetails = getLoggedInDetails();
+        if(loggedInDetails) {
+            navigate("/account", {replace: true});
+        }
+    }, [getLoggedInDetails()]);
 
     // Private routines
     async function handleLogin() {

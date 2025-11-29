@@ -1,12 +1,26 @@
 import React from "react";
-import { Container, Card, CardContent, Typography } from "@mui/material";
+import { Container, Card, CardContent, Typography, Box, IconButton } from "@mui/material";
 import { motion } from 'framer-motion';
+import { useNavigate } from "react-router";
+import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
 
 export interface PageShellProps {
     pageLabel: string;
+    showBackButton?: boolean;
+    backTo?: string;
 }
 
-export default function PageShell({ pageLabel, children }: React.PropsWithChildren<PageShellProps>) {
+export default function PageShell({ pageLabel, showBackButton = false, backTo, children }: React.PropsWithChildren<PageShellProps>) {
+    
+    // Global API
+    const navigate = useNavigate();
+    
+    // Private routines
+    function handleOnBack() {
+        if (backTo) navigate(backTo, { replace: true });
+        else navigate(-1);
+    }
+
     return (
         <motion.div
           initial={{ opacity: 0, x: -100 }}
@@ -15,7 +29,18 @@ export default function PageShell({ pageLabel, children }: React.PropsWithChildr
         >
             <Container maxWidth="sm" sx={{ py: 4, px: {xs: 0, sm: 3} }}>
                 <Card>
-                    <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+                    <CardContent sx={{ p: { xs: 3, sm: 4 }, position: "relative" }}>
+                        {showBackButton && (
+                            <IconButton 
+                                aria-label="Go back" 
+                                size="small" 
+                                onClick={handleOnBack}
+                                color="primary"
+                                sx={{position: "absolute", top: 0, left: 32}}
+                            >
+                                <KeyboardBackspaceIcon />
+                            </IconButton>
+                        )}
                         <Typography variant="h1" component="h1" textAlign="center" sx={{ mb: 3 }}>{pageLabel}</Typography>
                         {children}
                     </CardContent>

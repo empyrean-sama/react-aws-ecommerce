@@ -10,6 +10,8 @@ import Account from '../pages/User/Account';
 import Login from '../pages/User/Login';
 import SignUp from '../pages/User/SignUp';
 import VerifyUsername from '../pages/User/VerifyUsername';
+import ForgotPassword from '../pages/User/ForgotPassword';
+import ForgotPasswordVerify from '../pages/User/ForgotPasswordVerify';
 
 export default function AppLayout() {
     const router = createBrowserRouter(createRoutesFromElements(
@@ -20,6 +22,8 @@ export default function AppLayout() {
                 <Route path="login" element={<Login />} />
                 <Route path="signup" element={<SignUp />} />
                 <Route path="verify-username" element={<VerifyUsername />} />
+                <Route path="forgot-password" element={<ForgotPassword />} />
+                <Route path="forgot-password/verify" element={<ForgotPasswordVerify />} />
             </Route>
             <Route path="*" element={<NotFound />} />
         </Route>
