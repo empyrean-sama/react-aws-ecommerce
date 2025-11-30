@@ -11,15 +11,15 @@ import Constants from "../Constants";
 
 export default class AuthStack extends Stack {
 
-    
-    private readonly _userPool: Cognito.UserPool;
+    public readonly profilesTable: DynamoDB.Table;
+    public readonly userPool: Cognito.UserPool;
     private readonly _userPoolClient: Cognito.UserPoolClient;
 
     constructor(scope: Construct, id: string, props: StackProps = {}) {
         super(scope, id, props);
 
         // Create Cognito User Pool
-        this._userPool = new Cognito.UserPool(this, Constants.userPoolName, {
+        this.userPool = new Cognito.UserPool(this, Constants.userPoolName, {
             userPoolName: Constants.userPoolName,
             selfSignUpEnabled: true,
             signInAliases: { email: true, phone: false, username: false }, //todo: must make phone true before shipping version- 1
@@ -45,12 +45,12 @@ export default class AuthStack extends Stack {
 
         // Output the User Pool ID
         new CfnOutput(this, Constants.userPoolIdOutputKey, {
-            value: this._userPool.userPoolId,
+            value: this.userPool.userPoolId,
             exportName: Constants.userPoolIdOutputKey
         })
 
         // Create Cognito User Pool Client
-        this._userPoolClient = this._userPool.addClient(Constants.userPoolClientName, {
+        this._userPoolClient = this.userPool.addClient(Constants.userPoolClientName, {
             authFlows: {
                 adminUserPassword: true,
                 custom: true,
@@ -70,12 +70,12 @@ export default class AuthStack extends Stack {
 
         // Create admin group
         new Cognito.CfnUserPoolGroup(this, Constants.userPoolAdminGroupNameId, {
-            userPoolId: this._userPool.userPoolId,
+            userPoolId: this.userPool.userPoolId,
             groupName: Constants.userPoolAdminGroupName
         });
 
         // Create the Profile DynamoDB table
-        const profilesTable = new DynamoDB.Table(this, Constants.profilesTableId, {
+        this.profilesTable = new DynamoDB.Table(this, Constants.profilesTableId, {
             tableName: Constants.profilesTableName,
             partitionKey: { name: 'userId', type: DynamoDB.AttributeType.STRING },
             billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
@@ -87,13 +87,13 @@ export default class AuthStack extends Stack {
             handler: 'Handler',
             runtime: Lambda.Runtime.NODEJS_22_X,
             environment: {
-                PROFILES_TABLE: profilesTable.tableName,
+                PROFILES_TABLE: this.profilesTable.tableName,
             },
             bundling: { minify: true, sourceMap: true, target: 'node22' },
         });
-        profilesTable.grantWriteData(createProfileFunction);
+        this.profilesTable.grantWriteData(createProfileFunction);
 
         // Add post-confirmation trigger to User Pool
-        this._userPool.addTrigger(Cognito.UserPoolOperation.POST_CONFIRMATION, createProfileFunction);
+        this.userPool.addTrigger(Cognito.UserPoolOperation.POST_CONFIRMATION, createProfileFunction);
     }
 }
