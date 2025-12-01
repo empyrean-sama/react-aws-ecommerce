@@ -1,5 +1,4 @@
 import * as Cognito from 'aws-cdk-lib/aws-cognito'; 
-import * as IAM from 'aws-cdk-lib/aws-iam';
 import * as Lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import * as DynamoDB from 'aws-cdk-lib/aws-dynamodb';
@@ -7,7 +6,7 @@ import * as DynamoDB from 'aws-cdk-lib/aws-dynamodb';
 import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"; 
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
-import Constants from "../Constants";
+import InfrastructureConstants from "../InfrastructureConstants";
 
 export default class AuthStack extends Stack {
 
@@ -19,8 +18,8 @@ export default class AuthStack extends Stack {
         super(scope, id, props);
 
         // Create Cognito User Pool
-        this.userPool = new Cognito.UserPool(this, Constants.userPoolName, {
-            userPoolName: Constants.userPoolName,
+        this.userPool = new Cognito.UserPool(this, InfrastructureConstants.userPoolName, {
+            userPoolName: InfrastructureConstants.userPoolName,
             selfSignUpEnabled: true,
             signInAliases: { email: true, phone: false, username: false }, //todo: must make phone true before shipping version- 1
             autoVerify: { email: true, },
@@ -44,13 +43,13 @@ export default class AuthStack extends Stack {
         });
 
         // Output the User Pool ID
-        new CfnOutput(this, Constants.userPoolIdOutputKey, {
+        new CfnOutput(this, InfrastructureConstants.userPoolIdOutputKey, {
             value: this.userPool.userPoolId,
-            exportName: Constants.userPoolIdOutputKey
+            exportName: InfrastructureConstants.userPoolIdOutputKey
         })
 
         // Create Cognito User Pool Client
-        this._userPoolClient = this.userPool.addClient(Constants.userPoolClientName, {
+        this._userPoolClient = this.userPool.addClient(InfrastructureConstants.userPoolClientName, {
             authFlows: {
                 adminUserPassword: true,
                 custom: true,
@@ -63,20 +62,20 @@ export default class AuthStack extends Stack {
         });
 
         // Output the User Pool Client ID
-        new CfnOutput(this, Constants.userPoolClientIdOutputKey, {
+        new CfnOutput(this, InfrastructureConstants.userPoolClientIdOutputKey, {
             value: this._userPoolClient.userPoolClientId,
-            exportName: Constants.userPoolClientIdOutputKey
+            exportName: InfrastructureConstants.userPoolClientIdOutputKey
         })
 
         // Create admin group
-        new Cognito.CfnUserPoolGroup(this, Constants.userPoolAdminGroupNameId, {
+        new Cognito.CfnUserPoolGroup(this, InfrastructureConstants.userPoolAdminGroupNameId, {
             userPoolId: this.userPool.userPoolId,
-            groupName: Constants.userPoolAdminGroupName
+            groupName: InfrastructureConstants.userPoolAdminGroupName
         });
 
         // Create the Profile DynamoDB table
-        this.profilesTable = new DynamoDB.Table(this, Constants.profilesTableId, {
-            tableName: Constants.profilesTableName,
+        this.profilesTable = new DynamoDB.Table(this, InfrastructureConstants.profilesTableId, {
+            tableName: InfrastructureConstants.profilesTableName,
             partitionKey: { name: 'userId', type: DynamoDB.AttributeType.STRING },
             billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.DESTROY, //TODO: Change to RETAIN for production

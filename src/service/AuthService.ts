@@ -190,6 +190,28 @@ export default class AuthService {
     }
 
     /**
+     * Gets the current authenticated user's JWT token.
+     * @returns Promise<string | null> - the raw JWT (id token preferred) or null if no user session.
+     * ! This will ignore any errors and just return null
+     */
+    public async getCurrentUserToken(): Promise<string | null> {
+        try {
+            const session = await fetchAuthSession();
+            const idToken = session.tokens?.idToken;
+            if (idToken) {
+                return idToken.toString();
+            }
+            const accessToken = session.tokens?.accessToken;
+            if (accessToken) {
+                return accessToken.toString();
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
      * Start the password reset process for the given username.
      * @param username: the username (email or phone) of the user to reset password for
      */
@@ -209,6 +231,22 @@ export default class AuthService {
         const emailCheck = isEmailValid(username);
         const normalizedUsername = emailCheck.isValid ? username.trim().toLowerCase() : username.trim();
         await confirmResetPassword({username: normalizedUsername, newPassword, confirmationCode: verificationCode});
+    }
+
+    /**
+     * calls the fetch function with the current user's auth token in the Authorization header
+     * @param url: the URL to fetch
+     * @param init: optional fetch init parameters (will call 'GET' if not provided)
+     * @returns whatever fetch returns
+     */
+    public async authorizedFetch(url: URL, init?: RequestInit): Promise<Response> {
+        const token = await AuthService.getInstance().getCurrentUserToken();
+        const headers = new Headers(init?.headers || {});
+        if (token) {
+            headers.set('Authorization', token);
+            return await fetch(url.toString(), { ...init, headers });
+        }
+        throw new Error('User is not authenticated');
     }
 
     /**

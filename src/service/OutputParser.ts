@@ -1,5 +1,5 @@
 import Outputs from '../../outputs.json';
-import Constants from "../infrastructure/Constants";
+import Constants from "../infrastructure/InfrastructureConstants";
 
 export default class OutputParser {
 
@@ -25,5 +25,37 @@ export default class OutputParser {
             throw new Error("User Pool Client ID not found in CloudFormation outputs.");
         }
         return userPoolClientId;
+    }
+
+    /**
+     * Get the API Endpoint URL from the CloudFormation outputs
+     * @returns the API Endpoint URL
+     */
+    public static get ApiEndpoint(): string {
+        const apiEndpoint = (Outputs as any)[Constants.apiStackOutputKey][Constants.apiStackEndpointOutputKey];
+        if(!apiEndpoint) {
+            throw new Error("API Endpoint not found in CloudFormation outputs.");
+        }
+        return apiEndpoint;
+    }
+
+    /**
+     * Get the full Addresses API endpoint URL
+     * The addresses endpoint is constructed by appending 'addresses' to the base API endpoint.
+     * It supports operations GET, POST, DELETE for managing addresses.
+     * @returns the Addresses API endpoint URL
+     */
+    public static get AddressesEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.addressResourceName}`;
+    }
+
+    /**
+     * Get the full Autofill Address API endpoint URL
+     * The autofill address endpoint is constructed by appending 'autofill-address' to the base API endpoint.
+     * It supports the GET operation for address autocomplete.
+     * @returns the Autofill Address API endpoint URL
+     */
+    public static get AutofillAddressEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.autofillAddressResourceName}`;
     }
 }

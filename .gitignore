@@ -7,3 +7,6 @@ cdk.out
 
 # Master specific ignores
 outputs.json
+
+# API Keys and sensitive files
+.env.json
