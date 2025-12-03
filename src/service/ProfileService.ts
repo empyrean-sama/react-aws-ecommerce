@@ -134,6 +134,6 @@ export default class ProfileService {
         if (!resp.ok) {
             return null;
         }
-        return json as JsonLike;    
+        return json as JsonLike;
     }
 }

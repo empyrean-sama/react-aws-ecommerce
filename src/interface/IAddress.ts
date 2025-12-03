@@ -16,3 +16,16 @@ export default interface IAddress {
     /** Provider-specific place id (Photon or Nominatim or Mapbox etc.) */
     placeId?: string;
 }
+
+export function createEmptyAddress(): IAddress {
+    return {
+        userLabel: "",
+        specificAddress: "",
+        street: "",
+        area: "",
+        city: "",
+        state: "",
+        country: "",
+        postcode: ""
+    };
+}

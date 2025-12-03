@@ -3,7 +3,7 @@ import * as Lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import * as DynamoDB from 'aws-cdk-lib/aws-dynamodb';
 
-import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"; 
+import { CfnOutput, Duration, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"; 
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import Constants from "../InfrastructureConstants";
@@ -62,6 +62,7 @@ export default class ProfileStack extends Stack {
             environment: {
                 GEOAPIFY_API_KEY: env.autoCompleteGeoapifyAPIKey || '',
             },
+            timeout: Duration.seconds(20),
         });
         const autofillAddressLambdaIntegration = new LambdaIntegration(autofillAddressLambda);
         props.apiStack.addMethodOnResource(Constants.autofillAddressResourceName, 'GET', autofillAddressLambdaIntegration, false);

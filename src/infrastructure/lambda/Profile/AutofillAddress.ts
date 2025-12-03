@@ -53,12 +53,11 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
 			},
 		});
 
-		const bodyText = await resp.text();
 		let upstreamResponse: JsonLike;
 		try {
-			upstreamResponse = bodyText ? JSON.parse(bodyText) : {};
+			upstreamResponse = await resp.json();
 		} catch (e) {
-			console.error('AutofillAddress: Failed to parse Geoapify response JSON', e, bodyText);
+			console.error('AutofillAddress: Failed to parse Geoapify response JSON', e);
 			return constructResponse(502, { message: 'Invalid response from upstream service' });
 		}
 
