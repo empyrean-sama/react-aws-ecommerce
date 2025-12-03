@@ -31,7 +31,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping"; // shipped
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"; // delivered
 import HighlightOffIcon from "@mui/icons-material/HighlightOff"; // cancelled
 
-import { formatDate } from "date-fns";
+import { format } from "date-fns";
 import IAddress from "../../../interface/IAddress";
 
 type OrderStatus = "order placed" | "processing" | "shipped" | "delivered" | "cancelled";
@@ -99,7 +99,7 @@ export default function OrderCard(props: IOrderCardProps) {
     };
 
     return (
-        <Card sx={{ position: "relative" }}>
+        <Card sx={{ position: "relative" }} variant="compact">
             <LinearProgress
                 variant="determinate"
                 value={getProgressByStatus(props.status)}
@@ -127,7 +127,7 @@ export default function OrderCard(props: IOrderCardProps) {
                         </Avatar>
                     }
                     title={<CardTitle />}
-                    subheader={`Placed on ${formatDate(props.orderDate, "MMMM dd, yyyy")}`}
+                    subheader={`Placed on ${format(props.orderDate, "MMMM dd, yyyy")}`}
                     action={expanded ? <ExpandLessIcon sx={{ marginY: "auto" }} /> : <ExpandMoreIcon sx={{ marginY: "auto" }} />}
                     sx={{ cursor: "pointer", display: "flex", alignItems: "center" }}
                 />
@@ -136,9 +136,7 @@ export default function OrderCard(props: IOrderCardProps) {
             <CardContent>
                 <Collapse in={expanded} timeout="auto">
                     <Divider sx={{ my: 2 }} />
-                    <Typography variant="h4" component="h2" sx={{ mb: 2 }}>
-                        Order Summary
-                    </Typography>
+                    <Typography variant="h4" component="h2" sx={{ mb: 2, mx: {xs: 2, sm: 0} }}>Order Summary</Typography>
                     <TableContainer component={Paper}>
                         <Table size="small" aria-label="a dense table">
                             <TableHead>
@@ -193,26 +191,28 @@ export default function OrderCard(props: IOrderCardProps) {
                         </Typography>
                     </Paper>
 
-                    <Typography variant="h4" component="h2" sx={{ my: 2 }}>
-                        Shipping Details
-                    </Typography>
-                    <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-                        <Typography variant="h6" component="h3" gutterBottom>
-                            <strong>{props.shippingAddress.userLabel}</strong>
+                    <Box sx={{ mx: {xs: 2, sm: 0} }}>
+                        <Typography variant="h4" component="h2" sx={{ my: 2 }}>
+                            Shipping Details
                         </Typography>
-                        <Typography variant="body1" component="p">
-                            {props.shippingAddress.specificAddress}, <br />
-                            {props.shippingAddress.area}, {props.shippingAddress.street}, <br />
-                            {props.shippingAddress.city} {props.shippingAddress.postcode}, <br />
-                            {props.shippingAddress.state}, {props.shippingAddress.country}.
-                        </Typography>
-                    </Paper>
-                    <Paper variant="outlined" sx={{ p: 2 }}>
-                        <Typography variant="body1" component="p">
-                            Contact: {props.phoneNumber}<br />
-                            Email: {props.email}
-                        </Typography>
-                    </Paper>
+                        <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+                            <Typography variant="h6" component="h3" gutterBottom>
+                                <strong>{props.shippingAddress.userLabel}</strong>
+                            </Typography>
+                            <Typography variant="body1" component="p">
+                                {props.shippingAddress.specificAddress}, <br />
+                                {props.shippingAddress.area}, {props.shippingAddress.street}, <br />
+                                {props.shippingAddress.city} {props.shippingAddress.postcode}, <br />
+                                {props.shippingAddress.state}, {props.shippingAddress.country}.
+                            </Typography>
+                        </Paper>
+                        <Paper variant="outlined" sx={{ p: 2 }}>
+                            <Typography variant="body1" component="p">
+                                Contact: {props.phoneNumber}<br />
+                                Email: {props.email}
+                            </Typography>
+                        </Paper>
+                    </Box>
                 </Collapse>
             </CardContent>
         </Card>

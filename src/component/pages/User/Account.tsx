@@ -25,11 +25,9 @@ export default function Account() {
     },[getLoggedInDetails()]);
 
     return (
-        <Container maxWidth="xl">
-            <Typography variant="h1" component="h1" gutterBottom>
-                Hi {getLoggedInDetails()?.givenName} {getLoggedInDetails()?.familyName},
-            </Typography>
-            <Box sx={{display: 'flex', flexDirection: 'column', gap: 1, mt: 2}}>
+        <Container maxWidth="xl" sx={{ paddingX: { xs: 0, sm: 3 }}}>
+            <Typography variant="h1" component="h1" sx={{textAlign: { xs: "center", sm: "left" }}} gutterBottom>Hi {getLoggedInDetails()?.givenName} {getLoggedInDetails()?.familyName},</Typography>
+            <Box sx={{display: 'flex', flexDirection: 'column', gap: 2, mt: 2}}>
                 <OrderCard
                     status="order placed"
                     itemData={[

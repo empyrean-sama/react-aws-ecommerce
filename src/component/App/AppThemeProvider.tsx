@@ -163,6 +163,18 @@ export default function AppThemeProvider(props: React.PropsWithChildren) {
                             paddingLeft: '16px',
                             paddingRight: '16px',
                         },
+
+                        variants:[
+                            {
+                                props: { variant: 'compact' },
+                                style: {
+                                    [theme.breakpoints.up('xs')]: {
+                                        paddingTop: '16px',
+                                        paddingBottom: '16px'
+                                    }
+                                }
+                            }
+                        ],
                     }),
                 },
             },
