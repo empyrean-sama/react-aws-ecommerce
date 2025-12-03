@@ -7,6 +7,7 @@ export default class InfrastructureConstants {
     // Stack output keys
     static get authStackOutputKey(): string { return `${InfrastructureConstants.projectName}-AuthStack`; }
     static get apiStackOutputKey(): string { return `${InfrastructureConstants.projectName}-APIStack`; }
+    static get profileStackOutputKey(): string { return `${InfrastructureConstants.projectName}-ProfileStack`; }
     static get apiStackName(): string { return `${InfrastructureConstants.projectName}-APIStack`; }
     static get apiStackEndpointOutputKey(): string { return `APIStackEndpoint`; }
     

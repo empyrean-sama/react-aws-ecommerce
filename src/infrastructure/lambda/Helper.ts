@@ -8,12 +8,22 @@ export type JsonLike = { [key: string]: any };
  * @param payload: JsonLike, The JSON payload to include in the response body
  * @returns APIGatewayProxyResult, which can be returned from a Lambda function
  */
-export function constructResponse(statusCode: number, payload: JsonLike): APIGatewayProxyResult {
-    return {
+export function constructResponse(statusCode: number, payload: JsonLike, 
+    corsHeaders: Record<string, string> = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+        'Access-Control-Allow-Methods': 'OPTIONS,GET,POST,PUT,DELETE',
+    }
+): APIGatewayProxyResult {
+    const response = {
         statusCode,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders
+        },
         body: JSON.stringify(payload),
     };
+    return response;
 }
 
 /**

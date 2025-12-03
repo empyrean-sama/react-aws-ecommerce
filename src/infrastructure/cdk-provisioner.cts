@@ -14,7 +14,7 @@ const apiStack = new APIStack(app, Constants.apiStackOutputKey, {
 });
 
 // Create Profile Stack to manage user profiles
-new ProfileStack(app, 'ProfileStack', {
+new ProfileStack(app, Constants.profileStackOutputKey, {
     profilesTable: authStack.profilesTable,
     apiStack: apiStack,
 });
