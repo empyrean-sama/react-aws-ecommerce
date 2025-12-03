@@ -37,6 +37,7 @@ import IAddress from "../../../interface/IAddress";
 type OrderStatus = "order placed" | "processing" | "shipped" | "delivered" | "cancelled";
 
 interface ItemData {
+    imageUrl: string;
     name: string;
     cost: string;
     quantity: string;
@@ -106,7 +107,7 @@ export default function OrderCard(props: IOrderCardProps) {
                 color={getColorAndIconByStatus(props.status).color}
             />
 
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, padding: 1 }}>
+            <Box sx={{ display: "flex", flexDirection:{xs: "column", sm: "row"}, alignItems: {xs: "flex-start", sm: "center"}, justifyContent: "space-between", gap: 1, padding: 1 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Chip label={props.status} color={getColorAndIconByStatus(props.status).color} size="small" icon={getColorAndIconByStatus(props.status).icon} />
                     <Chip label={props.paymentDetails} color={props.paymentMode === "Pre Paid" ? "info" : "warning"} size="small" />
@@ -142,20 +143,23 @@ export default function OrderCard(props: IOrderCardProps) {
                         <Table size="small" aria-label="a dense table">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell align="left">Item</TableCell>
-                                    <TableCell align="center">Price</TableCell>
-                                    <TableCell align="center">Quantity</TableCell>
+                                    <TableCell align="left">Name</TableCell>
+                                    <TableCell align="center" sx={{display: {xs: "none", sm: "table-cell"}}}>Quantity</TableCell>
+                                    <TableCell align="center" sx={{display: {xs: "none", sm: "table-cell"}}}>Price</TableCell>
+                                    <TableCell align="center" sx={{display: {xs: "table-cell", sm: "none"}}}>Nos. x Price</TableCell>
                                     <TableCell align="right">Sub Total</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {props.itemData.map((row) => (
                                     <TableRow key={row.name} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-                                        <TableCell component="th" scope="row">
+                                        <TableCell scope="row" sx={{ display: "flex", alignItems: "center" }}>
+                                            <Box component="img" src={row.imageUrl} alt={row.name} sx={{ width: { xs: 50, sm: 75, md: 100, lg: 125 }, objectFit: "contain", marginRight: 2 }} />
                                             {row.name}
                                         </TableCell>
-                                        <TableCell align="center">{row.cost}</TableCell>
-                                        <TableCell align="center">{row.quantity}</TableCell>
+                                        <TableCell align="center" sx={{display: {xs: "none", sm: "table-cell"}}}>{row.quantity}</TableCell>
+                                        <TableCell align="center" sx={{display: {xs: "none", sm: "table-cell"}}}>{row.cost}</TableCell>
+                                        <TableCell align="center" sx={{display: {xs: "table-cell", sm: "none"}}}>{row.quantity} x {row.cost}</TableCell>
                                         <TableCell align="right">{row.totalCost}</TableCell>
                                     </TableRow>
                                 ))}

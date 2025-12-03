@@ -33,8 +33,8 @@ export default function Account() {
                 <OrderCard
                     status="order placed"
                     itemData={[
-                        { name: "Product 1", cost: "50", quantity: "1", totalCost: "50" },
-                        { name: "Product 2", cost: "25", quantity: "2", totalCost: "50" },
+                        { name: "Product 1", cost: "50", quantity: "1", totalCost: "50", imageUrl: "https://placehold.co/400" },
+                        { name: "Product 2", cost: "25", quantity: "2", totalCost: "50", imageUrl: "https://placehold.co/400" },
                     ]}
                     orderSubtotal="100$"
                     extraFees={{ Shipping: "10$", Tax: "5$" }}
@@ -60,8 +60,8 @@ export default function Account() {
                 <OrderCard
                     status="delivered"
                     itemData={[
-                        { name: "Product 1", cost: "50", quantity: "1", totalCost: "50" },
-                        { name: "Product 2", cost: "25", quantity: "2", totalCost: "50" },
+                        { name: "Product 1", cost: "50", quantity: "1", totalCost: "50", imageUrl: "https://placehold.co/400" },
+                        { name: "Product 2", cost: "25", quantity: "2", totalCost: "50", imageUrl: "https://placehold.co/400" },
                     ]}
                     orderSubtotal="100$"
                     extraFees={{ Shipping: "10$", Tax: "5$" }}
