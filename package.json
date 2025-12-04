@@ -12,8 +12,10 @@
     "@aws-sdk/client-dynamodb": "^3.940.0",
     "@aws-sdk/util-dynamodb": "^3.940.0",
     "@mui/types": "^7.4.8",
+    "@parcel/transformer-inline-string": "^2.16.1",
     "@parcel/transformer-typescript-tsc": "^2.16.1",
     "@types/aws-lambda": "^8.10.159",
+    "@types/leaflet": "^1.9.21",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
     "aws-cdk": "^2.1033.0",
@@ -35,9 +37,11 @@
     "aws-amplify": "^6.15.8",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.24",
+    "leaflet": "^1.9.4",
     "notistack": "^3.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.9.6"
   }
 }
