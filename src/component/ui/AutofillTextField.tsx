@@ -1,5 +1,7 @@
 import React from 'react';
-import { TextField, Box, Paper, List, ListItemButton, ListItemText, CircularProgress, Fade, TextFieldProps, Typography } from '@mui/material';
+import { TextField, Box, Paper, List, ListItemButton, ListItemText, CircularProgress, Fade, TextFieldProps, Typography, InputAdornment } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import { JsonLike } from '../../infrastructure/lambda/Helper';
 
 export interface AutofillTextFieldProps extends TextFieldProps<'standard'> {
     /**
@@ -35,7 +37,7 @@ export interface AutofillTextFieldProps extends TextFieldProps<'standard'> {
 export interface ISuggestion {
     labelTitle: string;
     labelDescription: string;
-    value: string;
+    value: JsonLike;
 }
 
 export default function AutofillTextField({tryFetchSuggestions, onSuggestionSelected, onTextInputChange, ...props}: AutofillTextFieldProps) {
@@ -115,13 +117,30 @@ export default function AutofillTextField({tryFetchSuggestions, onSuggestionSele
         }
     }
 
+    function handleOnBlur(e: React.FocusEvent<HTMLInputElement, Element>) {
+        // Hide suggestions when the input loses focus and the new focused element is not part of the suggestions list
+        const relatedTarget = e.relatedTarget as HTMLElement | null;
+        if (!relatedTarget || !relatedTarget.closest(".MuiList-root")) {
+            setSuggestions([]);
+        }
+    }
+
     return (
         <Box sx={{ position: "relative" }}>
             <TextField
                 value={props.value}
                 onChange={(e) => handleOnChange(e.target.value)}
                 {...props}
-                onBlur={() => setSuggestions([])}
+                onBlur={handleOnBlur}
+                slotProps={{
+                    input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon fontSize="small" />
+                            </InputAdornment>
+                        )
+                    }
+                }}
             />
             <Fade in={isLoadingSuggestions} unmountOnExit>
                 <CircularProgress size={16} sx={{ position: "absolute", top: 10, right: 10 }} />
@@ -137,13 +156,14 @@ export default function AutofillTextField({tryFetchSuggestions, onSuggestionSele
                         mt: 0.5,
                         maxHeight: 240,
                         overflowY: "auto",
-                        zIndex: 2,
+                        // Ensure suggestions appear above maps and other overlays
+                        zIndex: (theme) => theme.zIndex.modal + 1,
                     }}
                 >
                     <List dense disablePadding>
-                        {suggestions.map((s, index) => (
-                            <ListItemButton key={index} onClick={() => applySuggestion(s)}>
-                                <Typography component={ListItemText} primary={s.labelTitle} secondary={s.labelDescription} />
+                        {suggestions.map((suggestion, index) => (
+                            <ListItemButton key={index} onClick={() => applySuggestion(suggestion)}>
+                                <ListItemText primary={suggestion.labelTitle} secondary={suggestion.labelDescription} />
                             </ListItemButton>
                         ))}
                     </List>

@@ -20,12 +20,18 @@ export default interface IAddress {
 export function createEmptyAddress(): IAddress {
     return {
         userLabel: "",
+
         specificAddress: "",
         street: "",
         area: "",
         city: "",
         state: "",
         country: "",
-        postcode: ""
+        postcode: "",
+
+        latitude: 48.8566, // The latitude of Paris by default
+        longitude: 2.3522, // The longitude of Paris by default
+
+        placeId: "",
     };
 }
