@@ -241,3 +241,182 @@ export function isPasswordValid(password: string): {isValid: boolean, errorMessa
 
     return {isValid: true, errorMessage: ""};
 }
+
+export function isLabelValid(label: string): {isValid: boolean, errorMessage: string} {
+    // Validate address label (e.g., "Home", "Work")
+    if (!label || label.trim() === "") {
+        return { isValid: false, errorMessage: "Label is required" };
+    }
+
+    const trimmed = label.trim();
+
+    // Keep labels reasonably short for UI chips
+    if (trimmed.length > 32) {
+        return { isValid: false, errorMessage: "Label is too long (maximum 32 characters)" };
+    }
+
+    // Allow letters, numbers, spaces and common separators
+    const labelRegex = /^[a-zA-Z0-9\s'-]+$/;
+    if (!labelRegex.test(trimmed)) {
+        return { isValid: false, errorMessage: "Label can contain letters, numbers, spaces, hyphens and apostrophes" };
+    }
+
+    return { isValid: true, errorMessage: "" };
+}
+
+export function isSpecificAddressValid(specificAddress: string): {isValid: boolean, errorMessage: string} {
+    // Validate specific address (flat/door/building)
+    if (!specificAddress) {
+        // Optional field; treat empty as valid
+        return { isValid: true, errorMessage: "" };
+    }
+
+    const trimmed = specificAddress.trim();
+    if (trimmed.length === 0) {
+        return { isValid: true, errorMessage: "" };
+    }
+
+    if (trimmed.length > 128) {
+        return { isValid: false, errorMessage: "Specific address is too long (maximum 128 characters)" };
+    }
+
+    // Allow letters, numbers and common punctuation
+    const regex = /^[a-zA-Z0-9\s#'\-/.,]+$/;
+    if (!regex.test(trimmed)) {
+        return { isValid: false, errorMessage: "Specific address contains invalid characters" };
+    }
+
+    return { isValid: true, errorMessage: "" };
+}
+
+export function isStreetValid(street: string): {isValid: boolean, errorMessage: string} {
+    // Validate street/locality (required)
+    if (!street || street.trim() === "") {
+        return { isValid: false, errorMessage: "Street / locality is required" };
+    }
+
+    const trimmed = street.trim();
+    if (trimmed.length > 128) {
+        return { isValid: false, errorMessage: "Street / locality is too long (maximum 128 characters)" };
+    }
+
+    const regex = /^[a-zA-Z0-9\s'\-/.,]+$/;
+    if (!regex.test(trimmed)) {
+        return { isValid: false, errorMessage: "Street / locality contains invalid characters" };
+    }
+    if (/\s{2,}/.test(trimmed)) {
+        return { isValid: false, errorMessage: "Street / locality cannot contain consecutive spaces" };
+    }
+    return { isValid: true, errorMessage: "" };
+}
+
+export function isAreaValid(area: string): {isValid: boolean, errorMessage: string} {
+    // Validate area (neighborhood) - optional
+    if (!area) {
+        return { isValid: true, errorMessage: "" };
+    }
+    const trimmed = area.trim();
+    if (trimmed.length === 0) {
+        return { isValid: true, errorMessage: "" };
+    }
+    if (trimmed.length > 128) {
+        return { isValid: false, errorMessage: "Area is too long (maximum 128 characters)" };
+    }
+    const regex = /^[a-zA-Z0-9\s'\-/.,]+$/;
+    if (!regex.test(trimmed)) {
+        return { isValid: false, errorMessage: "Area contains invalid characters" };
+    }
+    return { isValid: true, errorMessage: "" };
+}
+
+export function isCityValid(city: string): {isValid: boolean, errorMessage: string} {
+    // Validate city (required)
+    if (!city || city.trim() === "") {
+        return { isValid: false, errorMessage: "City is required" };
+    }
+    const trimmed = city.trim();
+    if (trimmed.length > 128) {
+        return { isValid: false, errorMessage: "City is too long (maximum 128 characters)" };
+    }
+    const regex = /^[a-zA-Z\s'\-]+$/;
+    if (!regex.test(trimmed)) {
+        return { isValid: false, errorMessage: "City can only contain letters, spaces, hyphens and apostrophes" };
+    }
+    return { isValid: true, errorMessage: "" };
+}
+
+export function isStateValid(state: string): {isValid: boolean, errorMessage: string} {
+    // Validate state/province (required)
+    if (!state || state.trim() === "") {
+        return { isValid: false, errorMessage: "State / province is required" };
+    }
+    const trimmed = state.trim();
+    if (trimmed.length > 128) {
+        return { isValid: false, errorMessage: "State / province is too long (maximum 128 characters)" };
+    }
+    const regex = /^[a-zA-Z\s'\-]+$/;
+    if (!regex.test(trimmed)) {
+        return { isValid: false, errorMessage: "State / province can only contain letters, spaces, hyphens and apostrophes" };
+    }
+    return { isValid: true, errorMessage: "" };
+}
+
+export function isCountryValid(country: string): {isValid: boolean, errorMessage: string} {
+    // Validate country (required)
+    if (!country || country.trim() === "") {
+        return { isValid: false, errorMessage: "Country is required" };
+    }
+    const trimmed = country.trim();
+    if (trimmed.length > 128) {
+        return { isValid: false, errorMessage: "Country is too long (maximum 128 characters)" };
+    }
+    const regex = /^[a-zA-Z\s'\-]+$/;
+    if (!regex.test(trimmed)) {
+        return { isValid: false, errorMessage: "Country can only contain letters, spaces, hyphens and apostrophes" };
+    }
+    return { isValid: true, errorMessage: "" };
+}
+
+export function isPostcodeValid(postcode: string): {isValid: boolean, errorMessage: string} {
+    // Validate postcode/ZIP (required)
+    if (!postcode || postcode.trim() === "") {
+        return { isValid: false, errorMessage: "Postcode is required" };
+    }
+    const trimmed = postcode.trim();
+
+    // Keep generous length range to support global postcodes
+    if (trimmed.length < 3) {
+        return { isValid: false, errorMessage: "Postcode is too short (minimum 3 characters)" };
+    }
+    if (trimmed.length > 16) {
+        return { isValid: false, errorMessage: "Postcode is too long (maximum 16 characters)" };
+    }
+
+    // Allow letters + digits + spaces and common separators
+    const regex = /^[A-Za-z0-9\s-]+$/;
+    if (!regex.test(trimmed)) {
+        return { isValid: false, errorMessage: "Postcode can contain only letters, numbers, spaces and hyphens" };
+    }
+    return { isValid: true, errorMessage: "" };
+}
+
+export function areCoordinatesValid(latitude: number | undefined, longitude: number | undefined): {isValid: boolean, errorMessage: string} {
+    // Validate presence
+    if (latitude === undefined || longitude === undefined) {
+        return { isValid: false, errorMessage: "Coordinates are required" };
+    }
+
+    // Validate numeric ranges per WGS84
+    if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+        return { isValid: false, errorMessage: "Coordinates must be valid numbers" };
+    }
+
+    if (latitude < -90 || latitude > 90) {
+        return { isValid: false, errorMessage: "Latitude must be between -90 and 90" };
+    }
+    if (longitude < -180 || longitude > 180) {
+        return { isValid: false, errorMessage: "Longitude must be between -180 and 180" };
+    }
+
+    return { isValid: true, errorMessage: "" };
+}
