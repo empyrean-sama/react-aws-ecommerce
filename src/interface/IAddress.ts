@@ -12,9 +12,6 @@ export default interface IAddress {
     /** Geographic coordinates (optional) */
     latitude?: number;
     longitude?: number;
-
-    /** Provider-specific place id (Photon or Nominatim or Mapbox etc.) */
-    placeId?: string;
 }
 
 export function createEmptyAddress(): IAddress {
@@ -31,7 +28,5 @@ export function createEmptyAddress(): IAddress {
 
         latitude: 48.8566, // The latitude of Paris by default
         longitude: 2.3522, // The longitude of Paris by default
-
-        placeId: "",
     };
 }

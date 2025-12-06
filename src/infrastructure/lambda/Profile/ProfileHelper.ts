@@ -47,9 +47,5 @@ export function getAddressFromJSONLike(obj: JsonLike | undefined): IAddress | nu
 		if (!Number.isNaN(lon)) address.longitude = lon;
 	}
 
-	if (obj.placeId !== undefined && obj.placeId !== null) {
-		address.placeId = String(obj.placeId);
-	}
-
 	return address;
 }

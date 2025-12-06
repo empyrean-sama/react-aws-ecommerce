@@ -91,8 +91,6 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
 
                 latitude: suggestion.value["lat"],
                 longitude: suggestion.value["lon"],
-
-                placeId: suggestion.value["place_id"] || "",
             };
         });
     }
