@@ -160,6 +160,20 @@ export default function AddressPanel() {
         }
     }
 
+    const AddressList = React.useMemo(() => 
+        <Stack spacing={1.5} sx={{ mt: 1, maxHeight: 480, overflowY: "auto", pr: 0.5 }}>
+            {addresses.map((address) => (
+                <AddressCard
+                    key={address.addressId}
+                    address={address}
+                    onEdit={handleAddressCardEdit}
+                    onDelete={handleAddressCardDelete}
+                    isBusy={isLoading}
+                />
+            ))}
+        </Stack>
+    , [addresses, isLoading]);
+
     return (
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
@@ -201,19 +215,7 @@ export default function AddressPanel() {
                 />
             )}
 
-            {!isLoading && addresses.length > 0 && (
-                <Stack spacing={1.5} sx={{ mt: 1, maxHeight: 480, overflowY: "auto", pr: 0.5 }}>
-                    {addresses.map((address) => (
-                        <AddressCard
-                            key={address.addressId}
-                            address={address}
-                            onEdit={handleAddressCardEdit}
-                            onDelete={handleAddressCardDelete}
-                            isBusy={isLoading}
-                        />
-                    ))}
-                </Stack>
-            )}
+            {!isLoading && addresses.length > 0 && AddressList}
         </Paper>
     );
 }

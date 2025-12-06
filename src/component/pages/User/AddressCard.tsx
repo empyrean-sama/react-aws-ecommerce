@@ -41,24 +41,33 @@ export default function AddressCard({ address, onEdit, onDelete, isBusy }: Addre
                     {address.state && <>{address.state}, </>}
                     {address.country && <>{address.country}</>}
                 </Typography>
-                {address.placeId && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-                        Linked location
-                    </Typography>
-                )}
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+                    {address.latitude && address.longitude ? "Linked to map location" : "Not linked to map location"}
+                </Typography>
             </Box>
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5, minWidth: 80 }}>
                 <Box sx={{ display: "flex", gap: 0.5 }}>
                     <Tooltip title="Edit">
                         <span>
-                            <IconButton size="small" onClick={() => onEdit(address.addressId)} disabled={isBusy}>
+                            <IconButton
+                                size="small"
+                                onClick={() => onEdit(address.addressId)}
+                                disabled={isBusy}
+                                aria-label={`Edit address: ${address.userLabel || address.postcode || address.addressId}`}
+                            >
                                 <EditLocationAltIcon fontSize="small" />
                             </IconButton>
                         </span>
                     </Tooltip>
                     <Tooltip title="Delete">
                         <span>
-                            <IconButton size="small" color="error" onClick={() => onDelete(address.addressId)} disabled={isBusy}>
+                            <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => onDelete(address.addressId)}
+                                disabled={isBusy}
+                                aria-label={`Delete address: ${address.userLabel || address.postcode || address.addressId}`}
+                            >
                                 <DeleteOutlineIcon fontSize="small" />
                             </IconButton>
                         </span>
