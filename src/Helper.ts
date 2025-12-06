@@ -242,6 +242,12 @@ export function isPasswordValid(password: string): {isValid: boolean, errorMessa
     return {isValid: true, errorMessage: ""};
 }
 
+/**
+ * function to validate address label
+ * Requirements: non-empty, max 32 chars, letters/numbers/spaces/hyphens/apostrophes
+ * @param label the label to validate (e.g., "Home", "Work")
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
 export function isLabelValid(label: string): {isValid: boolean, errorMessage: string} {
     // Validate address label (e.g., "Home", "Work")
     if (!label || label.trim() === "") {
@@ -264,6 +270,12 @@ export function isLabelValid(label: string): {isValid: boolean, errorMessage: st
     return { isValid: true, errorMessage: "" };
 }
 
+/**
+ * function to validate specific address (flat/door/building)
+ * Requirements: optional, when provided max 128 chars, common punctuation allowed
+ * @param specificAddress the specific address to validate
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
 export function isSpecificAddressValid(specificAddress: string): {isValid: boolean, errorMessage: string} {
     // Validate specific address (flat/door/building)
     if (!specificAddress) {
@@ -289,6 +301,12 @@ export function isSpecificAddressValid(specificAddress: string): {isValid: boole
     return { isValid: true, errorMessage: "" };
 }
 
+/**
+ * function to validate street/locality
+ * Requirements: required, max 128 chars, common street characters, no consecutive spaces
+ * @param street the street/locality to validate
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
 export function isStreetValid(street: string): {isValid: boolean, errorMessage: string} {
     // Validate street/locality (required)
     if (!street || street.trim() === "") {
@@ -310,6 +328,12 @@ export function isStreetValid(street: string): {isValid: boolean, errorMessage: 
     return { isValid: true, errorMessage: "" };
 }
 
+/**
+ * function to validate area/neighborhood
+ * Requirements: optional, when provided max 128 chars, common characters allowed
+ * @param area the area/neighborhood to validate
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
 export function isAreaValid(area: string): {isValid: boolean, errorMessage: string} {
     // Validate area (neighborhood) - optional
     if (!area) {
@@ -329,6 +353,12 @@ export function isAreaValid(area: string): {isValid: boolean, errorMessage: stri
     return { isValid: true, errorMessage: "" };
 }
 
+/**
+ * function to validate city
+ * Requirements: required, max 128 chars, letters/spaces/hyphens/apostrophes only
+ * @param city the city name to validate
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
 export function isCityValid(city: string): {isValid: boolean, errorMessage: string} {
     // Validate city (required)
     if (!city || city.trim() === "") {
@@ -345,6 +375,12 @@ export function isCityValid(city: string): {isValid: boolean, errorMessage: stri
     return { isValid: true, errorMessage: "" };
 }
 
+/**
+ * function to validate state/province
+ * Requirements: required, max 128 chars, letters/spaces/hyphens/apostrophes only
+ * @param state the state/province to validate
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
 export function isStateValid(state: string): {isValid: boolean, errorMessage: string} {
     // Validate state/province (required)
     if (!state || state.trim() === "") {
@@ -361,6 +397,12 @@ export function isStateValid(state: string): {isValid: boolean, errorMessage: st
     return { isValid: true, errorMessage: "" };
 }
 
+/**
+ * function to validate country
+ * Requirements: required, max 128 chars, letters/spaces/hyphens/apostrophes only
+ * @param country the country name to validate
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
 export function isCountryValid(country: string): {isValid: boolean, errorMessage: string} {
     // Validate country (required)
     if (!country || country.trim() === "") {
@@ -377,6 +419,12 @@ export function isCountryValid(country: string): {isValid: boolean, errorMessage
     return { isValid: true, errorMessage: "" };
 }
 
+/**
+ * function to validate postcode/ZIP
+ * Requirements: required, 3–16 chars, letters/digits/spaces/hyphens
+ * @param postcode the postcode/ZIP to validate
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
 export function isPostcodeValid(postcode: string): {isValid: boolean, errorMessage: string} {
     // Validate postcode/ZIP (required)
     if (!postcode || postcode.trim() === "") {
@@ -400,6 +448,13 @@ export function isPostcodeValid(postcode: string): {isValid: boolean, errorMessa
     return { isValid: true, errorMessage: "" };
 }
 
+/**
+ * function to validate latitude/longitude coordinates
+ * Requirements: both present, numeric, latitude in [-90, 90], longitude in [-180, 180]
+ * @param latitude the latitude value to validate
+ * @param longitude the longitude value to validate
+ * @returns object {isValid, errorMessage} - errorMessage is empty string if valid
+ */
 export function areCoordinatesValid(latitude: number | undefined, longitude: number | undefined): {isValid: boolean, errorMessage: string} {
     // Validate presence
     if (latitude === undefined || longitude === undefined) {

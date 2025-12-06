@@ -30,7 +30,7 @@ export default function Account() {
             <Typography variant="h1" component="h1" sx={{textAlign: { xs: "center", sm: "left" }, mb: 3}} gutterBottom>Hi {getLoggedInDetails()?.givenName} {getLoggedInDetails()?.familyName},</Typography>
             
             <Grid container spacing={2}>
-                <Grid size={8}>
+                <Grid size={7}>
                     <Box sx={{display: 'flex', flexDirection: 'column', gap: 2}}>
                         <OrderCard
                             status="order placed"
@@ -87,7 +87,7 @@ export default function Account() {
                         />
                     </Box>
                 </Grid>
-                <Grid size={4}>
+                <Grid size={5}>
                     <AddressPanel />
                 </Grid>
             </Grid>

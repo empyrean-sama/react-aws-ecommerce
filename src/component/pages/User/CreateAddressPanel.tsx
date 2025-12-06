@@ -16,6 +16,18 @@ function getChipColor(formMode: "New Address" | "Editing Address") {
     return formMode === "New Address" ? "primary" : "warning";
 }
 
+export interface ISaveAddressErrorStates {
+    setLabelError: React.Dispatch<React.SetStateAction<string>>;
+    setPostCodeError: React.Dispatch<React.SetStateAction<string>>;
+    setSpecificAddressError: React.Dispatch<React.SetStateAction<string>>;
+    setStreetError: React.Dispatch<React.SetStateAction<string>>;
+    setAreaError: React.Dispatch<React.SetStateAction<string>>;
+    setCityError: React.Dispatch<React.SetStateAction<string>>;
+    setStateError: React.Dispatch<React.SetStateAction<string>>;
+    setCountryError: React.Dispatch<React.SetStateAction<string>>;
+    areLocationCoordinatesAvailable: boolean;
+}
+
 export interface CreateAddressPanelProps {
     
     // Are we creating a new address or editing an existing one?
@@ -31,14 +43,23 @@ export interface CreateAddressPanelProps {
 
     // Event handlers that will be called when the user cancels or saves the form
     onCancelForm: () => void;
-    onSaveAddress: () => void;    
+    onSaveAddress: (callbacks: ISaveAddressErrorStates) => void;
 }
 
 export default function CreateAddressPanel(props: CreateAddressPanelProps) {
 
     // State for this component
     const [suggestionText, setSuggestionText] = React.useState<string>("");
-    const [areCoordinatesAvailable, setAreCoordinatesAvailable] = React.useState<boolean>(false);
+    const [areCoordinatesAvailable, setAreCoordinatesAvailable] = React.useState<boolean>((props.formMode === "Editing Address")? props.addressToEdit.latitude !== undefined && props.addressToEdit.longitude !== undefined : false);
+
+    const [labelError, setLabelError] = React.useState<string>("");
+    const [postCodeError, setPostCodeError] = React.useState<string>("");
+    const [specificAddressError, setSpecificAddressError] = React.useState<string>("");
+    const [streetError, setStreetError] = React.useState<string>("");
+    const [areaError, setAreaError] = React.useState<string>("");
+    const [cityError, setCityError] = React.useState<string>("");
+    const [stateError, setStateError] = React.useState<string>("");
+    const [countryError, setCountryError] = React.useState<string>("");
 
     // Private Routines
     async function fetchSuggestions(trimmedInput: string): Promise<ISuggestion[]> {
@@ -101,6 +122,7 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                     <SelectLocation 
                         location={[props.addressToEdit.latitude || 0, props.addressToEdit.longitude || 0]}
                         setLocationChange={(coords) => props.setAddressToEdit({ ...props.addressToEdit, latitude: coords[0], longitude: coords[1] })}
+                        handleOnClose={() => setAreCoordinatesAvailable(false)}
                     />                   : 
                     <AskToGetCoordinatesNotice setAreGettingCoordinates={setAreCoordinatesAvailable} />
                 }
@@ -109,10 +131,12 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                     <TextField
                         label="Label"
                         size="small"
+                        placeholder="Home, Work, Parents, etc."
                         fullWidth
                         value={props.addressToEdit.userLabel}
                         onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, userLabel: e.target.value })}
-                        helperText="Home, Work, Parents, etc."
+                        error={!!labelError}
+                        helperText={labelError}
                     />
                     <TextField
                         label="Postcode"
@@ -120,6 +144,8 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                         fullWidth
                         value={props.addressToEdit.postcode}
                         onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, postcode: e.target.value })}
+                        error={!!postCodeError}
+                        helperText={postCodeError}
                     />
                 </Box>
 
@@ -129,6 +155,8 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                     fullWidth
                     value={props.addressToEdit.specificAddress}
                     onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, specificAddress: e.target.value })}
+                    error={!!specificAddressError}
+                    helperText={specificAddressError}
                 />
 
                 <TextField
@@ -137,6 +165,8 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                     fullWidth
                     value={props.addressToEdit.street}
                     onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, street: e.target.value })}
+                    error={!!streetError}
+                    helperText={streetError}
                 />
 
                 <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" } }}>
@@ -146,6 +176,8 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                         fullWidth
                         value={props.addressToEdit.area}
                         onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, area: e.target.value })}
+                        error={!!areaError}
+                        helperText={areaError}
                     />
                     <TextField
                         label="City"
@@ -153,6 +185,8 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                         fullWidth
                         value={props.addressToEdit.city}
                         onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, city: e.target.value })}
+                        error={!!cityError}
+                        helperText={cityError}
                     />
                 </Box>
 
@@ -163,6 +197,8 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                         fullWidth
                         value={props.addressToEdit.state}
                         onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, state: e.target.value })}
+                        error={!!stateError}
+                        helperText={stateError}
                     />
                     <TextField
                         label="Country"
@@ -170,6 +206,8 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                         fullWidth
                         value={props.addressToEdit.country}
                         onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, country: e.target.value })}
+                        error={!!countryError}
+                        helperText={countryError}
                     />
                 </Box>
 
@@ -181,7 +219,17 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                         variant="contained"
                         size="small"
                         startIcon={<SaveIcon />}
-                        onClick={props.onSaveAddress}
+                        onClick={() => props.onSaveAddress({
+                            setLabelError,
+                            setPostCodeError,
+                            setSpecificAddressError,
+                            setStreetError,
+                            setAreaError,
+                            setCityError,
+                            setStateError,
+                            setCountryError,
+                            areLocationCoordinatesAvailable: areCoordinatesAvailable,
+                        })}
                         disabled={props.isLoading}
                     >
                         Save address
@@ -194,7 +242,7 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
 
 function AskToGetCoordinatesNotice(props: { setAreGettingCoordinates: React.Dispatch<React.SetStateAction<boolean>> }) {
     return (
-         <Paper variant="outlined" sx={{ p: 3, textAlign: "center", borderStyle: "dashed" }}>
+         <Paper variant="outlined" sx={{ p: 3, textAlign: "center", borderStyle: "dashed", width: "100%", aspectRatio: "16/9", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
             <Typography variant="body1" gutterBottom>
                 You are not submitting coordinates for this address.
             </Typography>
@@ -207,7 +255,7 @@ function AskToGetCoordinatesNotice(props: { setAreGettingCoordinates: React.Disp
                 size="small"
                 onClick={() => props.setAreGettingCoordinates(true)}
             >
-                Add your first address
+                Add your coordinates
             </Button>
         </Paper>
     );

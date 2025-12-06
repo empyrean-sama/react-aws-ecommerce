@@ -7,8 +7,8 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
 export interface AddressCardProps {
     address: IAddressRecord;
-    onEdit: () => void;
-    onDelete: () => void;
+    onEdit: (addressId: string) => void;
+    onDelete: (addressId: string) => void;
     isBusy?: boolean;
 }
 
@@ -23,11 +23,6 @@ export default function AddressCard({ address, onEdit, onDelete, isBusy }: Addre
                 alignItems: "flex-start",
                 justifyContent: "space-between",
                 gap: 1.5,
-                transition: (theme) => theme.transitions.create(["box-shadow", "transform"], { duration: theme.transitions.duration.shorter }),
-                "&:hover": {
-                    boxShadow: 2,
-                    transform: "translateY(-1px)",
-                },
             }}
         >
             <Box sx={{ flex: 1 }}>
@@ -56,14 +51,14 @@ export default function AddressCard({ address, onEdit, onDelete, isBusy }: Addre
                 <Box sx={{ display: "flex", gap: 0.5 }}>
                     <Tooltip title="Edit">
                         <span>
-                            <IconButton size="small" onClick={onEdit} disabled={isBusy}>
+                            <IconButton size="small" onClick={() => onEdit(address.addressId)} disabled={isBusy}>
                                 <EditLocationAltIcon fontSize="small" />
                             </IconButton>
                         </span>
                     </Tooltip>
                     <Tooltip title="Delete">
                         <span>
-                            <IconButton size="small" color="error" onClick={onDelete} disabled={isBusy}>
+                            <IconButton size="small" color="error" onClick={() => onDelete(address.addressId)} disabled={isBusy}>
                                 <DeleteOutlineIcon fontSize="small" />
                             </IconButton>
                         </span>
