@@ -1,0 +1,15 @@
+{
+  "ReactAwsEcommerce-AuthStack": {
+    "ExportsOutputFnGetAttReactAwsEcommerceUserPool179A9025ArnF027E14B": "arn:aws:cognito-idp:ap-south-1:044336537894:userpool/ap-south-1_1A9mstSzz",
+    "UserPoolClientId": "76dqjsrh00o7oiqiml8qr9m13b",
+    "UserPoolId": "ap-south-1_1A9mstSzz"
+  },
+  "ReactAwsEcommerce-ProfileStack": {
+    "ExportsOutputFnGetAttProfileAddressFunction382822CDArn7F939DE2": "arn:aws:lambda:ap-south-1:044336537894:function:AddressFunction",
+    "ExportsOutputFnGetAttAutofillAddressFunction0ED0815FArnB5C9F1C1": "arn:aws:lambda:ap-south-1:044336537894:function:AutofillAddressFunction"
+  },
+  "ReactAwsEcommerce-APIStack": {
+    "ReactAwsEcommerceRestAPIGatewayEndpointE2AAA6E0": "https://394gsksemk.execute-api.ap-south-1.amazonaws.com/prod/",
+    "APIStackEndpoint": "https://394gsksemk.execute-api.ap-south-1.amazonaws.com/prod/"
+  }
+}

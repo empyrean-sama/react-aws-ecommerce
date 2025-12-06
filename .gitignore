@@ -6,7 +6,7 @@ public
 cdk.out
 
 # Master specific ignores
-outputs.json
+# outputs.json //temporarily commented out for debugging the frontend deployment
 
 # API Keys and sensitive files
 .env.json
