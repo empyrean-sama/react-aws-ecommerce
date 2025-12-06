@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ProfileService from "../../../service/ProfileService";
 
-import { Typography, Box, Button, Paper, Stack} from "@mui/material";
+import { Typography, Box, Button, Paper, Stack, SxProps} from "@mui/material";
 import CreateAddressPanel, { ISaveAddressErrorStates } from "./CreateAddressPanel";
 import AddressCard from "./AddressCard";
 
@@ -16,7 +16,7 @@ import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
 
 import {areCoordinatesValid, isAreaValid, isCityValid, isCountryValid, isLabelValid, isSpecificAddressValid, isStateValid, isStreetValid, isPostcodeValid} from '../../../Helper';
 
-export default function AddressPanel() {
+export default function AddressPanel(props: {sx?: SxProps}) {
 
     // Global API
     const { getLoggedInDetails, showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
@@ -175,47 +175,49 @@ export default function AddressPanel() {
     , [addresses, isLoading]);
 
     return (
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
-                <Typography variant="h4" component="h2">Saved Addresses</Typography>
-                <Button size="small" startIcon={<AddLocationAltIcon />} variant="contained" onClick={() => setShowCreateForm(true)} disabled={showCreateForm || isLoading}>Add new</Button>
-            </Box>
+        <Box sx={{...props.sx, alignSelf: "flex-start" }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                    <Typography variant="h4" component="h2">Saved Addresses</Typography>
+                    <Button size="small" startIcon={<AddLocationAltIcon />} variant="contained" onClick={() => setShowCreateForm(true)} disabled={showCreateForm || isLoading}>Add new</Button>
+                </Box>
 
-            <Typography variant="body2" color="text.secondary">Manage where we ship your orders. You can add multiple addresses and quickly switch between them while checking out.</Typography>
+                <Typography variant="body2" color="text.secondary">Manage where we ship your orders. You can add multiple addresses and quickly switch between them while checking out.</Typography>
 
-            {/** If no addresses are found, then ask the user to add their first address */}
-            {!isLoading && addresses.length === 0 && !showCreateForm && canShowAddFirstAddressHint && (
-                <Paper variant="outlined" sx={{ p: 3, textAlign: "center", borderStyle: "dashed" }}>
-                    <Typography variant="body1" gutterBottom>
-                        You don&apos;t have any saved addresses yet.
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Add your home or work address to speed up checkout.
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddLocationAltIcon />}
-                        size="small"
-                        onClick={() => setShowCreateForm(true)}
-                    >
-                        Add your first address
-                    </Button>
-                </Paper>
-            )}
+                {/** If no addresses are found, then ask the user to add their first address */}
+                {!isLoading && addresses.length === 0 && !showCreateForm && canShowAddFirstAddressHint && (
+                    <Paper variant="outlined" sx={{ p: 3, textAlign: "center", borderStyle: "dashed" }}>
+                        <Typography variant="body1" gutterBottom>
+                            You don&apos;t have any saved addresses yet.
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Add your home or work address to speed up checkout.
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            startIcon={<AddLocationAltIcon />}
+                            size="small"
+                            onClick={() => setShowCreateForm(true)}
+                        >
+                            Add your first address
+                        </Button>
+                    </Paper>
+                )}
 
-            {showCreateForm && (
-                <CreateAddressPanel
-                    formMode={formMode}
-                    isLoading={isLoading}
-                    setIsLoading={setIsLoading}
-                    onCancelForm={handleCancelAddressForm}
-                    onSaveAddress={handleSaveAddress}
-                    addressToEdit={addressToEdit}
-                    setAddressToEdit={setAddressToEdit}
-                />
-            )}
+                {showCreateForm && (
+                    <CreateAddressPanel
+                        formMode={formMode}
+                        isLoading={isLoading}
+                        setIsLoading={setIsLoading}
+                        onCancelForm={handleCancelAddressForm}
+                        onSaveAddress={handleSaveAddress}
+                        addressToEdit={addressToEdit}
+                        setAddressToEdit={setAddressToEdit}
+                    />
+                )}
 
-            {!isLoading && addresses.length > 0 && AddressList}
-        </Paper>
+                {!isLoading && addresses.length > 0 && AddressList}
+            </Paper>
+        </Box>
     );
 }

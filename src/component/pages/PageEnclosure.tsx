@@ -13,9 +13,16 @@ export default function PageEnclosure() {
             <AppDrawer isDrawerOpen={isDrawerOpen} setIsDrawerOpen={setIsDrawerOpen}>
                 
             </AppDrawer>
-            <Box sx={{transition: "inherit", paddingLeft: isDrawerOpen? 1: undefined, minHeight: "100dvh", display: "flex", flexDirection: "column", transform: isDrawerOpen? {xs: `translateX(${Constants.DRAWER_WIDTH_MOBILE})`, sm: `translateX(${Constants.DRAWER_WIDTH_TABLET})`} : undefined }}>
+            <Box sx={{
+                transition: "inherit", 
+                paddingLeft: isDrawerOpen? 1: undefined, 
+                minHeight: "100dvh", 
+                display: "flex", 
+                flexDirection: "column", 
+                transform: isDrawerOpen? {xs: `translateX(${Constants.DRAWER_WIDTH_MOBILE})`, sm: `translateX(${Constants.DRAWER_WIDTH_TABLET})`} : undefined }}
+            >
                 <Nav setIsDrawerOpen={setIsDrawerOpen} isDrawerOpen={isDrawerOpen} />
-                <Box component="section" sx={{flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center"}}>
+                <Box component="section" sx={{flexGrow: 1, display: "flex"}}>
                     <Outlet />
                 </Box>
             </Box>

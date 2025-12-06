@@ -3,7 +3,7 @@ import AuthService from "../../../service/AuthService";
 import { useNavigate } from "react-router";
 import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
 import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
-import { Container, Typography, Box, Grid } from "@mui/material";
+import { Container, Typography, Box, Grid, Tab, Tabs } from "@mui/material";
 import OrderCard from "./OrderCard";
 import AddressPanel from "./AddressPanel";
 
@@ -13,6 +13,9 @@ export default function Account() {
     const { getLoggedInDetails } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const authService = AuthService.getInstance();
     const navigateTo = useNavigate();
+
+    // State
+    const [tabLocation, setTabLocation] = React.useState<"orders" | "addresses">("orders");
 
     // Effects
     useEffect(() => {
@@ -26,12 +29,22 @@ export default function Account() {
     },[getLoggedInDetails()]);
 
     return (
-        <Container maxWidth="xl" sx={{ paddingX: { xs: 0, sm: 3 }}}>
+        <Container maxWidth="xl" sx={{ paddingX: { xs: 0, sm: 3 }, marginY: 4, display: "flex", flexDirection: "column" }}>
             <Typography variant="h1" component="h1" sx={{textAlign: { xs: "center", sm: "left" }, mb: 3}} gutterBottom>Hi {getLoggedInDetails()?.givenName} {getLoggedInDetails()?.familyName},</Typography>
             
+            <Tabs
+                value={tabLocation}
+                onChange={(e, newValue) => setTabLocation(newValue)}
+                variant="fullWidth"
+                sx={{ display: {xl: "none"} }}
+            >
+                <Tab value="orders" label="Orders" />
+                <Tab value="addresses" label="Addresses" />
+            </Tabs>
+
             <Grid container spacing={2}>
-                <Grid size={7}>
-                    <Box sx={{display: 'flex', flexDirection: 'column', gap: 2}}>
+                <Grid size={{xs: 12, xl: 7}}>
+                    <Box sx={{display: { xs: tabLocation === "orders" ? "flex" : "none", xl: "flex" }, flexDirection: 'column', gap: 2}}>
                         <OrderCard
                             status="order placed"
                             itemData={[
@@ -87,8 +100,8 @@ export default function Account() {
                         />
                     </Box>
                 </Grid>
-                <Grid size={5}>
-                    <AddressPanel />
+                <Grid size={{xs: 12, xl: 5}} sx={{display: 'flex', justifyContent: "center"}}>
+                    <AddressPanel sx={{display: { xs: tabLocation === "addresses" ? "flex" : "none", xl: "flex" }}} />
                 </Grid>
             </Grid>
             
