@@ -22,6 +22,14 @@ export default class InfrastructureConstants {
     // Profiles Table constants
     static get profilesTableName(): string { return `${InfrastructureConstants.projectName}-profiles`; }
     static get profilesTableId(): string { return `${InfrastructureConstants.projectName}-ProfilesTable`; }
+
+    // Product Stack constants
+    static get itemTableId(): string { return `${InfrastructureConstants.projectName}-ItemsTable`; }
+    static get itemTableName(): string { return `${InfrastructureConstants.projectName}-items`; }
+    static get variantTableId(): string { return `${InfrastructureConstants.projectName}-VariantsTable`; }
+    static get variantTableName(): string { return `${InfrastructureConstants.projectName}-variants`; }
+    static get collectionTableId(): string { return `${InfrastructureConstants.projectName}-CollectionsTable`; }
+    static get collectionTableName(): string { return `${InfrastructureConstants.projectName}-collections`; }
     
     // API Gateway constants
     static get restAPIGatewayId(): string { return `${InfrastructureConstants.projectName}-RestAPIGateway`; }

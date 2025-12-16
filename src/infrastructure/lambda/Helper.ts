@@ -76,3 +76,12 @@ export function isAuthorized(event: APIGatewayProxyEvent, targetUserId: string |
     if (callerSub === targetUserId) return true;
     return groups.includes('admin');
 }
+
+/**
+ * Checks if the caller belongs to the admin group
+ * @param event The event received by the Lambda function
+ * @returns boolean indicating if the caller is an admin
+ */
+export function isAdmin(event: APIGatewayProxyEvent): boolean {
+    return getGroups(event).includes('admin');
+}
