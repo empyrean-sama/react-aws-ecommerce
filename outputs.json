@@ -8,6 +8,10 @@
     "ExportsOutputFnGetAttProfileAddressFunction382822CDArn7F939DE2": "arn:aws:lambda:ap-south-1:044336537894:function:AddressFunction",
     "ExportsOutputFnGetAttAutofillAddressFunction0ED0815FArnB5C9F1C1": "arn:aws:lambda:ap-south-1:044336537894:function:AutofillAddressFunction"
   },
+  "ReactAwsEcommerce-MemoryStack": {
+    "ExportsOutputFnGetAttGeneratePresignedUploadUrlFunction32129FC0Arn758B4BC0": "arn:aws:lambda:ap-south-1:044336537894:function:GeneratePresignedUploadUrl",
+    "ReactAwsEcommerceMemoryBucketName": "reactawsecommerce-memorys-publicreadmemorybucket97-1fzajqky0ykz"
+  },
   "ReactAwsEcommerce-APIStack": {
     "ReactAwsEcommerceRestAPIGatewayEndpointE2AAA6E0": "https://394gsksemk.execute-api.ap-south-1.amazonaws.com/prod/",
     "APIStackEndpoint": "https://394gsksemk.execute-api.ap-south-1.amazonaws.com/prod/"

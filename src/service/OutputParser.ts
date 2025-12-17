@@ -58,4 +58,23 @@ export default class OutputParser {
     public static get AutofillAddressEndPointURL(): string {
         return `${this.ApiEndpoint}${Constants.autofillAddressResourceName}`;
     }
+
+    /**
+     * Get the full Upload URL API endpoint
+     * Used to request a presigned URL for S3 uploads.
+     */
+    public static get UploadToMemoryEndPointURL(): URL {
+        return new URL(`${this.ApiEndpoint}${Constants.uploadUrlResourceName}`);
+    }
+
+    /**
+     * Get the public S3 bucket name used for memory uploads (public-read).
+     */
+    public static get MemoryBucketName(): string {
+        const bucketName = (Outputs as any)[Constants.memoryStackOutputKey]?.[Constants.memoryBucketNameOutputKey];
+        if (!bucketName) {
+            throw new Error("Memory bucket name not found in CloudFormation outputs.");
+        }
+        return bucketName;
+    }
 }

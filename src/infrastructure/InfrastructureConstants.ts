@@ -10,6 +10,8 @@ export default class InfrastructureConstants {
     static get profileStackOutputKey(): string { return `${InfrastructureConstants.projectName}-ProfileStack`; }
     static get apiStackName(): string { return `${InfrastructureConstants.projectName}-APIStack`; }
     static get apiStackEndpointOutputKey(): string { return `APIStackEndpoint`; }
+    static get memoryStackOutputKey(): string { return `${InfrastructureConstants.projectName}-MemoryStack`; }
+    static get memoryBucketNameOutputKey(): string { return `${InfrastructureConstants.projectName}MemoryBucketName`; }
     
     // User Pool constants
     static get userPoolName(): string { return `${InfrastructureConstants.projectName}-UserPool`; }
@@ -42,4 +44,5 @@ export default class InfrastructureConstants {
     // API Resource names
     static get addressResourceName(): string { return `address`; }
     static get autofillAddressResourceName(): string { return `autofill-address`; }
+    static get uploadUrlResourceName(): string { return `upload-url`; }
 }

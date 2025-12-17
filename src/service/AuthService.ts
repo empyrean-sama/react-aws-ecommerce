@@ -1,5 +1,7 @@
+import CryptoJS from "crypto-js";
 import OutputParser from "./OutputParser";
 import { isEmailValid, isPhoneValid } from "../Helper";
+import ProjectConstants from "../Constants";
 
 import { Amplify } from "aws-amplify";
 import { signUp, SignUpOutput, confirmSignUp, resendSignUpCode, signIn, signOut, getCurrentUser, resetPassword, confirmResetPassword, signInWithRedirect, fetchAuthSession } from "@aws-amplify/auth";
@@ -10,6 +12,7 @@ import IUserDetails from "../interface/IUserDetails";
 
 import UserNotVerifiedException from "../error/UserNotVerifiedException";
 import UserAlreadyExistsException from "../error/UserAlreadyExistsException";
+import Constants from "../Constants";
 export default class AuthService {
 
     private static _instance: AuthService;
@@ -247,6 +250,70 @@ export default class AuthService {
             return await fetch(url.toString(), { ...init, headers });
         }
         throw new Error('User is not authenticated');
+    }
+
+    /**
+     * Upload an image to S3 using a presigned URL.
+     * - Requests a presigned URL from the backend (admin-only).
+     * - Validates file size and type client-side.
+     * - Computes base64 Content-MD5 for integrity and binds upload to exact bytes.
+     * @param file: the image File selected by the user
+     * @returns the S3 object key string if upload succeeds
+     * @throws Error if unauthorized or upload fails
+     */
+    public async uploadImage(file: File): Promise<string> {
+        // Validate client-side constraints (mirror backend)
+        const maxBytes = ProjectConstants.IMAGE_UPLOAD_MAX_BYTES;
+        if (file.size <= 0 || file.size > maxBytes) {
+            throw new Error(`Invalid file size. Max ${maxBytes} bytes`);
+        }
+        const type = file.type || '';
+        if (!Constants.IMAGE_UPLOAD_ALLOWED_TYPES.includes(type)) {
+            throw new Error('Unsupported image type');
+        }
+
+        // Compute base64 MD5 of the exact bytes
+        const arrayBuffer = await file.arrayBuffer();
+        const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer as any);
+        const md5Digest = CryptoJS.MD5(wordArray);
+        const contentMd5 = CryptoJS.enc.Base64.stringify(md5Digest);
+
+        // Request presigned URL
+        const requestBody = {
+            fileName: file.name,
+            contentType: type,
+            contentMd5,
+            contentLength: file.size,
+        };
+        const presignResponse = await this.authorizedFetch(OutputParser.UploadToMemoryEndPointURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+        });
+        if (!presignResponse.ok) {
+            const text = await presignResponse.text();
+            throw new Error(text || 'Failed to get upload URL');
+        }
+        const presignData = await presignResponse.json() as {
+            uploadUrl: string;
+            key: string;
+            requiredHeaders: { ['Content-Type']: string; ['Content-MD5']: string };
+        };
+
+        // PUT the file to S3 using the presigned URL
+        const putResp = await fetch(presignData.uploadUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': presignData.requiredHeaders['Content-Type'],
+                'Content-MD5': presignData.requiredHeaders['Content-MD5'],
+            },
+            body: file,
+        });
+        if (!putResp.ok) {
+            const errText = await putResp.text();
+            throw new Error(errText || 'Upload failed');
+        }
+        return presignData.key;
     }
 
     /**

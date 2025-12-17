@@ -1,3 +1,5 @@
+import OutputParser from './service/OutputParser';
+
 /**
  * function to validate email format
  * @param email the email address to validate
@@ -474,4 +476,15 @@ export function areCoordinatesValid(latitude: number | undefined, longitude: num
     }
 
     return { isValid: true, errorMessage: "" };
+}
+
+/**
+ * Useful to get the S3 URL for a given bucket and key
+ * Definitely useful for displaying images stored in S3
+ * @param bucket the S3 bucket name, defaults to MemoryBucketName from OutputParser
+ * @param key the object key within the bucket
+ * @returns the full URL to access the object
+ */
+export function getS3Url(key: string, bucket: string = OutputParser.MemoryBucketName): string {
+    return `https://${bucket}.s3.amazonaws.com/${encodeURI(key)}`;
 }
