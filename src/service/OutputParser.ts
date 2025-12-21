@@ -77,4 +77,18 @@ export default class OutputParser {
         }
         return bucketName;
     }
+
+    // Product APIs
+    public static get CollectionsEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.collectionResourceName}`;
+    }
+    public static get ProductsEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.productResourceName}`;
+    }
+    public static get ProductDefaultVariantEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.productDefaultVariantResourceName}`;
+    }
+    public static get VariantsEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.variantResourceName}`;
+    }
 }
