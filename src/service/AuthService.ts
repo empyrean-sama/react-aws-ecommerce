@@ -215,6 +215,41 @@ export default class AuthService {
     }
 
     /**
+     * Gets the current authenticated user's Cognito groups from the ID token.
+     * @returns string[] of groups (e.g. ['admin'])
+     */
+    public async getCurrentUserGroups(): Promise<string[]> {
+        try {
+            const session = await fetchAuthSession();
+            const idToken = session.tokens?.idToken;
+            const payload: any = idToken?.payload;
+            const groupsRaw = payload?.['cognito:groups'] ?? payload?.groups;
+            if (!groupsRaw) return [];
+            if (Array.isArray(groupsRaw)) return groupsRaw.map(String);
+            if (typeof groupsRaw === 'string') {
+                try {
+                    const parsed = JSON.parse(groupsRaw);
+                    if (Array.isArray(parsed)) return parsed.map(String);
+                } catch {
+                    // ignore
+                }
+                return groupsRaw.split(',').map(s => s.trim()).filter(Boolean);
+            }
+            return [];
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Checks whether the current user is in the admin group.
+     */
+    public async isCurrentUserAdmin(): Promise<boolean> {
+        const groups = await this.getCurrentUserGroups();
+        return groups.includes('admin');
+    }
+
+    /**
      * Start the password reset process for the given username.
      * @param username: the username (email or phone) of the user to reset password for
      */
