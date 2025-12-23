@@ -39,8 +39,6 @@ function generateVariantFromInput(input: any): IProductVariant | undefined {
         if (typeof input.stock !== 'number' || !Number.isFinite(input.stock)) return false;
         if (!(input.maximumInOrder === undefined || typeof input.maximumInOrder === 'number')) return false;
         if (!isStringArray(input.relatedProductIds)) return false;
-        if (!Array.isArray(input.fields)) return false;
-        if (!isStringArray(input.imageUrls)) return false;
         if (typeof input.productId !== 'string') return false;
         if (typeof input.collectionId !== 'string') return false;
         return true;
@@ -55,8 +53,6 @@ function generateVariantFromInput(input: any): IProductVariant | undefined {
         stock: input.stock,
         maximumInOrder: input.maximumInOrder,
         relatedProductIds: input.relatedProductIds,
-        fields: input.fields,
-        imageUrls: input.imageUrls,
         productId: input.productId,
         collectionId: input.collectionId
     };
