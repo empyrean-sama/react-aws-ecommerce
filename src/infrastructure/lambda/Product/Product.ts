@@ -33,8 +33,10 @@ const VARIANT_TABLE = process.env.VARIANT_TABLE;
 function generateProductFromInput(input: any): IProduct | null {
     function isValidItem(input: any): input is IProduct {
         if (!input || typeof input !== 'object') return false;
-        if (typeof input.collectionId !== 'string') return false;
-        if (typeof input.defaultVariantId !== 'string') return false;
+        if (typeof input.name !== 'string') return false;
+        if (typeof input.description !== 'undefined' && typeof input.description !== 'string') return false;
+        if (typeof input.collectionId !== 'undefined' && typeof input.collectionId !== 'string') return false;
+        if (typeof input.defaultVariantId !== 'undefined' && typeof input.defaultVariantId !== 'string') return false;
         if (!Array.isArray(input.fields)) return false;
         if (!Array.isArray(input.imageUrls)) return false;
         return true;
@@ -43,10 +45,12 @@ function generateProductFromInput(input: any): IProduct | null {
         return null;
     }
     return {
-        collectionId: input.collectionId,
-        defaultVariantId: input.defaultVariantId,
+        name: input.name,
         fields: input.fields,
-        imageUrls: input.imageUrls
+        imageUrls: input.imageUrls,
+        ...(typeof input.collectionId === 'string' ? { collectionId: input.collectionId } : {}),
+        ...(typeof input.description === 'string' ? { description: input.description } : {}),
+        ...(typeof input.defaultVariantId === 'string' ? { defaultVariantId: input.defaultVariantId } : {})
     };
 }
 

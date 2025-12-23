@@ -12,8 +12,13 @@
     "ExportsOutputFnGetAttGeneratePresignedUploadUrlFunction32129FC0Arn758B4BC0": "arn:aws:lambda:ap-south-1:044336537894:function:GeneratePresignedUploadUrl",
     "ReactAwsEcommerceMemoryBucketName": "reactawsecommerce-memorys-publicreadmemorybucket97-1fzajqky0ykz"
   },
+  "ReactAwsEcommerce-ProductStack": {
+    "ExportsOutputFnGetAttProductCollectionFunctionA7F7037CArn3C2BFDA2": "arn:aws:lambda:ap-south-1:044336537894:function:ProductCollectionFunction",
+    "ExportsOutputFnGetAttProductVariantFunction7E75517DArnEC8A579D": "arn:aws:lambda:ap-south-1:044336537894:function:ProductVariantFunction",
+    "ExportsOutputFnGetAttProductFunction5AC8A50BArn7F520BC3": "arn:aws:lambda:ap-south-1:044336537894:function:ProductFunction"
+  },
   "ReactAwsEcommerce-APIStack": {
-    "ReactAwsEcommerceRestAPIGatewayEndpointE2AAA6E0": "https://394gsksemk.execute-api.ap-south-1.amazonaws.com/prod/",
-    "APIStackEndpoint": "https://394gsksemk.execute-api.ap-south-1.amazonaws.com/prod/"
+    "ReactAwsEcommerceRestAPIGatewayEndpointE2AAA6E0": "https://f8ao04pr65.execute-api.ap-south-1.amazonaws.com/prod/",
+    "APIStackEndpoint": "https://f8ao04pr65.execute-api.ap-south-1.amazonaws.com/prod/"
   }
 }

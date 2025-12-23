@@ -4,6 +4,7 @@ import AuthStack from './stack/AuthStack.cts';
 import APIStack from './stack/APIStack';
 import ProfileStack from './stack/ProfileStack';
 import MemoryStack from './stack/MemoryStack';
+import ProductStack from './stack/ProductStack';
 
 import Constants from './InfrastructureConstants';
 
@@ -22,3 +23,6 @@ new ProfileStack(app, Constants.profileStackOutputKey, {
 
 // Create Memory Stack to host public-read assets
 new MemoryStack(app, Constants.memoryStackOutputKey, { apiStack });
+
+// Create Product Stack to host product/collection/variant APIs and tables
+new ProductStack(app, Constants.productStackOutputKey, { apiStack });

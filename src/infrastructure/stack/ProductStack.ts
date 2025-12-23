@@ -63,7 +63,7 @@ export default class ProductStack extends Stack {
 		});
 		this._collectionTable.grantReadWriteData(collectionLambda);
 		const collectionIntegration = new LambdaIntegration(collectionLambda);
-		props.apiStack.addMethodOnResource('collection', 'GET', collectionIntegration);
+		props.apiStack.addMethodOnResource('collection', 'GET', collectionIntegration, false);
 		props.apiStack.addMethodOnResource('collection', 'POST', collectionIntegration);
 		props.apiStack.addMethodOnResource('collection', 'PUT', collectionIntegration);
 		props.apiStack.addMethodOnResource('collection', 'DELETE', collectionIntegration);
@@ -83,7 +83,7 @@ export default class ProductStack extends Stack {
 		this._productTable.grantReadWriteData(productLambda);
 		this._variantTable.grantReadWriteData(productLambda);
 		const productIntegration = new LambdaIntegration(productLambda);
-		props.apiStack.addMethodOnResource('product', 'GET', productIntegration);
+		props.apiStack.addMethodOnResource('product', 'GET', productIntegration, false);
 		props.apiStack.addMethodOnResource('product', 'POST', productIntegration);
 		props.apiStack.addMethodOnResource('product', 'PUT', productIntegration);
 		props.apiStack.addMethodOnResource('product', 'DELETE', productIntegration);
@@ -103,7 +103,7 @@ export default class ProductStack extends Stack {
 		});
 		this._variantTable.grantReadWriteData(variantLambda);
 		const variantIntegration = new LambdaIntegration(variantLambda);
-		props.apiStack.addMethodOnResource('variant', 'GET', variantIntegration);
+		props.apiStack.addMethodOnResource('variant', 'GET', variantIntegration, false);
 		props.apiStack.addMethodOnResource('variant', 'POST', variantIntegration);
 		props.apiStack.addMethodOnResource('variant', 'PUT', variantIntegration);
 		props.apiStack.addMethodOnResource('variant', 'DELETE', variantIntegration);
