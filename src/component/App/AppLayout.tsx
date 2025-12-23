@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router';
+import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider, useLoaderData } from 'react-router';
 
 import Home from "../pages/Home/Home";
 import PageEnclosure from '../pages/PageEnclosure';
@@ -12,11 +12,38 @@ import SignUp from '../pages/User/SignUp';
 import VerifyUsername from '../pages/User/VerifyUsername';
 import ForgotPassword from '../pages/User/ForgotPassword';
 import ForgotPasswordVerify from '../pages/User/ForgotPasswordVerify';
+import AdminConsole from "../pages/Admin/AdminConsole";
+import AuthService from "../../service/AuthService";
+
+type AdminLoaderResult = { allowed: boolean };
+
+async function adminLoader(): Promise<AdminLoaderResult> {
+    try {
+        const auth = AuthService.getInstance();
+        const isAdmin = await auth.isCurrentUserAdmin();
+        return { allowed: isAdmin };
+    } catch {
+        return { allowed: false };
+    }
+}
+
+/**
+ * React Guard for Admin Route
+ * @returns 404 Not Found if user is not admin, otherwise AdminConsole
+ */
+function AdminRoute() {
+    const data = useLoaderData() as AdminLoaderResult | undefined;
+    if (!data?.allowed) {
+        return <NotFound />;
+    }
+    return <AdminConsole />;
+}
 
 export default function AppLayout() {
     const router = createBrowserRouter(createRoutesFromElements(
         <Route path="/" element={<PageEnclosure />}>
             <Route index element={<Home />} />
+            <Route path="admin" element={<AdminRoute />} loader={adminLoader} />
             <Route path="account" element={<AccountOutlet />}>
                 <Route index element={<Account />} />
                 <Route path="login" element={<Login />} />
