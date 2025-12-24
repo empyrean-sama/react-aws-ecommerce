@@ -3,8 +3,7 @@ import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
 import ProductService from "../../../service/ProductService";
 
 import PanelShell from "./PanelShell";
-import { Chip, Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, Checkbox, Toolbar, IconButton, Tooltip, TextField, InputAdornment, CircularProgress } from "@mui/material";
-import SearchBar from "../../ui/SearchBar";
+import { Chip, Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, Checkbox, Toolbar, IconButton, Tooltip, TextField, InputAdornment, CircularProgress } from "@mui/material";
 
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -36,9 +35,7 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
     
     const [order, setOrder] = useState<Order>("asc");
     const [orderBy, setOrderBy] = useState<keyof ICollectionRecord>("name");
-    
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+
     const [filterText, setFilterText] = useState<string>("");
 
     // Global State
@@ -133,17 +130,8 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
     // Given an ID, return whether it is selected
     const isSelected = (id: string) => props.selected.indexOf(id) !== -1;
 
-    const handleChangePage = (event: unknown, newPage: number) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
-    };
-
     return (
-        <PanelShell>
+        <PanelShell flexBasis="25%">
             <Box
                 sx={{
                     px: 3,
@@ -159,39 +147,40 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
                 <Chip label={`${collections.length} total`} size="small" variant="outlined" />
             </Box>
 
+            <Toolbar variant="regular" sx={{ gap: 1 }}>
+                <TextField
+                    size="small"
+                    variant="outlined"
+                    placeholder="Search collections"
+                    value={filterText}
+                    onChange={(e) => setFilterText(e.target.value)}
+                    sx={{ width: "100%" }}
+                    slotProps={{input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>}}}
+                />
+                <Tooltip title="Add new collection">
+                    <IconButton size="small" color="primary" aria-label="add collection" onClick={() => console.log('add collection clicked')}>
+                        <AddIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete selected collections">
+                    <span>
+                        <IconButton size="small" color="error" aria-label="delete selected" onClick={() => console.log('delete selected clicked')} disabled={props.selected.length === 0}>
+                            <DeleteIcon fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            </Toolbar>
+
             <Box>
                 <Paper elevation={0}>
-                    <Toolbar variant="regular" sx={{ gap: 1 }}>
-                        <TextField
-                            size="small"
-                            variant="outlined"
-                            placeholder="Search collections"
-                            value={filterText}
-                            onChange={(e) => setFilterText(e.target.value)}
-                            sx={{ width: "100%" }}
-                            slotProps={{input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>}}}
-                        />
-                        <Tooltip title="Add new collection">
-                            <IconButton size="small" color="primary" aria-label="add collection" onClick={() => console.log('add collection clicked')}>
-                                <AddIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete selected collections">
-                            <span>
-                                <IconButton size="small" color="error" aria-label="delete selected" onClick={() => console.log('delete selected clicked')} disabled={props.selected.length === 0}>
-                                    <DeleteIcon fontSize="small" />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </Toolbar>
                     {isLoading ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
                             <CircularProgress />
                         </Box>
                     ) : (
                         <>
-                            <TableContainer>
-                                <Table size="small">
+                            <TableContainer sx={{ maxHeight: 'calc(100dvh - 254px)', overflowX: "hidden" }}> {/*TODO: try to get rid of magic numbers in the future */}
+                                <Table size="small" stickyHeader aria-label="sticky table">
                                     <TableHead>
                                         <TableRow>
                                             <TableCell padding="checkbox">
@@ -205,25 +194,34 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
                                                     slotProps={{input: {"aria-label": "select all collections"}}}
                                                 />
                                             </TableCell>
-                                            {headCells.map((headCell) => (
-                                                <TableCell
-                                                    key={String(headCell.id)}
-                                                    sortDirection={orderBy === headCell.id ? order : false}
+                                            <TableCell
+                                                sortDirection={orderBy === "collectionId" ? order : false}
+                                                sx={{textAlign: 'center'}}
+                                            >
+                                                <TableSortLabel
+                                                    active={orderBy === "collectionId"}
+                                                    direction={orderBy === "collectionId" ? order : "asc"}
+                                                    onClick={() => handleRequestSort("collectionId")}
                                                 >
-                                                    <TableSortLabel
-                                                        active={orderBy === headCell.id}
-                                                        direction={orderBy === headCell.id ? order : "asc"}
-                                                        onClick={() => handleRequestSort(headCell.id)}
-                                                    >
-                                                        {headCell.label}
-                                                    </TableSortLabel>
-                                                </TableCell>
-                                            ))}
+                                                    Id
+                                                </TableSortLabel>
+                                            </TableCell>
+                                            <TableCell
+                                                sortDirection={orderBy === "name" ? order : false}
+                                            >
+                                                <TableSortLabel
+                                                    active={orderBy === "name"}
+                                                    direction={orderBy === "name" ? order : "asc"}
+                                                    onClick={() => handleRequestSort("name")}
+                                                >
+                                                    Name
+                                                </TableSortLabel>
+                                            </TableCell>
+                                            <TableCell>Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {stableSort(filteredCollections, getComparator(order, orderBy))
-                                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                             .map((row) => {
                                                 const isItemSelected = isSelected(row.collectionId);
                                                 const labelId = `collections-table-checkbox-${row.collectionId}`;
@@ -245,8 +243,27 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
                                                                 slotProps={{input: {"aria-labelledby": labelId}}}
                                                             />
                                                         </TableCell>
-                                                        <TableCell>{row.collectionId}</TableCell>
-                                                        <TableCell component="th" id={labelId} scope="row">{row.name}</TableCell>
+                                                        <TableCell 
+                                                            sx={{ 
+                                                                maxWidth: "65px", 
+                                                                textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"
+                                                            }}
+                                                        >
+                                                            <Tooltip title={row.collectionId}>
+                                                                <span>{row.collectionId}</span>
+                                                            </Tooltip>
+                                                        </TableCell>
+                                                        <TableCell 
+                                                            sx={{
+                                                                textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap",
+                                                                maxWidth: "200px"
+                                                            }} 
+                                                            component="th" 
+                                                            id={labelId} 
+                                                            scope="row"
+                                                        >
+                                                            {row.name}
+                                                        </TableCell>
                                                     </TableRow>
                                                 );
                                             })}
@@ -258,16 +275,6 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
-                            <TablePagination
-                                rowsPerPageOptions={[5, 10]}
-                                labelRowsPerPage="Collections on page:"
-                                component="div"
-                                count={filteredCollections.length}
-                                rowsPerPage={rowsPerPage}
-                                page={page}
-                                onPageChange={handleChangePage}
-                                onRowsPerPageChange={handleChangeRowsPerPage}
-                            />
                         </>
                     )}
                 </Paper>

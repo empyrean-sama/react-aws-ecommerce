@@ -2,7 +2,7 @@ import React from "react";
 import { Paper } from "@mui/material";
 
 export interface PanelShellProps {
-    grow?: boolean;
+    flexBasis?: string;
 }
 
 export default function PanelShell(props: React.PropsWithChildren<PanelShellProps>) {
@@ -18,7 +18,8 @@ export default function PanelShell(props: React.PropsWithChildren<PanelShellProp
                 border: "1px solid",
                 borderColor: "divider",
                 m: 1,
-                flexGrow: props.grow ? 1 : undefined,
+                overflowY: "hidden",
+                flexBasis: props.flexBasis,
             }}
         >
             {props.children}
