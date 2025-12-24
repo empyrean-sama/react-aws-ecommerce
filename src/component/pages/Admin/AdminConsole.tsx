@@ -9,7 +9,7 @@ export default function AdminConsole() {
 	return (
 		<Box sx={{ display: "flex", width: "100%" }}>
 			<CollectionsPanel selected={selected} setSelected={setSelected} />
-			<ItemAndVariantPanel />
+			<ItemAndVariantPanel selectedCollectionIds={selected} />
 		</Box>
 	);
 }
