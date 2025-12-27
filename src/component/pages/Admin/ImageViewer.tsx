@@ -40,7 +40,7 @@ export default function ImageViewer(props: ImageCarouselProps) {
                     overflow: "hidden",
                     borderRadius: 1,
                     bgcolor: "background.default",
-                    width: imageWidth,
+                    width: "100%",
                 }}
             >
                 <Box
@@ -91,6 +91,25 @@ export default function ImageViewer(props: ImageCarouselProps) {
                         </IconButton>
                     </>
                 )}
+
+                {/* Counter */}
+                <Box
+                    sx={{
+                        position: "absolute",
+                        bottom: 8,
+                        right: 8,
+                        px: 1,
+                        py: 0.25,
+                        borderRadius: 999,
+                        bgcolor: "rgba(0,0,0,0.6)",
+                        color: "common.white",
+                        fontSize: "0.75rem",
+                        minWidth: 40,
+                        textAlign: "center",
+                    }}
+                >
+                    {activeIndex + 1} / {imageUrls.length}
+                </Box>
             </Box>
         </Box>
     );

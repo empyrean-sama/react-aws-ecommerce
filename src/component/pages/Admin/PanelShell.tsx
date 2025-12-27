@@ -19,7 +19,9 @@ export default function PanelShell(props: React.PropsWithChildren<PanelShellProp
                 borderColor: "divider",
                 m: 1,
                 overflowY: "hidden",
+                flex: "1 1 auto",
                 flexBasis: props.flexBasis,
+                minWidth: 0,
             }}
         >
             {props.children}

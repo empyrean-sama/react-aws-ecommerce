@@ -1,6 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
-import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
-import ProductService from "../../../service/ProductService";
+import React, { useMemo, useState } from "react";
 
 import PanelShell from "./PanelShell";
 import { Chip, Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, Checkbox, Toolbar, IconButton, Tooltip, TextField, InputAdornment, CircularProgress } from "@mui/material";
@@ -8,14 +6,13 @@ import { Chip, Box, Typography, Paper, Table, TableBody, TableCell, TableContain
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 
 import Fuse from 'fuse.js';
 
 import { getComparator, Order, stableSort } from "./AdminConsoleHelper";
 
 import ICollectionRecord from "../../../interface/product/ICollectionRecord";
-import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
-import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
 
 const headCells: { id: keyof ICollectionRecord; label: string }[] = [
     { id: "collectionId", label: "ID" },
@@ -23,55 +20,29 @@ const headCells: { id: keyof ICollectionRecord; label: string }[] = [
 ];
 
 export interface CollectionsPanelProps {
-    selected: string[];
-    setSelected: React.Dispatch<React.SetStateAction<string[]>>;
+    selectedCollections: string[];
+    setSelectedCollections: React.Dispatch<React.SetStateAction<string[]>>;
+    collections: ICollectionRecord[];
+    isLoading: boolean;
+    onAddCollection: () => void;
+    onDeleteSelectedCollections: () => void;
+    onClosePanel: () => void;
 }
 
 export default function CollectionsPanel(props: CollectionsPanelProps) {
 
     // State variables
-    const [collections, setCollections] = useState<Array<ICollectionRecord>>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    
     const [order, setOrder] = useState<Order>("asc");
     const [orderBy, setOrderBy] = useState<keyof ICollectionRecord>("name");
 
     const [filterText, setFilterText] = useState<string>("");
 
-    // Global State
-    const globalAPI = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
-
-    // Effects
-    useEffect(() => {
-        let isMounted = true;
-        (async function() {
-            try {
-                setIsLoading(true);
-                const result = await ProductService.getInstance().listCollections();
-                if (isMounted) {
-                    setCollections(result ?? []);
-                }
-            } catch (error) {
-                console.error("Failed to load collections", error);
-                globalAPI.showMessage("Failed to load collections", ESnackbarMsgVariant.error);
-            } finally {
-                if (isMounted) {
-                    setIsLoading(false);
-                }
-            }
-        })();
-
-        return () => {
-            isMounted = false;
-        };
-    }, []);
-
     // Computed properties
     const filteredCollections: ICollectionRecord[] = useMemo(() => {
-        let filteredCollections: ICollectionRecord[] = collections;
+        let filteredCollections: ICollectionRecord[] = props.collections;
         if (filterText.trim()) {
             try {
-                const fuse = new Fuse(collections, {
+                const fuse = new Fuse(props.collections, {
                     keys: [
                         { name: 'name', weight: 0.7 },
                         { name: 'collectionId', weight: 0.2 },
@@ -86,7 +57,7 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
             } catch (err) {
                 // fallback to simple filter on error
                 const q = filterText.trim().toLowerCase();
-                filteredCollections = collections.filter((c) => {
+                filteredCollections = props.collections.filter((c) => {
                     const name = (c.name || "").toString().toLowerCase();
                     const id = (c.collectionId || "").toString().toLowerCase();
                     const desc = (c.description || "").toString().toLowerCase();
@@ -95,7 +66,7 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
             }
         }
         return filteredCollections;
-    }, [filterText, collections]);
+    }, [filterText, props.collections]);
 
     // Handlers
     function handleRequestSort(property: keyof ICollectionRecord) {
@@ -107,29 +78,28 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
     function handleSelectAllClick(event: React.ChangeEvent<HTMLInputElement>) {
         if (event.target.checked) {
             const newSelected = filteredCollections.map((n) => n.collectionId);
-            props.setSelected(newSelected);
+            props.setSelectedCollections(newSelected);
         } else {
-            props.setSelected([]);
+            props.setSelectedCollections([]);
         }
     };
 
     function handleClick(id: string) {
-        const selectedIndex = props.selected.indexOf(id);
+        const selectedIndex = props.selectedCollections.indexOf(id);
         let newSelected: string[] = [];
 
         if (selectedIndex === -1) {
             // selecting a new item
-            newSelected = newSelected.concat(props.selected, id);
+            newSelected = newSelected.concat(props.selectedCollections, id);
         } else {
             // deselecting an item
-            newSelected = props.selected.filter((selectedId) => selectedId !== id);
+            newSelected = props.selectedCollections.filter((selectedId) => selectedId !== id);
         }
-        props.setSelected(newSelected);
+        props.setSelectedCollections(newSelected);
     };
 
     // Given an ID, return whether it is selected
-    const isSelected = (id: string) => props.selected.indexOf(id) !== -1;
-
+    const isSelected = (id: string) => props.selectedCollections.indexOf(id) !== -1;
     return (
         <PanelShell flexBasis="25%">
             <Box
@@ -144,7 +114,18 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
                 }}
             >
                 <Typography variant="h5">Collections</Typography>
-                <Chip label={`${collections.length} total`} size="small" variant="outlined" />
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Chip label={`${props.collections.length} total`} size="small" variant="outlined" />
+                    <Tooltip title="Hide collections panel">
+                        <IconButton
+                            size="small"
+                            aria-label="hide collections panel"
+                            onClick={props.onClosePanel}
+                        >
+                            <ChevronLeftIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
             </Box>
 
             <Toolbar variant="regular" sx={{ gap: 1 }}>
@@ -158,13 +139,24 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
                     slotProps={{input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>}}}
                 />
                 <Tooltip title="Add new collection">
-                    <IconButton size="small" color="primary" aria-label="add collection" onClick={() => console.log('add collection clicked')}>
+                    <IconButton
+                        size="small"
+                        color="primary"
+                        aria-label="add collection"
+                        onClick={props.onAddCollection}
+                    >
                         <AddIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>
                 <Tooltip title="Delete selected collections">
                     <span>
-                        <IconButton size="small" color="error" aria-label="delete selected" onClick={() => console.log('delete selected clicked')} disabled={props.selected.length === 0}>
+                        <IconButton
+                            size="small"
+                            color="error"
+                            aria-label="delete selected"
+                            onClick={props.onDeleteSelectedCollections}
+                            disabled={props.selectedCollections.length === 0}
+                        >
                             <DeleteIcon fontSize="small" />
                         </IconButton>
                     </span>
@@ -173,13 +165,13 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
 
             <Box>
                 <Paper elevation={0}>
-                    {isLoading ? (
+                    {props.isLoading ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
                             <CircularProgress />
                         </Box>
                     ) : (
                         <>
-                            <TableContainer sx={{ maxHeight: 'calc(100dvh - 254px)', overflowX: "hidden" }}> {/*TODO: try to get rid of magic numbers in the future */}
+                            <TableContainer sx={{ maxHeight: 'calc(100dvh - 256px)', minHeight: 'calc(100dvh - 256px)', overflowX: "hidden" }}> {/*TODO: try to get rid of magic numbers in the future */}
                                 <Table size="small" stickyHeader aria-label="sticky table">
                                     <TableHead>
                                         <TableRow>
@@ -187,9 +179,9 @@ export default function CollectionsPanel(props: CollectionsPanelProps) {
                                                 <Checkbox
                                                     color="primary"
                                                     indeterminate={
-                                                        props.selected.length > 0 && props.selected.length < filteredCollections.length
+                                                        props.selectedCollections.length > 0 && props.selectedCollections.length < filteredCollections.length
                                                     }
-                                                    checked={filteredCollections.length > 0 && props.selected.length === filteredCollections.length}
+                                                    checked={filteredCollections.length > 0 && props.selectedCollections.length === filteredCollections.length}
                                                     onChange={handleSelectAllClick}
                                                     slotProps={{input: {"aria-label": "select all collections"}}}
                                                 />

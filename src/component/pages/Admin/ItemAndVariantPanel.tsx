@@ -1,5 +1,6 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import Fuse from "fuse.js";
+import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 
 import OutputParser from "../../../service/OutputParser";
 import { getComparator, Order, stableSort } from "./AdminConsoleHelper";
@@ -10,10 +11,14 @@ import AuthService from "../../../service/AuthService";
 import { Box, Button, Chip, CircularProgress, Divider, IconButton, InputAdornment, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Toolbar, Typography } from '@mui/material';
 import PanelShell from "./PanelShell";
 import ImageCarousel from "./ImageViewer";
+import PickCollection from './PickCollection';
 
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
+import Close from '@mui/icons-material/Close';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 
 import IProductRecord from "../../../interface/product/IProductRecord";
 import IProduct from "../../../interface/product/IProduct";
@@ -23,6 +28,8 @@ import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContext
 import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
 
 import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
+import useIsMounted from '../../../hooks/useIsMounted';
+import ICollectionRecord from '../../../interface/product/ICollectionRecord';
 
 type EditableProduct = IProductRecord & {
     isNew?: boolean;
@@ -32,12 +39,14 @@ type EditableProduct = IProductRecord & {
 type EditableVariant = IProductVariantRecord & {
     isNew?: boolean;
     isDeleted?: boolean;
+    isEdited?: boolean;
 };
 
 type ProductOrderBy = keyof IProductRecord;
 
 export interface ItemAndVariantPanelProps {
     selectedCollectionIds: string[];
+    allCollections: ICollectionRecord[];
 }
 
 export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
@@ -45,6 +54,7 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
     // Global API
     const globalAPI = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const productService = ProductService.getInstance();
+    const isMounted = useIsMounted();
 
     // Page State
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -79,14 +89,7 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
 
     // Effects
     useEffect(() => {
-        // Fetch products when selected collections change
-        let isMounted = true;
-        
-        fetchProducts(isMounted);
-        
-        return () => {
-            isMounted = false;
-        }
+        fetchProducts();
     }, [props.selectedCollectionIds, globalAPI]);
 
     useEffect(() => {
@@ -102,10 +105,8 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
     },  [selectedProductId, variantsByProductId, globalAPI]);
 
     // Helper Methods
-    function resetItemPanelState(isMounted: boolean = true) {
-        if(isMounted === true) {   
-            setProductFilterText("");
-            setSelectedProductId(null);
+    function resetItemPanelState() {
+        if(isMounted.current) {   
             setSelectedImageFile(null);
             setImageUploadStatus("");
             setIsUploadingImage(false);
@@ -116,9 +117,9 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
         }
     }
 
-    async function fetchProducts(isMounted: boolean) {
-        if(isMounted) {
-            resetItemPanelState(isMounted);
+    async function fetchProducts() {
+        if(isMounted.current) {
+            resetItemPanelState();
             setIsLoading(true);
         }
     
@@ -135,10 +136,10 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
                 }
             }
 
-            if (isMounted) {
+            if (isMounted.current) {
                 // Set the products to view and select the first product by default
                 setProducts(productRecords);
-                if (productRecords.length > 0) {
+                if (productRecords.length > 0 && !selectedProductId) {
                     setSelectedProductId(productRecords[0].productId);
                 }
             }
@@ -382,7 +383,7 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
     }
 
     async function handleCancel() {
-        resetItemPanelState();
+        await fetchProducts();
     }
 
     async function handleOk() {
@@ -411,11 +412,18 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
                     continue;
                 }
 
+                let productDefaultVariantId = product.defaultVariantId;
+                // If the default variant still has a temporary ID, defer setting it
+                // until after variants are created and we know the real ID.
+                if (productDefaultVariantId && productDefaultVariantId.startsWith("temp-var-")) {
+                    productDefaultVariantId = undefined;
+                }
+
                 const productPayload: IProduct = {
                     name: product.name,
                     description: product.description,
                     collectionId: product.collectionId,
-                    defaultVariantId: product.defaultVariantId,
+                    defaultVariantId: productDefaultVariantId,
                     fields: product.fields,
                     imageUrls: product.imageUrls,
                 };
@@ -429,6 +437,7 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
             }
 
             // Then handle variants for all products we have in memory
+            const tempVariantIdToRealId = new Map<string, string>();
             for (const [productIdKey, variants] of Object.entries(variantsByProductId)) {
                 const actualProductId = tempIdToRealId.get(productIdKey) ?? productIdKey;
                 for (const variant of variants) {
@@ -457,10 +466,31 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
                     };
 
                     if (variant.isNew) {
-                        await productService.createVariant(variantPayload);
+                        const createdVariant = await productService.createVariant(variantPayload);
+                        if (isTemp) {
+                            tempVariantIdToRealId.set(variant.variantId, createdVariant.variantId);
+                        }
                     } else {
                         await productService.updateVariant(variant.variantId, variantPayload);
                     }
+                }
+            }
+
+            // Finally, update default variants where needed, after we know real IDs
+            for (const product of products) {
+                const actualProductId = tempIdToRealId.get(product.productId) ?? product.productId;
+                const original = product.isNew ? undefined : originalProductsById.get(product.productId);
+
+                let desiredDefaultVariantId = product.defaultVariantId;
+                if (desiredDefaultVariantId && desiredDefaultVariantId.startsWith("temp-var-")) {
+                    const mapped = tempVariantIdToRealId.get(desiredDefaultVariantId);
+                    desiredDefaultVariantId = mapped;
+                }
+
+                const originalDefaultVariantId = original?.defaultVariantId;
+
+                if (desiredDefaultVariantId && desiredDefaultVariantId !== originalDefaultVariantId) {
+                    await productService.updateDefaultVariant(actualProductId, desiredDefaultVariantId);
                 }
             }
 
@@ -468,7 +498,7 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
             setHasUnsavedChanges(false);
 
             // Reload everything from backend to get fresh state
-            await resetItemPanelState();
+            await fetchProducts();
         } catch (error) {
             console.error("Failed to save item and variant changes", error);
             globalAPI.showMessage("Failed to save changes", ESnackbarMsgVariant.error);
@@ -509,19 +539,9 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
         return list;
     }, [visibleProducts, productFilterText]);
 
-    // If the selected product is no longer visible in the filtered list
-    // (e.g., due to search text or collection changes), clear the selection
-    useEffect(() => {
-        if (!selectedProductId) return;
-        const stillVisible = filteredProducts.some((p) => p.productId === selectedProductId);
-        if (!stillVisible) {
-            setSelectedProductId(null);
-        }
-    }, [filteredProducts, selectedProductId]);
-
     const headCells: { id: ProductOrderBy; label: string }[] = [
         { id: "name", label: "Item Name" },
-        { id: "productId", label: "ID" },
+        { id: "collectionId", label: "Collection" },
     ];
 
     return (
@@ -560,10 +580,12 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
                 </Box>
             </Box>
 
-            <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
-                {/* Left: Items table */}
-                <Box sx={{ width: "45%", borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                    <Toolbar variant="dense" sx={{ gap: 1, px: 2, py: 1 }}>
+            <Box sx={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
+                <PanelGroup direction="horizontal">
+                    {/* Left: Items table */}
+                    <Panel defaultSize={40} minSize={25} maxSize={60}>
+                        <Box sx={{ height: "100%", borderRight: (theme) => `1px solid ${theme.palette.divider}`, display: "flex", flexDirection: "column" }}>
+                            <Toolbar variant="dense" sx={{ gap: 1, px: 2, py: 1 }}>
                         <Typography variant="subtitle1">
                             Items
                         </Typography>
@@ -581,6 +603,11 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
                                             <SearchIcon fontSize="small" />
                                         </InputAdornment>
                                     ),
+                                    endAdornment: (
+                                        productFilterText && <IconButton onClick={() => setProductFilterText("")}>
+                                            <Close fontSize="small" />
+                                        </IconButton>
+                                    )
                                 },
                             }}
                         />
@@ -592,15 +619,15 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
                         >
                             <AddIcon fontSize="small" />
                         </IconButton>
-                    </Toolbar>
-                    {isLoading ? (
-                        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-                            <CircularProgress size={24} />
-                        </Box>
-                    ) : (
-                        <>
-                            <TableContainer component={Paper} elevation={0}>
-                                <Table size="small">
+                            </Toolbar>
+                            {isLoading ? (
+                                <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+                                    <CircularProgress size={24} />
+                                </Box>
+                            ) : (
+                                <Box sx={{ overflowY: "auto", height: "calc(100% - 56px)" }}> {/** TODO: remove the magic number 56 */}
+                                    <TableContainer component={Paper} elevation={0}>
+                                <Table size="small" stickyHeader>
                                     <TableHead>
                                         <TableRow>
                                             {headCells.map((headCell) => (
@@ -649,16 +676,13 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
                                                             />
                                                         </TableCell>
                                                         <TableCell sx={{ maxWidth: 140 }}>
-                                                            <Typography
-                                                                variant="body2"
-                                                                sx={{
-                                                                    whiteSpace: "nowrap",
-                                                                    overflow: "hidden",
-                                                                    textOverflow: "ellipsis",
-                                                                }}
-                                                            >
-                                                                {row.productId}
-                                                            </Typography>
+                                                            <PickCollection
+                                                                currentCollectionId={row.collectionId}
+                                                                onCollectionPick={(collectionId: string) =>
+                                                                    handleProductFieldChange(row.productId, "collectionId", collectionId)
+                                                                }
+                                                                collections={props.allCollections}
+                                                            />
                                                         </TableCell>
                                                         <TableCell align="right">
                                                             {isDeleted ? (
@@ -700,295 +724,342 @@ export default function ItemAndVariantPanel(props: ItemAndVariantPanelProps) {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
-                        </>
+                        </Box>
                     )}
-                </Box>
+                        </Box>
+                    </Panel>
 
-                {/* Right: Selected item details + variants */}
-                <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                    <Box sx={{ px: 2, py: 1.5 }}>
-                        {selectedProduct ? (
-                            <>
-                                <Typography variant="subtitle1" gutterBottom>
-                                    Item details
-                                </Typography>
-                                <Box sx={{ display: "flex", flexDirection: "column", gap: 2, maxWidth: 720 }}>
-                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                                        <TextField
-                                            label="Name"
-                                            fullWidth
-                                            size="small"
-                                            value={selectedProduct.name}
-                                            onChange={(e) =>
-                                                handleProductFieldChange(
-                                                    selectedProduct.productId,
-                                                    "name",
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-                                        <TextField
-                                            label="Description"
-                                            fullWidth
-                                            multiline
-                                            minRows={2}
-                                            size="small"
-                                            value={selectedProduct.description ?? ""}
-                                            onChange={(e) =>
-                                                handleProductFieldChange(
-                                                    selectedProduct.productId,
-                                                    "description",
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-                                    </Box>
+                    <PanelResizeHandle>
+                        <Box
+                            sx={{
+                                width: 4,
+                                cursor: "col-resize",
+                                bgcolor: (theme) => theme.palette.divider,
+                                '&:hover': {
+                                    bgcolor: (theme) => theme.palette.action.hover,
+                                },
+                            }}
+                        />
+                    </PanelResizeHandle>
 
-                                    {/* Images */}
-                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                        <Typography variant="subtitle2" color="text.secondary">
-                                            Images
+                    {/* Right: Selected item details + variants */}
+                    <Panel minSize={40}>
+                        <Box
+                            sx={{
+                                flex: 1,
+                                display: "flex",
+                                flexDirection: "column",
+                                minWidth: 0,
+                                maxHeight: "calc(100vh - 262px)",
+                                minHeight: "calc(100vh - 262px)",
+                                overflowY: "auto",
+                            }}
+                        >
+                            <Box sx={{ px: 2, py: 1.5 }}>
+                                {selectedProduct ? (
+                                    <>
+                                        <Typography variant="subtitle1" gutterBottom>
+                                            Item details
                                         </Typography>
-                                        <ImageCarousel
-                                            imageUrls={selectedProduct.imageUrls ?? []}
-                                            imageWidth='100px'
-                                            aspectRatio='16 / 9'
-                                        />
-                                        <Box sx={{ display: "flex", gap: 1, mt: 1, alignItems: "center", flexWrap: "wrap" }}>
-                                            <Button
-                                                variant="outlined"
-                                                component="label"
-                                                size="small"
-                                            >
-                                                Choose image
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    hidden
-                                                    onChange={handleImageFileChange}
+                                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, maxWidth: 720 }}>
+                                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                                                <TextField
+                                                    label="Name"
+                                                    fullWidth
+                                                    size="small"
+                                                    value={selectedProduct.name}
+                                                    onChange={(e) =>
+                                                        handleProductFieldChange(
+                                                            selectedProduct.productId,
+                                                            "name",
+                                                            e.target.value
+                                                        )
+                                                    }
                                                 />
-                                            </Button>
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    minWidth: 0,
-                                                    flexGrow: 1,
-                                                    whiteSpace: "nowrap",
-                                                    overflow: "hidden",
-                                                    textOverflow: "ellipsis",
-                                                }}
-                                            >
-                                                {selectedImageFile ? selectedImageFile.name : "No file selected"}
-                                            </Typography>
-                                            <Button
-                                                variant="contained"
-                                                size="small"
-                                                onClick={() => handleUploadImage(selectedProduct.productId)}
-                                                disabled={!selectedImageFile || isUploadingImage}
-                                            >
-                                                {isUploadingImage ? "Uploading..." : "Upload"}
-                                            </Button>
-                                        </Box>
-                                        {imageUploadStatus && (
-                                            <Typography variant="caption" color="text.secondary">
-                                                {imageUploadStatus}
-                                            </Typography>
-                                        )}
-                                        {selectedProduct.imageUrls && selectedProduct.imageUrls.length > 0 && (
-                                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 0.5 }}>
-                                                {selectedProduct.imageUrls.map((url, index) => (
-                                                    <Box
-                                                        key={`${url}-${index}`}
+                                                <TextField
+                                                    label="Description"
+                                                    fullWidth
+                                                    multiline
+                                                    minRows={2}
+                                                    size="small"
+                                                    value={selectedProduct.description ?? ""}
+                                                    onChange={(e) =>
+                                                        handleProductFieldChange(
+                                                            selectedProduct.productId,
+                                                            "description",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                />
+                                            </Box>
+
+                                            {/* Images */}
+                                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                                <Typography variant="subtitle2" color="text.secondary">
+                                                    Images
+                                                </Typography>
+                                                <ImageCarousel
+                                                    imageUrls={selectedProduct.imageUrls ?? []}
+                                                    imageWidth='100px'
+                                                    aspectRatio='16 / 9'
+                                                />
+                                                <Box sx={{ display: "flex", gap: 1, mt: 1, alignItems: "center", flexWrap: "wrap" }}>
+                                                    <Button
+                                                        variant="outlined"
+                                                        component="label"
+                                                        size="small"
+                                                    >
+                                                        Choose image
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            hidden
+                                                            onChange={handleImageFileChange}
+                                                        />
+                                                    </Button>
+                                                    <Typography
+                                                        variant="body2"
                                                         sx={{
-                                                            border: (theme) => `1px solid ${theme.palette.divider}`,
-                                                            borderRadius: 1,
-                                                            p: 0.5,
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            gap: 0.5,
-                                                            maxWidth: 260,
+                                                            minWidth: 0,
+                                                            flexGrow: 1,
+                                                            whiteSpace: "nowrap",
+                                                            overflow: "hidden",
+                                                            textOverflow: "ellipsis",
                                                         }}
                                                     >
-                                                        <Box
-                                                            component="img"
-                                                            src={url}
-                                                            alt={`thumb-${index}`}
-                                                            sx={{
-                                                                width: 40,
-                                                                height: 40,
-                                                                objectFit: "cover",
-                                                                borderRadius: 0.5,
-                                                                bgcolor: "background.paper",
-                                                            }}
-                                                        />
-                                                        <Typography
-                                                            variant="caption"
-                                                            sx={{
-                                                                flexGrow: 1,
-                                                                whiteSpace: "nowrap",
-                                                                overflow: "hidden",
-                                                                textOverflow: "ellipsis",
-                                                            }}
-                                                        >
-                                                            {url}
-                                                        </Typography>
-                                                        <IconButton
-                                                            size="small"
-                                                            color="error"
-                                                            aria-label="delete image"
-                                                            onClick={() =>
-                                                                handleDeleteImage(selectedProduct.productId, index)
-                                                            }
-                                                        >
-                                                            <DeleteIcon fontSize="small" />
-                                                        </IconButton>
+                                                        {selectedImageFile ? selectedImageFile.name : "No file selected"}
+                                                    </Typography>
+                                                    <Button
+                                                        variant="contained"
+                                                        size="small"
+                                                        onClick={() => handleUploadImage(selectedProduct.productId)}
+                                                        disabled={!selectedImageFile || isUploadingImage}
+                                                    >
+                                                        {isUploadingImage ? "Uploading..." : "Upload"}
+                                                    </Button>
+                                                </Box>
+                                                {imageUploadStatus && (
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {imageUploadStatus}
+                                                    </Typography>
+                                                )}
+                                                {selectedProduct.imageUrls && selectedProduct.imageUrls.length > 0 && (
+                                                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 0.5 }}>
+                                                        {selectedProduct.imageUrls.map((url, index) => (
+                                                            <Box
+                                                                key={`${url}-${index}`}
+                                                                sx={{
+                                                                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                                                                    borderRadius: 1,
+                                                                    p: 0.5,
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    gap: 0.5,
+                                                                    maxWidth: 260,
+                                                                }}
+                                                            >
+                                                                <Box
+                                                                        component="img"
+                                                                        src={url}
+                                                                        alt={`thumb-${index}`}
+                                                                        sx={{
+                                                                            width: 40,
+                                                                            height: 40,
+                                                                            objectFit: "cover",
+                                                                            borderRadius: 0.5,
+                                                                            bgcolor: "background.paper",
+                                                                        }}
+                                                                    />
+                                                                    <Typography
+                                                                        variant="caption"
+                                                                        sx={{
+                                                                            flexGrow: 1,
+                                                                            whiteSpace: "nowrap",
+                                                                            overflow: "hidden",
+                                                                            textOverflow: "ellipsis",
+                                                                        }}
+                                                                    >
+                                                                        {url}
+                                                                    </Typography>
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        color="error"
+                                                                        aria-label="delete image"
+                                                                        onClick={() =>
+                                                                            handleDeleteImage(selectedProduct.productId, index)
+                                                                        }
+                                                                    >
+                                                                        <DeleteIcon fontSize="small" />
+                                                                    </IconButton>
+                                                                </Box>
+                                                        ))}
                                                     </Box>
-                                                ))}
+                                                )}
                                             </Box>
-                                        )}
-                                    </Box>
-                                </Box>
-                            </>
-                        ) : (
-                            <Typography variant="body2" color="text.secondary">
-                                Select an item on the left to edit its details and variants.
-                            </Typography>
-                        )}
-                    </Box>
-                    <Divider />
-                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                        <Toolbar variant="dense" sx={{ gap: 1, px: 2, py: 1 }}>
-                            <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
-                                Variants
-                            </Typography>
-                            <IconButton
-                                size="small"
-                                color="primary"
-                                aria-label="add variant"
-                                onClick={handleAddVariant}
-                                disabled={!selectedProduct}
-                            >
-                                <AddIcon fontSize="small" />
-                            </IconButton>
-                        </Toolbar>
-                        {selectedProduct ? (
-                            <TableContainer component={Paper} elevation={0} sx={{ flex: 1 }}>
-                                <Table size="small" stickyHeader>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Name</TableCell>
-                                            <TableCell>Price (₹, paise)</TableCell>
-                                            <TableCell>Stock</TableCell>
-                                            <TableCell>Max / order</TableCell>
-                                            <TableCell align="right">Actions</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {selectedProductVariants.length === 0 && (
-                                            <TableRow>
-                                                <TableCell colSpan={5} align="center">
-                                                    No variants. Use the + button to add one.
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                        {selectedProductVariants.map((variant) => (
-                                            <TableRow key={variant.variantId}>
-                                                <TableCell>
-                                                    <TextField
-                                                        variant="standard"
-                                                        size="small"
-                                                        fullWidth
-                                                        value={variant.name}
-                                                        onChange={(e) =>
-                                                            handleVariantFieldChange(
-                                                                variant.variantId,
-                                                                "name",
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <TextField
-                                                        variant="standard"
-                                                        size="small"
-                                                        type="number"
-                                                        fullWidth
-                                                        value={variant.price}
-                                                        onChange={(e) =>
-                                                            handleVariantFieldChange(
-                                                                variant.variantId,
-                                                                "price",
-                                                                Number(e.target.value || 0)
-                                                            )
-                                                        }
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <TextField
-                                                        variant="standard"
-                                                        size="small"
-                                                        type="number"
-                                                        fullWidth
-                                                        value={variant.stock}
-                                                        onChange={(e) =>
-                                                            handleVariantFieldChange(
-                                                                variant.variantId,
-                                                                "stock",
-                                                                Number(e.target.value || 0)
-                                                            )
-                                                        }
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <TextField
-                                                        variant="standard"
-                                                        size="small"
-                                                        type="number"
-                                                        fullWidth
-                                                        value={variant.maximumInOrder ?? ""}
-                                                        onChange={(e) =>
-                                                            handleVariantFieldChange(
-                                                                variant.variantId,
-                                                                "maximumInOrder",
-                                                                e.target.value === "" ? undefined : Number(e.target.value)
-                                                            )
-                                                        }
-                                                    />
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    {variant.isDeleted ? (
-                                                        <Button
-                                                            size="small"
-                                                            onClick={() => handleUndoDeleteVariant(variant.variantId)}
-                                                        >
-                                                            Undo
-                                                        </Button>
-                                                    ) : (
-                                                        <IconButton
-                                                            size="small"
-                                                            color="error"
-                                                            aria-label="delete variant"
-                                                            onClick={() => handleDeleteVariant(variant.variantId)}
-                                                        >
-                                                            <DeleteIcon fontSize="small" />
-                                                        </IconButton>
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        ) : (
-                            <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Select an item to view and edit its variants.
-                                </Typography>
+                                        </Box>
+
+                                        <Divider sx={{ my: 2 }} />
+
+                                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                                            <Toolbar variant="dense" sx={{ gap: 1, px: 0, py: 0 }}>
+                                                <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
+                                                    Variants
+                                                </Typography>
+                                                <IconButton
+                                                    
+size="small"
+                                                    color="primary"
+                                                    aria-label="add variant"
+                                                    onClick={handleAddVariant}
+                                                    disabled={!selectedProduct}
+                                                >
+                                                    <AddIcon fontSize="small" />
+                                                </IconButton>
+                                            </Toolbar>
+                                            <TableContainer component={Paper} elevation={0}>
+                                                <Table size="small" stickyHeader>
+                                                    <TableHead>
+                                                        <TableRow>
+                                                            <TableCell>Name</TableCell>
+                                                            <TableCell>Price (₹, paise)</TableCell>
+                                                            <TableCell>Stock</TableCell>
+                                                            <TableCell>Max / order</TableCell>
+                                                            <TableCell align="right">Actions</TableCell>
+                                                        </TableRow>
+                                                    </TableHead>
+                                                    <TableBody>
+                                                        {selectedProductVariants.length === 0 && (
+                                                            <TableRow>
+                                                                <TableCell colSpan={5} align="center">
+                                                                    No variants. Use the + button to add one.
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )}
+                                                        {selectedProductVariants.map((variant) => (
+                                                            <TableRow key={variant.variantId}>
+                                                                <TableCell>
+                                                                    <TextField
+                                                                        variant="standard"
+                                                                        size="small"
+                                                                        fullWidth
+                                                                        value={variant.name}
+                                                                        onChange={(e) =>
+                                                                            handleVariantFieldChange(
+                                                                                variant.variantId,
+                                                                                "name",
+                                                                                e.target.value
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <TextField
+                                                                        variant="standard"
+                                                                        size="small"
+                                                                        type="number"
+                                                                        fullWidth
+                                                                        value={variant.price}
+                                                                        onChange={(e) =>
+                                                                            handleVariantFieldChange(
+                                                                                variant.variantId,
+                                                                                "price",
+                                                                                Number(e.target.value || 0)
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <TextField
+                                                                        variant="standard"
+                                                                        size="small"
+                                                                        type="number"
+                                                                        fullWidth
+                                                                        value={variant.stock}
+                                                                        onChange={(e) =>
+                                                                            handleVariantFieldChange(
+                                                                                variant.variantId,
+                                                                                "stock",
+                                                                                Number(e.target.value || 0)
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <TextField
+                                                                        variant="standard"
+                                                                        size="small"
+                                                                        type="number"
+                                                                        fullWidth
+                                                                        value={variant.maximumInOrder ?? ""}
+                                                                        onChange={(e) =>
+                                                                            handleVariantFieldChange(
+                                                                                variant.variantId,
+                                                                                "maximumInOrder",
+                                                                                e.target.value === "" ? undefined : Number(e.target.value)
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </TableCell>
+                                                                <TableCell align="right">
+                                                                    <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+                                                                        <IconButton
+                                                                                size="small"
+                                                                                aria-label="set default variant"
+                                                                                onClick={() => {
+                                                                                    if (!selectedProduct) {
+                                                                                        return;
+                                                                                    }
+                                                                                    setProducts((prev) =>
+                                                                                        prev.map((p) =>
+                                                                                            p.productId === selectedProduct.productId
+                                                                                                ? { ...p, defaultVariantId: variant.variantId }
+                                                                                                : p
+                                                                                        )
+                                                                                    );
+                                                                                    markDirty();
+                                                                                }}
+                                                                            >
+                                                                            {selectedProduct?.defaultVariantId === variant.variantId ? (
+                                                                                <StarIcon color="warning" fontSize="small" />
+                                                                            ) : (
+                                                                                <StarBorderIcon fontSize="small" />
+                                                                            )}
+                                                                        </IconButton>
+                                                                        {variant.isDeleted ? (
+                                                                            <Button
+                                                                                    size="small"
+                                                                                    onClick={() => handleUndoDeleteVariant(variant.variantId)}
+                                                                                >
+                                                                                    Undo
+                                                                                </Button>
+                                                                            ) : (
+                                                                                <IconButton
+                                                                                    size="small"
+                                                                                    color="error"
+                                                                                    aria-label="delete variant"
+                                                                                    onClick={() => handleDeleteVariant(variant.variantId)}
+                                                                                >
+                                                                                    <DeleteIcon fontSize="small" />
+                                                                                </IconButton>
+                                                                            )}
+                                                                        </Box>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </TableContainer>
+                                        </Box>
+                                    </>
+                                ) : (
+                                    <Typography variant="body2" color="text.secondary">
+                                        Select an item on the left to edit its details and variants.
+                                    </Typography>
+                                )}
                             </Box>
-                        )}
-                    </Box>
-                </Box>
+                        </Box>
+                    </Panel>
+                </PanelGroup>
             </Box>
 
             {/* Sticky OK / Cancel bar */}
