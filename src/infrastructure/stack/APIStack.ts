@@ -42,7 +42,7 @@ export default class APIStack extends Stack {
 		});
 	}
 
-	public addMethodOnResource(resourceName: string, methodType: 'GET' | 'POST' | 'PUT' | 'DELETE', lambdaIntegration: APIGateway.LambdaIntegration, addAuthorizer: boolean = true) {
+	public addMethodOnResource(resourceName: string, methodType: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH', lambdaIntegration: APIGateway.LambdaIntegration, addAuthorizer: boolean = true) {
 		
 		// Get a created resource or create it if it doesn't exist
 		let resource = this._resources.get(resourceName);

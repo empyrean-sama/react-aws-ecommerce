@@ -9,12 +9,14 @@
  *
  * API
  * - GET /collection - list all collections (ICollectionRecord[])
+ * - GET /collection?favourite=true - list all favourite collections
  * - POST /collection - create (body: { collection: ICollection })
  * - PUT /collection - update (body: { collectionId: string, collection: ICollection })
+ * - PATCH /collection - update favourite status (body: { collectionId: string, favourite: boolean })
  * - DELETE /collection?collectionId={id} - delete by id
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient, PutItemCommand, DeleteItemCommand, ScanCommand, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, PutItemCommand, DeleteItemCommand, ScanCommand, GetItemCommand, QueryCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import { randomUUID } from 'crypto';
 
@@ -24,6 +26,7 @@ import ICollectionRecord from '../../../interface/product/ICollectionRecord';
 
 const ddb = new DynamoDBClient({});
 const COLLECTION_TABLE = process.env.COLLECTION_TABLE;
+const COLLECTION_FAVOURITE_INDEX = process.env.COLLECTION_FAVOURITE_INDEX;
 
 function getCollectionFromInput(input: any): ICollection | null {
     function isValidCollection(input: any): input is ICollection {
@@ -35,7 +38,8 @@ function getCollectionFromInput(input: any): ICollection | null {
     }
     return {
         name: input.name,
-        description: input.description
+        description: input.description,
+        favourite: input.favourite === 'true' ? 'true' : 'false',
     };
 }
 
@@ -49,9 +53,24 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
         const method = (event.httpMethod || '').toUpperCase();
         switch (method) {
             case 'GET': {
-                // List all collections; open to any authenticated user
-                const scanResp = await ddb.send(new ScanCommand({ TableName: COLLECTION_TABLE }));
-                const items = (scanResp.Items || []).map(i => unmarshall(i) as ICollectionRecord);
+                // List all collections; open to any user
+                let items: ICollectionRecord[] = [];
+                if (event.queryStringParameters?.favourite === 'true') {
+                    if (!COLLECTION_FAVOURITE_INDEX) {
+                        console.error('Collection: COLLECTION_FAVOURITE_INDEX env var not set');
+                        return constructResponse(500, { message: 'Server configuration error' });
+                    }
+                    const queryResp = await ddb.send(new QueryCommand({
+                        TableName: COLLECTION_TABLE,
+                        IndexName: COLLECTION_FAVOURITE_INDEX,
+                        KeyConditionExpression: 'favourite = :f',
+                        ExpressionAttributeValues: { ':f': { S: 'true' } }
+                    }));
+                    items = (queryResp.Items || []).map(i => unmarshall(i) as ICollectionRecord);
+                } else {
+                    const scanResp = await ddb.send(new ScanCommand({ TableName: COLLECTION_TABLE }));
+                    items = (scanResp.Items || []).map(i => unmarshall(i) as ICollectionRecord);
+                }
                 return constructResponse(200, items);
             }
             case 'POST': {
@@ -110,6 +129,44 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
                 const record: ICollectionRecord = { collectionId, ...collection };
                 await ddb.send(new PutItemCommand({ TableName: COLLECTION_TABLE, Item: marshall(record) }));
                 return constructResponse(200, { message: 'Collection updated', collection: record });
+            }
+            case 'PATCH': {
+                if (!isAdmin(event)) {
+                    return constructResponse(403, { message: 'Forbidden' });
+                }
+                let parsed: JsonLike = {};
+                if (event.body) {
+                    try { 
+                        parsed = JSON.parse(event.body); 
+                    } 
+                    catch { 
+                        return constructResponse(400, { message: 'Invalid JSON body' }); 
+                    }
+                }
+                const collectionId = typeof parsed.collectionId === 'string' ? parsed.collectionId : '';
+                const favourite = typeof parsed.favourite === 'boolean' ? parsed.favourite : undefined;
+
+                if (!collectionId) {
+                    return constructResponse(400, { message: 'Missing collectionId' });
+                }
+                if (favourite === undefined) {
+                    return constructResponse(400, { message: 'Missing favourite status' });
+                }
+
+                // Ensure the collection exists
+                const existing = await ddb.send(new GetItemCommand({ TableName: COLLECTION_TABLE, Key: marshall({ collectionId }) }));
+                if (!existing.Item) {
+                    return constructResponse(404, { message: `Collection with id ${collectionId} not found` });
+                }
+
+                await ddb.send(new UpdateItemCommand({
+                    TableName: COLLECTION_TABLE,
+                    Key: marshall({ collectionId }),
+                    UpdateExpression: 'SET favourite = :f',
+                    ExpressionAttributeValues: { ':f': { S: favourite ? 'true' : 'false' } }
+                }));
+
+                return constructResponse(200, { message: 'Collection updated', collectionId, favourite });
             }
             case 'DELETE': {
                 if (!isAdmin(event)) {

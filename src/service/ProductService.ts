@@ -36,6 +36,39 @@ export default class ProductService {
     }
 
     /**
+     * List all favourite collections of products from the backend service.
+     * @returns all the favourite collections or null if the request failed
+     */
+    public async getFavouriteCollections(): Promise<ICollectionRecord[] | null> {
+        const url = new URL(OutputParser.CollectionsEndPointURL);
+        url.searchParams.set('favourite', 'true');
+        const resp = await fetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined);
+        if (!resp.ok) {
+            return null;
+        }
+        return (json as ICollectionRecord[]) ?? [];
+    }
+
+    /**
+     * Set the favourite status of a collection.
+     * @param collectionId The ID of the collection to update
+     * @param favourite The new favourite status
+     */
+    public async setCollectionFavourite(collectionId: string, favourite: boolean): Promise<void> {
+        const url = new URL(OutputParser.CollectionsEndPointURL);
+        const resp = await AuthService.getInstance().authorizedFetch(url, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collectionId, favourite })
+        });
+        if (!resp.ok) {
+            const json = await resp.json().catch(() => undefined) as any;
+            throw new Error(json?.message || 'Failed to update collection favourite status');
+        }
+    }
+
+    /**
      * Create a new collection of products in the backend service.
      * @param collection The collection data to create
      * @returns The created collection record

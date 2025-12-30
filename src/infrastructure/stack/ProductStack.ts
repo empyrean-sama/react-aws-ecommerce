@@ -27,6 +27,10 @@ export default class ProductStack extends Stack {
 			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
 			removalPolicy: RemovalPolicy.DESTROY, // TODO: change to RETAIN in production
 		});
+		this._collectionTable.addGlobalSecondaryIndex({
+			indexName: Constants.collectionGSINameOnFavourite,
+			partitionKey: { name: 'favourite', type: DynamoDB.AttributeType.STRING },
+		});
 
 		this._productTable = new DynamoDB.Table(this, Constants.productTableId, {
 			tableName: Constants.productTableName,
@@ -58,6 +62,7 @@ export default class ProductStack extends Stack {
 			runtime: Lambda.Runtime.NODEJS_22_X,
 			environment: {
 				COLLECTION_TABLE: this._collectionTable.tableName,
+				COLLECTION_FAVOURITE_INDEX: Constants.collectionGSINameOnFavourite,
 			},
 			bundling: { minify: true, sourceMap: true, target: 'node22' },
 		});
@@ -66,6 +71,7 @@ export default class ProductStack extends Stack {
 		props.apiStack.addMethodOnResource('collection', 'GET', collectionIntegration, false);
 		props.apiStack.addMethodOnResource('collection', 'POST', collectionIntegration);
 		props.apiStack.addMethodOnResource('collection', 'PUT', collectionIntegration);
+		props.apiStack.addMethodOnResource('collection', 'PATCH', collectionIntegration);
 		props.apiStack.addMethodOnResource('collection', 'DELETE', collectionIntegration);
 
 		// Lambda: Product

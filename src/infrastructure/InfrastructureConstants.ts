@@ -32,6 +32,7 @@ export default class InfrastructureConstants {
     static get variantTableName(): string { return `${InfrastructureConstants.projectName}-variants`; }
     static get collectionTableId(): string { return `${InfrastructureConstants.projectName}-CollectionsTable`; }
     static get collectionTableName(): string { return `${InfrastructureConstants.projectName}-collections`; }
+    static get collectionGSINameOnFavourite(): string { return `FavouriteIndex`; }
     static get productGSINameOnCollectionId(): string { return `CollectionIdIndex`; }
     static get variantGSINameOnProductId(): string { return `ProductIdIndex`; }
     
