@@ -14,6 +14,8 @@ import ForgotPassword from '../pages/User/ForgotPassword';
 import ForgotPasswordVerify from '../pages/User/ForgotPasswordVerify';
 import AdminConsole from "../pages/Admin/AdminConsole";
 import AuthService from "../../service/AuthService";
+import CatalogPage from '../pages/Admin/Catalog/CatalogPage';
+import PagePicker from '../pages/Admin/PagePicker';
 
 type AdminLoaderResult = { allowed: boolean };
 
@@ -43,7 +45,10 @@ export default function AppLayout() {
     const router = createBrowserRouter(createRoutesFromElements(
         <Route path="/" element={<PageEnclosure />}>
             <Route index element={<Home />} />
-            <Route path="admin" element={<AdminRoute />} loader={adminLoader} />
+            <Route path="admin" element={<AdminRoute />} loader={adminLoader}>
+                <Route index element={<PagePicker />} />
+                <Route path="catalog" element={<CatalogPage />} />
+            </Route>
             <Route path="account" element={<AccountOutlet />}>
                 <Route index element={<Account />} />
                 <Route path="login" element={<Login />} />
