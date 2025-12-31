@@ -55,6 +55,17 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
             case 'GET': {
                 // List all collections; open to any user
                 let items: ICollectionRecord[] = [];
+                if (event.queryStringParameters?.collectionId) {
+                    const collectionId = event.queryStringParameters.collectionId;
+                    const getResp = await ddb.send(new GetItemCommand({
+                        TableName: COLLECTION_TABLE,
+                        Key: marshall({ collectionId })
+                    }));
+                    if (!getResp.Item) {
+                        return constructResponse(404, { message: 'Collection not found' });
+                    }
+                    return constructResponse(200, unmarshall(getResp.Item) as ICollectionRecord);
+                }
                 if (event.queryStringParameters?.favourite === 'true') {
                     if (!COLLECTION_FAVOURITE_INDEX) {
                         console.error('Collection: COLLECTION_FAVOURITE_INDEX env var not set');

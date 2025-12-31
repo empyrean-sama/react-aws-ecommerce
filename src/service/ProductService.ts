@@ -36,6 +36,22 @@ export default class ProductService {
     }
 
     /**
+     * Get a collection by ID.
+     * @param collectionId The ID of the collection to retrieve
+     * @returns The collection record or null if not found
+     */
+    public async getCollection(collectionId: string): Promise<ICollectionRecord | null> {
+        const url = new URL(OutputParser.CollectionsEndPointURL);
+        url.searchParams.set('collectionId', collectionId);
+        const resp = await fetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined);
+        if (!resp.ok) {
+            return null;
+        }
+        return (json as ICollectionRecord) ?? null;
+    }
+
+    /**
      * List all favourite collections of products from the backend service.
      * @returns all the favourite collections or null if the request failed
      */
