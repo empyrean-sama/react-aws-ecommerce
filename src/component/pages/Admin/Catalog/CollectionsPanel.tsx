@@ -213,20 +213,24 @@ function CollectionPanelCollectionsEnclosure() {
     const catalogPageAPI = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
     const collectionsPanelAPI = React.useContext(collectionsPanelContext) as ICollectionPanelAPI;
 
+    // Magic numbers for height calculation
+    const magicMaxHeight = "calc(100dvh - 290px)";
+    const magicMinHeight = "calc(100dvh - 290px)";
+
     if(catalogPageAPI.isCollectionsPanelLoading){
         return (
-            <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
+            <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", maxHeight: magicMaxHeight, minHeight: magicMinHeight}}>
                 <CircularProgress />
             </Box>
         );
     }
     return (
-        <CollectionTable />
+        <CollectionTable magicMaxHeight={magicMaxHeight} magicMinHeight={magicMinHeight} />
     );
 }
 
 // Display the collections table
-function CollectionTable() {
+function CollectionTable({magicMaxHeight, magicMinHeight}: {magicMaxHeight: string, magicMinHeight: string}) {
     
     // Global API
     const catalogPageAPI = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
@@ -237,7 +241,7 @@ function CollectionTable() {
     const filteredSortedCollectionRecords: ICollectionRecord[] = useMemo(() => {
         return sort(filteredCollections, order, orderBy);
     }, [filteredCollections, order, orderBy]);
-
+    
     // Handlers
     async function handleCollectionClicked(collectionId: string) {
         const selectedIndex = catalogPageAPI.selectedCollections.indexOf(collectionId);
@@ -357,7 +361,7 @@ function CollectionTable() {
     }
 
     return (
-        <TableContainer sx={{ maxHeight: 'calc(100dvh - 290px)', minHeight: 'calc(100dvh - 290px)', overflowX: "hidden" }}> {/*TODO: try to get rid of magic numbers in the future */}
+        <TableContainer sx={{ maxHeight: magicMaxHeight, minHeight: magicMinHeight, overflowX: "hidden" }}> {/*TODO: try to get rid of magic numbers in the future */}
             <Table size="small" stickyHeader aria-label="sticky table">
                 <TableHead>
                     <TableRow>
