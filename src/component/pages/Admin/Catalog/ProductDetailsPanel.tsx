@@ -311,9 +311,15 @@ function SelectProductToolbar() {
     // Global API
     const { productFilterText, setProductFilterText, setProducts, setSelectedProductId } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
     const { selectedCollections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
+    const globalAPI = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     
     // Handlers
     async function handleAddProduct() {
+        if (selectedCollections.length > 1) {
+            globalAPI.showMessage("Please select a single collection to add a new item", ESnackbarMsgVariant.warning);
+            return;
+        }
+
         const newProductId = `new-${crypto.randomUUID()}`;
         const newProduct: EditableProduct = {
             productId: newProductId,
@@ -439,7 +445,15 @@ function SelectProductList() {
     }
 
     function handleDeleteProduct(productId: string) {
-        setProducts(prev => prev.map(p => p.productId === productId ? { ...p, isDeleted: true } : p));
+        const product = products.find(p => p.productId === productId);
+        if (product?.isNew) {
+            setProducts(prev => prev.filter(p => p.productId !== productId));
+            if (selectedProductId === productId) {
+                setSelectedProductId(null);
+            }
+        } else {
+            setProducts(prev => prev.map(p => p.productId === productId ? { ...p, isDeleted: true } : p));
+        }
     }
 
     async function handleUndoProduct(productId: string) {
