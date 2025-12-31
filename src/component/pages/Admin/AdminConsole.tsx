@@ -8,8 +8,8 @@ export default function AdminConsole() {
     const pathnames = location.pathname.split('/').filter((x) => x);
 
     return (
-        <Container maxWidth="xl" sx={{mt: 4}}>
-            <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+        <Container maxWidth="xl" sx={{mt: 1}}>
+            <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 1 }}>
                 {pathnames.map((value, index) => {
                     const last: boolean = index === pathnames.length - 1;
                     const to = `/${pathnames.slice(0, index + 1).join('/')}`;

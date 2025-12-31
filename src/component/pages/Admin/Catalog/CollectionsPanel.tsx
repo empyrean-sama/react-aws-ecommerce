@@ -357,7 +357,7 @@ function CollectionTable() {
     }
 
     return (
-        <TableContainer sx={{ maxHeight: 'calc(100dvh - 320px)', minHeight: 'calc(100dvh - 320px)', overflowX: "hidden" }}> {/*TODO: try to get rid of magic numbers in the future */}
+        <TableContainer sx={{ maxHeight: 'calc(100dvh - 290px)', minHeight: 'calc(100dvh - 290px)', overflowX: "hidden" }}> {/*TODO: try to get rid of magic numbers in the future */}
             <Table size="small" stickyHeader aria-label="sticky table">
                 <TableHead>
                     <TableRow>

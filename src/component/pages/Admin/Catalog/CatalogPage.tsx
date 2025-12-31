@@ -10,6 +10,7 @@ import ICollectionRecord from "../../../../interface/product/ICollectionRecord";
 import ESnackbarMsgVariant from "../../../../enum/ESnackbarMsgVariant";
 
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ProductDetailsPanel from "./ProductDetailsPanel";
 
 
 export interface ICatalogPageContextAPI {
@@ -27,6 +28,9 @@ export interface ICatalogPageContextAPI {
 	isCollapsedPanelOpen: boolean;
 	setIsCollapsedPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
 
+	itemDetailsPanelResizePaneLocationPercentage: number;
+	setItemDetailsPanelResizePaneLocationPercentage: React.Dispatch<React.SetStateAction<number>>;
+
 	reloadCollections: () => Promise<void>;
 }
 export const catalogPageContext = React.createContext<ICatalogPageContextAPI | null>(null);
@@ -43,6 +47,7 @@ export default function CatalogPage() {
 	const [isCatalogPageLoading, setIsCatalogPageLoading] = useState<boolean>(true); //The use effect will set it to false after loading
 	const [isCollectionsPanelLoading, setIsCollectionsPanelLoading] = useState<boolean>(false);
 	const [isCollapsedPanelOpen, setIsCollapsedPanelOpen] = useState<boolean>(true);
+	const [itemDetailsPanelResizePaneLocationPercentage, setItemDetailsPanelResizePaneLocationPercentage] = useState<number>(35); // Percentage from left
 
 	// Routines
 	async function reloadCollections() {
@@ -94,10 +99,12 @@ export default function CatalogPage() {
 			isCollapsedPanelOpen,
 			setIsCollapsedPanelOpen,
 			reloadCollections,
+			itemDetailsPanelResizePaneLocationPercentage,
+			setItemDetailsPanelResizePaneLocationPercentage,
 		}}>
 			<CatalogPageEnclosure isCatalogPageLoading={isCatalogPageLoading}>
 				<CollapsedPanelButton isCollectionsPanelOpen={isCollapsedPanelOpen} setIsCollectionsPanelOpen={setIsCollapsedPanelOpen} />
-				{/* <Box sx={{ display: "flex", width: "100%", position: "relative" }}> */}
+				<Box sx={{ display: "flex", width: "100%", position: "relative", gap: 1 }}>
 					<Collapse
 						in={isCollapsedPanelOpen}
 						orientation="horizontal"
@@ -106,7 +113,8 @@ export default function CatalogPage() {
 					>
 						<CollectionsPanel />
 					</Collapse>
-				{/* </Box> */}
+					<ProductDetailsPanel />
+				</Box>
 			</CatalogPageEnclosure>
 		</catalogPageContext.Provider>
 	);
