@@ -278,17 +278,25 @@ function Header() {
     )
 }
 
+interface IProductDetailsContextAPI {
+    magicMinPaneHeight: string;
+    magicMaxPaneHeight: string;
+}
+const productDetailsContext = createContext<IProductDetailsContextAPI | null>(null);
+
 function ProductDetails() {
     return (
-        <Box sx={{flex: "1 1 100%", display: "flex"}}>
-            <PanelGroup direction="horizontal">
-                <SelectProductPane />
-                <PanelResizeHandle>
-                    <Box sx={{ width: "1px", height: "100%", cursor: "col-resize", bgcolor: (theme) => theme.palette.divider}} />
-                </PanelResizeHandle>
-                <ProductInspectorPane />
-            </PanelGroup>
-        </Box>
+        <productDetailsContext.Provider value={{ magicMinPaneHeight: "calc(100dvh - 350px)", magicMaxPaneHeight: "calc(100dvh - 350px)" }}>
+            <Box sx={{flex: "1 1 100%", display: "flex"}}>
+                <PanelGroup direction="horizontal">
+                    <SelectProductPane />
+                    <PanelResizeHandle>
+                        <Box sx={{ width: "1px", height: "100%", cursor: "col-resize", bgcolor: (theme) => theme.palette.divider}} />
+                    </PanelResizeHandle>
+                    <ProductInspectorPane />
+                </PanelGroup>
+            </Box>
+        </productDetailsContext.Provider>
     );
 }
 
@@ -376,6 +384,7 @@ function SelectProductToolbar() {
 function SelectProductList() {
 
     // Global API
+    const {magicMinPaneHeight, magicMaxPaneHeight} = React.useContext(productDetailsContext) as IProductDetailsContextAPI;
     const { collections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
     const { isItemListLoading, productFilterText, filteredProducts, selectedProductId, setSelectedProductId, order, orderBy, setOrder, setOrderBy, handleProductFieldChange, setProducts, products } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
 
@@ -489,7 +498,7 @@ function SelectProductList() {
     else {
         return (
             <Box sx={{ overflowY: "auto", height: "calc(100% - 56px)" }}> {/** TODO: remove the magic number 56 */}
-                <TableContainer component={Paper} elevation={0}>
+                <TableContainer component={Paper} elevation={0} sx={{ minHeight: magicMinPaneHeight, maxHeight: magicMaxPaneHeight }}>
                     <Table size="small" stickyHeader>
                         <TableHead>
                             <TableRow>
