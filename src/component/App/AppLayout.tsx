@@ -1,5 +1,6 @@
 import React from 'react';
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider, useLoaderData } from 'react-router';
+import { Box, CircularProgress } from '@mui/material';
 
 import Home from "../pages/Home/Home";
 import PageEnclosure from '../pages/PageEnclosure';
@@ -43,7 +44,7 @@ function AdminRoute() {
 
 export default function AppLayout() {
     const router = createBrowserRouter(createRoutesFromElements(
-        <Route path="/" element={<PageEnclosure />}>
+        <Route path="/" element={<PageEnclosure />} hydrateFallbackElement={<Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}><CircularProgress /></Box>}>
             <Route index element={<Home />} />
             <Route path="admin" element={<AdminRoute />} loader={adminLoader}>
                 <Route index element={<PagePicker />} />

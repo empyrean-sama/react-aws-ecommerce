@@ -324,16 +324,16 @@ function CollectionTable() {
                     {row.name}
                 </TableCell>
                 <TableCell sx={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", maxWidth: "96px" }} component="th" id={labelId} scope="row">
-                    <IconButton size="small" aria-label="toggle favourite" onClick={(e) => handleToggleFavouriteCollection(e, row)}>
-                        <Tooltip title={row.favourite === "true" ? "Remove from favourites" : "Add to favourites"}>
+                    <Tooltip title={row.favourite === "true" ? "Remove from favourites" : "Add to favourites"}>
+                        <IconButton size="small" aria-label="toggle favourite" onClick={(e) => handleToggleFavouriteCollection(e, row)}>
                             {row.favourite === "true" ? <StarIcon fontSize="small" color="warning" /> : <StarOutlineIcon fontSize="small" />}
-                        </Tooltip>
-                    </IconButton>
-                    <IconButton size="small" aria-label="edit collection" onClick={(e) => {e.stopPropagation(); handleEditCollectionClicked(row.collectionId)}}>
-                        <Tooltip title="Edit collection">
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Edit collection">
+                        <IconButton size="small" aria-label="edit collection" onClick={(e) => {e.stopPropagation(); handleEditCollectionClicked(row.collectionId)}}>
                             <EditIcon fontSize="small" />
-                        </Tooltip>
-                    </IconButton>
+                        </IconButton>
+                    </Tooltip>
                 </TableCell>
             </TableRow>
         );
