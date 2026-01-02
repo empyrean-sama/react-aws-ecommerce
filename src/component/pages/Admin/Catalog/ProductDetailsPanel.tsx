@@ -3,7 +3,7 @@ import React, { createContext, useMemo, useState, useContext, useEffect } from "
 import IProductRecord from "../../../../interface/product/IProductRecord";
 import IProductVariantRecord from "../../../../interface/product/IProductVariantRecord";
 import PanelShell from "./PanelShell";
-import { Box, Button, Chip, CircularProgress, IconButton, InputAdornment, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, TextField, Toolbar, Tooltip, Typography, alpha } from "@mui/material";
+import { Box, Button, Chip, CircularProgress, IconButton, InputAdornment, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, TextField, Toolbar, Tooltip, Typography, alpha, LinearProgress } from "@mui/material";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 import AddIcon from '@mui/icons-material/Add';
@@ -13,7 +13,14 @@ import Close from '@mui/icons-material/Close';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import Fuse from "fuse.js";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import RestoreIcon from '@mui/icons-material/Restore';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+
+import CryptoJS from 'crypto-js';
+import OutputParser from "../../../../service/OutputParser";
+import Constants from "../../../../infrastructure/InfrastructureConstants";
 
 import sort, { SortOrder } from "../../../../helper/SortHelper";
 import { catalogPageContext, ICatalogPageContextAPI } from "./CatalogPage";
@@ -72,6 +79,7 @@ interface IItemDetailsPanelContextAPI {
     handleProductFieldChange: <K extends keyof IProductRecord>(productId: string, field: K, value: IProductRecord[K]) => void;
     markDirty: (productId: string) => void;
     reloadProducts: () => Promise<void>;
+    handleUndoProduct: (productId: string) => Promise<void>;
 }
 const itemDetailsPanelContext = createContext<IItemDetailsPanelContextAPI | null>(null);
 
@@ -210,9 +218,31 @@ export default function ProductDetailsPanel() {
         }
     }
 
+    async function handleUndoProduct(productId: string) {
+        const product = products.find(p => p.productId === productId);
+        if (!product) {
+            return;
+        }
+
+        if (product.isDeleted && !product.isEdited) {
+            setProducts(prev => prev.map(p => p.productId === productId ? { ...p, isDeleted: false } : p));
+            return;
+        }
+
+        const productService = ProductService.getInstance();
+        try {
+            const original = await productService.getProductById(productId);
+            if (original) {
+                setProducts(prev => prev.map(p => p.productId === productId ? { ...original, isEdited: false, isDeleted: false, isNew: false } : p));
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
     return (
         <PanelShell flexBasis='75%'>
-            <itemDetailsPanelContext.Provider value={{ products, setProducts, selectedProductId, setSelectedProductId, visibleProducts, productFilterText, setProductFilterText, filteredProducts, hasUnsavedChanges, isLoading, setIsLoading, isItemListLoading, setIsItemListLoading, order, setOrder, orderBy, setOrderBy, markDirty, handleProductFieldChange, selectedImageFile, setSelectedImageFile, isUploadingImage, setIsUploadingImage, imageUploadStatus, setImageUploadStatus, variantsByProductId, setVariantsByProductId, reloadProducts }}>
+            <itemDetailsPanelContext.Provider value={{ products, setProducts, selectedProductId, setSelectedProductId, visibleProducts, productFilterText, setProductFilterText, filteredProducts, hasUnsavedChanges, isLoading, setIsLoading, isItemListLoading, setIsItemListLoading, order, setOrder, orderBy, setOrderBy, markDirty, handleProductFieldChange, selectedImageFile, setSelectedImageFile, isUploadingImage, setIsUploadingImage, imageUploadStatus, setImageUploadStatus, variantsByProductId, setVariantsByProductId, reloadProducts, handleUndoProduct }}>
                 <ProductDetailsPanelLoadingEnclosure />
             </itemDetailsPanelContext.Provider>    
         </PanelShell>
@@ -386,7 +416,7 @@ function SelectProductList() {
     // Global API
     const {magicMinPaneHeight, magicMaxPaneHeight} = React.useContext(productDetailsContext) as IProductDetailsContextAPI;
     const { collections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
-    const { isItemListLoading, productFilterText, filteredProducts, selectedProductId, setSelectedProductId, order, orderBy, setOrder, setOrderBy, handleProductFieldChange, setProducts, products } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
+    const { isItemListLoading, productFilterText, filteredProducts, selectedProductId, setSelectedProductId, order, orderBy, setOrder, setOrderBy, handleProductFieldChange, setProducts, products, handleUndoProduct } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
 
     // Computed Properties
     const filteredSortedProducts = sort(filteredProducts, order, orderBy)
@@ -465,27 +495,7 @@ function SelectProductList() {
         }
     }
 
-    async function handleUndoProduct(productId: string) {
-        const product = products.find(p => p.productId === productId);
-        if (!product) {
-            return;
-        }
-
-        if (product.isDeleted && !product.isEdited) {
-            setProducts(prev => prev.map(p => p.productId === productId ? { ...p, isDeleted: false } : p));
-            return;
-        }
-
-        const productService = ProductService.getInstance();
-        try {
-            const original = await productService.getProductById(productId);
-            if (original) {
-                setProducts(prev => prev.map(p => p.productId === productId ? { ...original, isEdited: false, isDeleted: false, isNew: false } : p));
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    }
+    
 
     // Rendering List
     if(isItemListLoading) {
@@ -536,10 +546,270 @@ function SelectProductList() {
 
 function ProductInspectorPane() {
     const { itemDetailsPanelResizePaneLocationPercentage } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
+    const { magicMinPaneHeight, magicMaxPaneHeight} = React.useContext(productDetailsContext) as IProductDetailsContextAPI;
+    const { selectedProductId, products, handleProductFieldChange, setProducts, setSelectedProductId } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
+    const { collections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
+
+    const selectedProduct = products.find(p => p.productId === selectedProductId);
+
+    if (!selectedProduct) {
+        return (
+            <Panel defaultSize={100 - itemDetailsPanelResizePaneLocationPercentage}>
+                <Box sx={{ minHeight: magicMinPaneHeight, maxHeight: magicMaxPaneHeight, display: "flex", justifyContent: "center", alignItems: "center", color: "text.secondary" }}>
+                    <Typography>Select a product to view details</Typography>
+                </Box>
+            </Panel>
+        );
+    }
+
     return (
         <Panel defaultSize={100 - itemDetailsPanelResizePaneLocationPercentage}>
-            <h1>Product Inspector Pane</h1>
+            <Box sx={{ minHeight: magicMinPaneHeight, maxHeight: magicMaxPaneHeight, display: "flex", flexDirection: "column" }}>
+                <ProductInspectorToolbar />
+                <ProductInspectorDetails />
+                <ProductInspectorImageTab />
+            </Box>
         </Panel>
+    );
+}
+
+function ProductInspectorToolbar() {
+
+    // Global API
+    const { selectedProductId, products, setProducts, setSelectedProductId, handleProductFieldChange, handleUndoProduct } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
+
+    // Computed
+    const selectedProduct = products.find(p => p.productId === selectedProductId);
+    const isDeleted = !!selectedProduct?.isDeleted;
+
+    if(!selectedProduct) {
+        return null;
+    }
+
+    // Handlers
+    async function handleDelete() {
+        if (selectedProduct?.isNew) {
+            setProducts(prev => prev.filter(p => p.productId !== selectedProductId));
+            setSelectedProductId(null);
+        } else {
+            setProducts(prev => prev.map(p => p.productId === selectedProduct!.productId ? { ...p, isDeleted: true } : p));
+        }
+    }
+
+    async function handleClone() {
+        const newProductId = `new-${crypto.randomUUID()}`;
+        const newProduct: EditableProduct = {
+            ...selectedProduct!,
+            productId: newProductId,
+            name: `${selectedProduct!.name} (Copy)`,
+            isNew: true,
+            isEdited: true,
+            isDeleted: false
+        };
+        setProducts(prev => [newProduct, ...prev]);
+        setSelectedProductId(newProductId);
+    }
+
+    return (
+        <Toolbar variant="dense" sx={{ borderBottom: 1, borderColor: 'divider', justifyContent: 'flex-end', gap: 1 }}>
+            <Tooltip title="Clone item">
+                <span>
+                    <IconButton size="small" onClick={handleClone} disabled={isDeleted}>
+                        <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                </span>
+            </Tooltip>
+            <Tooltip title="Undo changes">
+                <span>
+                    <IconButton size="small" onClick={() => handleUndoProduct(selectedProduct.productId)} disabled={!isDeleted && !selectedProduct.isEdited && !selectedProduct.isNew}>
+                        <RestoreIcon fontSize="small" />
+                    </IconButton>
+                </span>
+            </Tooltip>
+            <Tooltip title="Delete item">
+                <span>
+                    <IconButton size="small" color="error" onClick={handleDelete} disabled={isDeleted}>
+                        <DeleteIcon fontSize="small" />
+                    </IconButton>
+                </span>
+            </Tooltip>
+        </Toolbar>
+    );
+}
+
+function ProductInspectorDetails() {
+
+    // Global API
+    const { collections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
+    const { selectedProductId, products, handleProductFieldChange } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
+
+    // Computed
+    const selectedProduct = products.find(p => p.productId === selectedProductId);
+    const isDeleted = !!selectedProduct?.isDeleted;
+
+    if(!selectedProduct) {
+        return null;
+    }
+
+    return (
+        <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
+            <TextField
+                label="Product Name"
+                value={selectedProduct.name}
+                onChange={(e) => handleProductFieldChange(selectedProduct.productId, "name", e.target.value)}
+                fullWidth
+                size="small"
+                disabled={isDeleted}
+            />
+            <TextField
+                label="Description"
+                value={selectedProduct.description || ""}
+                onChange={(e) => handleProductFieldChange(selectedProduct.productId, "description", e.target.value)}
+                fullWidth
+                multiline
+                rows={4}
+                size="small"
+                disabled={isDeleted}
+            />
+            <PickCollection
+                currentCollectionId={selectedProduct.collectionId}
+                collections={collections}
+                onCollectionPick={(collectionId) => handleProductFieldChange(selectedProduct.productId, "collectionId", collectionId)}
+                disabled={isDeleted}
+            />
+        </Box>
+    );
+}
+
+function ProductInspectorImageTab() {
+    const { selectedProductId, products, handleProductFieldChange } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
+    const globalAPI = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const productService = ProductService.getInstance();
+
+    const selectedProduct = products.find(p => p.productId === selectedProductId);
+    const isDeleted = !!selectedProduct?.isDeleted;
+
+    const [isUploading, setIsUploading] = useState(false);
+
+    if (!selectedProduct) return null;
+
+    const imageUrls = selectedProduct.imageUrls || [];
+
+    async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            // Calculate MD5
+            const arrayBuffer = await file.arrayBuffer();
+            const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer as any);
+            const contentMd5 = CryptoJS.enc.Base64.stringify(CryptoJS.MD5(wordArray));
+
+            // Get presigned URL
+            const { uploadUrl, key, requiredHeaders } = await productService.getPresignedUploadUrl(file.name, file.type, contentMd5, file.size);
+
+            // Upload to S3
+            await productService.uploadFileToS3(uploadUrl, file, requiredHeaders);
+
+            // Construct public URL
+            const bucket = OutputParser.MemoryBucketName;
+            const region = Constants.region;
+            const publicUrl = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+            
+            // Update product
+            const newImages = [...imageUrls, publicUrl];
+            handleProductFieldChange(selectedProduct!.productId, "imageUrls", newImages);
+            
+        } catch (error) {
+            console.error(error);
+            globalAPI.showMessage("Failed to upload image", ESnackbarMsgVariant.error);
+        } finally {
+            setIsUploading(false);
+            // Reset input
+            event.target.value = '';
+        }
+    }
+
+    async function handleDeleteImage(index: number) {
+        const urlToDelete = imageUrls[index];
+        try {
+            // Extract key from URL
+            // URL format: https://bucket.s3.region.amazonaws.com/key
+            const urlObj = new URL(urlToDelete);
+            const key = urlObj.pathname.substring(1); // remove leading slash
+
+            // Delete from S3
+            await productService.deleteImage(key);
+            
+            // Update product
+            const newImages = imageUrls.filter((_, i) => i !== index);
+            handleProductFieldChange(selectedProduct!.productId, "imageUrls", newImages);
+        } catch (error) {
+             console.error(error);
+             globalAPI.showMessage("Failed to delete image", ESnackbarMsgVariant.error);
+        }
+    }
+
+    function handleMoveImage(index: number, direction: 'up' | 'down') {
+        if (direction === 'up' && index === 0) return;
+        if (direction === 'down' && index === imageUrls.length - 1) return;
+
+        const newImages = [...imageUrls];
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
+        
+        handleProductFieldChange(selectedProduct!.productId, "imageUrls", newImages);
+    }
+
+    return (
+        <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="subtitle2">Images</Typography>
+                <Button
+                    component="label"
+                    variant="outlined"
+                    size="small"
+                    startIcon={<AddIcon />}
+                    disabled={isDeleted || isUploading}
+                >
+                    Upload
+                    <input type="file" hidden accept="image/*" onChange={handleUpload} />
+                </Button>
+            </Box>
+            
+            {isUploading && <LinearProgress />}
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {imageUrls.map((url, index) => (
+                    <Paper key={url} variant="outlined" sx={{ p: 1, display: "flex", alignItems: "center", gap: 2 }}>
+                        <Box
+                            component="img"
+                            src={url}
+                            sx={{ width: 60, height: 60, objectFit: "cover", borderRadius: 1, cursor: 'pointer' }}
+                            onClick={() => window.open(url, '_blank')}
+                        />
+                        <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
+                            <Typography variant="caption" noWrap title={url}>{url.split('/').pop()}</Typography>
+                        </Box>
+                        <Box sx={{ display: "flex" }}>
+                            <IconButton size="small" onClick={() => handleMoveImage(index, 'up')} disabled={index === 0 || isDeleted}>
+                                <ArrowUpwardIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton size="small" onClick={() => handleMoveImage(index, 'down')} disabled={index === imageUrls.length - 1 || isDeleted}>
+                                <ArrowDownwardIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton size="small" color="error" onClick={() => handleDeleteImage(index)} disabled={isDeleted}>
+                                <DeleteIcon fontSize="small" />
+                            </IconButton>
+                        </Box>
+                    </Paper>
+                ))}
+                {imageUrls.length === 0 && (
+                    <Typography variant="body2" color="text.secondary" align="center">No images</Typography>
+                )}
+            </Box>
+        </Box>
     );
 }
 

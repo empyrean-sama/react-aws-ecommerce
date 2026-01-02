@@ -55,4 +55,5 @@ export default class InfrastructureConstants {
     static get productResourceName(): string { return `product`; }
     static get productDefaultVariantResourceName(): string { return `product-default-variant`; }
     static get variantResourceName(): string { return `variant`; }
+    static get imageResourceName(): string { return `image`; }
 }

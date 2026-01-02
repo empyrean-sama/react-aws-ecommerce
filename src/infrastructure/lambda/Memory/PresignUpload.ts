@@ -98,7 +98,15 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
 
         const safeName = sanitizeFileName(fileName);
         const ext = extFromMime(contentType);
-        const key = `uploads/images/${new Date().toISOString().slice(0,10)}/${randomUUID()}-${safeName}.${ext}`;
+
+        // Remove existing extension from safeName if present to avoid duplication
+        const lastDotIndex = safeName.lastIndexOf('.');
+        let nameWithoutExt = safeName;
+        if (lastDotIndex !== -1) {
+            nameWithoutExt = safeName.substring(0, lastDotIndex);
+        }
+
+        const key = `uploads/images/${new Date().toISOString().slice(0,10)}/${randomUUID()}-${nameWithoutExt}.${ext}`;
 
         // Prepare a signed PUT URL that binds Content-Type and Content-MD5
         const put = new PutObjectCommand({

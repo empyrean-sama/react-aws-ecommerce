@@ -327,4 +327,69 @@ export default class ProductService {
             throw new Error(json?.message || 'Failed to delete variant');
         }
     }
+
+    // Images
+
+    /**
+     * Get a presigned URL for uploading an image.
+     * @param fileName The name of the file
+     * @param contentType The MIME type of the file
+     * @param contentMd5 The MD5 hash of the file content (base64 encoded)
+     * @param contentLength The size of the file in bytes
+     * @returns The presigned URL and other details
+     */
+    public async getPresignedUploadUrl(fileName: string, contentType: string, contentMd5: string, contentLength: number): Promise<{ uploadUrl: string, bucket: string, key: string, requiredHeaders: Record<string, string> }> {
+        const url = OutputParser.UploadToMemoryEndPointURL;
+        const resp = await AuthService.getInstance().authorizedFetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName, contentType, contentMd5, contentLength })
+        });
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok) {
+            throw new Error(json?.message || 'Failed to get presigned URL');
+        }
+        return json;
+    }
+
+    /**
+     * Upload a file to S3 using a presigned URL.
+     * @param uploadUrl The presigned URL
+     * @param file The file to upload
+     * @param requiredHeaders Headers required by the presigned URL
+     */
+    public async uploadFileToS3(uploadUrl: string, file: File, requiredHeaders: Record<string, string>): Promise<void> {
+        const headers: Record<string, string> = { ...requiredHeaders };
+        // Ensure Content-Type is set if not in requiredHeaders (though it should be)
+        if (!headers['Content-Type']) {
+            headers['Content-Type'] = file.type;
+        }
+
+        const resp = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: headers,
+            body: file
+        });
+
+        if (!resp.ok) {
+            throw new Error('Failed to upload file to S3');
+        }
+    }
+
+    /**
+     * Delete an image from S3.
+     * @param key The key of the image to delete
+     */
+    public async deleteImage(key: string): Promise<void> {
+        const url = new URL(OutputParser.ImageEndPointURL);
+        const resp = await AuthService.getInstance().authorizedFetch(url, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key })
+        });
+        if (!resp.ok) {
+            const json = await resp.json().catch(() => undefined) as any;
+            throw new Error(json?.message || 'Failed to delete image');
+        }
+    }
 }

@@ -91,4 +91,7 @@ export default class OutputParser {
     public static get VariantsEndPointURL(): string {
         return `${this.ApiEndpoint}${Constants.variantResourceName}`;
     }
+    public static get ImageEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.imageResourceName}`;
+    }
 }

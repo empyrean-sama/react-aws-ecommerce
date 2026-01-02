@@ -79,5 +79,21 @@ export default class MemoryStack extends Stack {
         // Expose API endpoint to request presigned URL (Cognito auth enabled by default)
         const presignIntegration = new LambdaIntegration(presignLambda);
         props.apiStack.addMethodOnResource('upload-url', 'POST', presignIntegration);
+
+        // Lambda to delete image (admin only)
+        const deleteImageLambda = new NodejsFunction(this, 'DeleteImageFunction', {
+            functionName: 'DeleteImage',
+            entry: path.join(__dirname, '..', 'lambda', 'Memory', 'DeleteImage.ts'),
+            handler: 'Handle',
+            runtime: Lambda.Runtime.NODEJS_22_X,
+            environment: {
+                BUCKET_NAME: bucket.bucketName,
+            },
+            bundling: { minify: true, sourceMap: true, target: 'node22' },
+        });
+        bucket.grantDelete(deleteImageLambda);
+
+        const deleteImageIntegration = new LambdaIntegration(deleteImageLambda);
+        props.apiStack.addMethodOnResource('image', 'DELETE', deleteImageIntegration);
     }
 }
