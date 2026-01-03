@@ -30,6 +30,11 @@ import { appGlobalStateContext } from "../../../App/AppGlobalStateProvider";
 import useIsMounted from "../../../../hooks/useIsMounted";
 import ProductService from "../../../../service/ProductService";
 import ESnackbarMsgVariant from "../../../../enum/ESnackbarMsgVariant";
+import AddProductFieldDialog from "./AddProductFieldDialog";
+import IProductField from "../../../../interface/product/field/IProductField";
+import ISectionField from "../../../../interface/product/field/ISectionField";
+import ITableField from "../../../../interface/product/field/ITableField";
+import EProductFieldType from "../../../../enum/EProductFieldType";
 
 type EditableProduct = IProductRecord & {
     isNew?: boolean;
@@ -576,6 +581,7 @@ function ProductInspectorPane() {
                 <ProductInspectorDetails />
                 <ProductInspectorImageTab />
                 <ProductInspectorVariantTable />
+                <ProductInspectorCustomFields />
             </Box>
         </Panel>
     );
@@ -684,6 +690,165 @@ function ProductInspectorDetails() {
                 collections={collections}
                 onCollectionPick={(collectionId) => handleProductFieldChange(selectedProduct.productId, "collectionId", collectionId)}
                 disabled={isDeleted}
+            />
+        </Box>
+    );
+}
+
+function ProductInspectorCustomFields() {
+    // Global API
+    const { selectedProductId, products, handleProductFieldChange } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
+
+    // Local State
+    const [isAddFieldDialogOpen, setIsAddFieldDialogOpen] = useState(false);
+
+    // Computed
+    const selectedProduct = products.find(p => p.productId === selectedProductId);
+    const isDeleted = !!selectedProduct?.isDeleted;
+
+    if(!selectedProduct) {
+        return null;
+    }
+
+    // Handlers
+    function handleAddField(field: IProductField) {
+        const newFields = [...(selectedProduct!.fields || []), field];
+        handleProductFieldChange(selectedProduct!.productId, "fields", newFields);
+    }
+
+    function handleUpdateField(index: number, updatedField: IProductField) {
+        const newFields = [...(selectedProduct!.fields || [])];
+        newFields[index] = updatedField;
+        handleProductFieldChange(selectedProduct!.productId, "fields", newFields);
+    }
+
+    function handleDeleteField(index: number) {
+        const newFields = [...(selectedProduct!.fields || [])];
+        newFields.splice(index, 1);
+        handleProductFieldChange(selectedProduct!.productId, "fields", newFields);
+    }
+
+    return (
+        <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+            {/* Custom Fields */}
+            {(selectedProduct.fields || []).map((field, index) => (
+                <React.Fragment key={index}>
+                    {field.type === EProductFieldType.section && (
+                        <Box sx={{ bgcolor: 'action.hover', p: 2, borderRadius: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1 }}>Section</Typography>
+                                <IconButton size="small" onClick={() => handleDeleteField(index)} disabled={isDeleted}>
+                                    <Close fontSize="small" />
+                                </IconButton>
+                            </Box>
+                            <TextField
+                                label="Section Title"
+                                value={(field as ISectionField).sectionTitle}
+                                onChange={(e) => handleUpdateField(index, { ...field, sectionTitle: e.target.value } as ISectionField)}
+                                fullWidth
+                                size="small"
+                                sx={{ mb: 2, bgcolor: 'background.paper' }}
+                                disabled={isDeleted}
+                            />
+                            <TextField
+                                label="Section Description"
+                                value={(field as ISectionField).sectionDescription}
+                                onChange={(e) => handleUpdateField(index, { ...field, sectionDescription: e.target.value } as ISectionField)}
+                                fullWidth
+                                multiline
+                                rows={2}
+                                size="small"
+                                sx={{ bgcolor: 'background.paper' }}
+                                disabled={isDeleted}
+                            />
+                        </Box>
+                    )}
+                    {field.type === EProductFieldType.table && (
+                        <Box sx={{ bgcolor: 'action.hover', p: 2, borderRadius: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1 }}>Table</Typography>
+                                <IconButton size="small" onClick={() => handleDeleteField(index)} disabled={isDeleted}>
+                                    <Close fontSize="small" />
+                                </IconButton>
+                            </Box>
+                            <TextField
+                                label="Table Name"
+                                value={(field as ITableField).tableName}
+                                onChange={(e) => handleUpdateField(index, { ...field, tableName: e.target.value } as ITableField)}
+                                fullWidth
+                                size="small"
+                                sx={{ mb: 1, bgcolor: 'background.paper' }}
+                                disabled={isDeleted}
+                            />
+                            <TableContainer component={Paper} variant="outlined" sx={{ mt: 1 }}>
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow>
+                                            {(field as ITableField).columns.map((col, colIndex) => (
+                                                <TableCell key={colIndex}>{col}</TableCell>
+                                            ))}
+                                            <TableCell align="center" width={50}>
+                                                <IconButton size="small" onClick={() => {
+                                                    const newRows = [...(field as ITableField).rows, new Array((field as ITableField).columns.length).fill('')];
+                                                    handleUpdateField(index, { ...field, rows: newRows } as ITableField);
+                                                }} disabled={isDeleted}>
+                                                    <AddIcon fontSize="small" />
+                                                </IconButton>
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {(field as ITableField).rows.map((row, rowIndex) => (
+                                            <TableRow key={rowIndex}>
+                                                {row.map((cell, cellIndex) => (
+                                                    <TableCell key={cellIndex} sx={{ p: 0.5 }}>
+                                                        <TextField
+                                                            value={cell}
+                                                            onChange={(e) => {
+                                                                const newRows = [...(field as ITableField).rows];
+                                                                newRows[rowIndex] = [...newRows[rowIndex]];
+                                                                newRows[rowIndex][cellIndex] = e.target.value;
+                                                                handleUpdateField(index, { ...field, rows: newRows } as ITableField);
+                                                            }}
+                                                            fullWidth
+                                                            size="small"
+                                                            variant="standard"
+                                                            disabled={isDeleted}
+                                                        />
+                                                    </TableCell>
+                                                ))}
+                                                <TableCell align="center">
+                                                    <IconButton size="small" onClick={() => {
+                                                        const newRows = [...(field as ITableField).rows];
+                                                        newRows.splice(rowIndex, 1);
+                                                        handleUpdateField(index, { ...field, rows: newRows } as ITableField);
+                                                    }} disabled={isDeleted}>
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Box>
+                    )}
+                </React.Fragment>
+            ))}
+
+            <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={() => setIsAddFieldDialogOpen(true)}
+                disabled={isDeleted}
+            >
+                Add Field
+            </Button>
+
+            <AddProductFieldDialog
+                open={isAddFieldDialogOpen}
+                onClose={() => setIsAddFieldDialogOpen(false)}
+                onAdd={handleAddField}
             />
         </Box>
     );
