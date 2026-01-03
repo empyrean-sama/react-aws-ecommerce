@@ -4,6 +4,8 @@ import { useSnackbar } from "notistack";
 import ESnackbarMsgVariant from "../../enum/ESnackbarMsgVariant";
 import IUserDetails from "../../interface/IUserDetails";
 import AuthService from "../../service/AuthService";
+import ICollectionRecord from "../../interface/product/ICollectionRecord";
+import ProductService from "../../service/ProductService";
 
 export const appGlobalStateContext = createContext<IAppGlobalStateContextAPI | null>(null);
 
@@ -12,7 +14,9 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
     // Providers
     const { enqueueSnackbar } = useSnackbar();
     const authService = AuthService.getInstance()
+    const productService = ProductService.getInstance();
     const [loginDetails, setLoginDetails] = React.useState<IUserDetails | null>(null);
+    const [favouriteCollections, setFavouriteCollections] = React.useState<ICollectionRecord[]>([]);
     
     // Effects
     useEffect(() => {
@@ -23,6 +27,9 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
                 setLoginDetails(userDetails);
             } catch (error) {}
         })();
+
+        // Fetch favourite collections
+        refreshFavouriteCollections();
     }, []);
 
     // Global API implementations
@@ -47,8 +54,19 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
         enqueueSnackbar(msg, { variant, autoHideDuration, persist: autoHideDuration === null });
     }
 
+    async function refreshFavouriteCollections() {
+        try {
+            const collections = await productService.getFavouriteCollections();
+            if (collections) {
+                setFavouriteCollections(collections);
+            }
+        } catch (error) {
+            console.error("Failed to fetch favourite collections", error);
+        }
+    }
+
     return (
-        <appGlobalStateContext.Provider value={{ showMessage, getLoggedInDetails, setLoggedInDetails, logout }}>
+        <appGlobalStateContext.Provider value={{ showMessage, getLoggedInDetails, setLoggedInDetails, logout, favouriteCollections, refreshFavouriteCollections }}>
             {children}
         </appGlobalStateContext.Provider>
     );

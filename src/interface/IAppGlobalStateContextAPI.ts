@@ -1,5 +1,6 @@
 import ESnackbarMsgVariant from "../enum/ESnackbarMsgVariant";
 import IUserDetails from "./IUserDetails";
+import ICollectionRecord from "./product/ICollectionRecord";
 
 export default interface IAppGlobalStateContextAPI {
     /**
@@ -29,4 +30,14 @@ export default interface IAppGlobalStateContextAPI {
      * @returns A promise that resolves when the logout process is complete
      */
     logout: () => Promise<void>;
+
+    /**
+     * The list of favourite collections
+     */
+    favouriteCollections: ICollectionRecord[];
+
+    /**
+     * Refreshes the list of favourite collections
+     */
+    refreshFavouriteCollections: () => Promise<void>;
 }

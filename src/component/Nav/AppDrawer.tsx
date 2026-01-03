@@ -1,8 +1,12 @@
-import React, {PropsWithChildren, useEffect} from "react";
+import React, {PropsWithChildren, useContext, useEffect, useState} from "react";
 import Box from "@mui/material/Box/Box";
 import SearchBar from "../ui/SearchBar";
-import { useTheme } from "@mui/material";
+import { List, ListItem, ListItemButton, ListItemText, useTheme } from "@mui/material";
 import Constants from "../../Constants";
+import { useNavigate } from "react-router";
+import { appGlobalStateContext } from "../App/AppGlobalStateProvider";
+import IAppGlobalStateContextAPI from "../../interface/IAppGlobalStateContextAPI";
+import AuthService from "../../service/AuthService";
 
 export interface AppDrawerProps {
     isDrawerOpen: boolean;
@@ -16,6 +20,13 @@ export interface AppDrawerProps {
  */
 export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen, children }: PropsWithChildren<AppDrawerProps>) {
     const theme = useTheme();
+    const navigateTo = useNavigate();
+    const { favouriteCollections } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        AuthService.getInstance().isCurrentUserAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+    }, []);
 
     // Must listen for escape key to close drawer
     useEffect(() => {
@@ -56,7 +67,27 @@ export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen, children }: P
             >
                 <SearchBar placeholder="Search products..." sx={{ backgroundColor: theme.palette.background.default, marginLeft: 1, width: {xs: `calc(${Constants.DRAWER_WIDTH_MOBILE} - ${theme.spacing(1)}px)`, sm: `calc(${Constants.DRAWER_WIDTH_TABLET} - ${theme.spacing(1)}px)`} }}/>
                 <Box sx={{backgroundColor: theme.palette.background.paper, flexGrow: 1}}>
-                    {children}
+                    <List>
+                        <ListItem disablePadding>
+                            <ListItemButton onClick={() => { navigateTo("/"); setIsDrawerOpen(false); }}>
+                                <ListItemText primary="HOME" />
+                            </ListItemButton>
+                        </ListItem>
+                        {favouriteCollections.map((collection) => (
+                            <ListItem key={collection.collectionId} disablePadding>
+                                <ListItemButton onClick={() => { navigateTo(`/collection/${collection.collectionId}`); setIsDrawerOpen(false); }}>
+                                    <ListItemText primary={collection.name} />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                        {isAdmin && (
+                            <ListItem disablePadding>
+                                <ListItemButton onClick={() => { navigateTo("/admin"); setIsDrawerOpen(false); }}>
+                                    <ListItemText primary="ADMIN" primaryTypographyProps={{ color: '#9c27b0', fontWeight: 'bold' }} />
+                                </ListItemButton>
+                            </ListItem>
+                        )}
+                    </List>
                 </Box>
             </Box>
         

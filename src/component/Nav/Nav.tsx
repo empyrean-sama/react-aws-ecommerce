@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { AppBar, Box, IconButton, Typography, Toolbar, Tabs, Tab, useTheme, Container } from "@mui/material";
@@ -9,6 +9,9 @@ import AccountButtons from "./AccountButtons";
 
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseSharpIcon from '@mui/icons-material/CloseSharp';
+import { appGlobalStateContext } from "../App/AppGlobalStateProvider";
+import IAppGlobalStateContextAPI from "../../interface/IAppGlobalStateContextAPI";
+import AuthService from "../../service/AuthService";
 
 export interface NavProps {
     setIsDrawerOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -18,7 +21,13 @@ export interface NavProps {
 export default function Nav({ setIsDrawerOpen, isDrawerOpen }: NavProps) {
     const theme = useTheme();
     const navigateTo = useNavigate();
+    const { favouriteCollections } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const [value, setValue] = React.useState(0); //todo: remove
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        AuthService.getInstance().isCurrentUserAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+    }, []);
 
     const handleChange = (event: React.SyntheticEvent, newValue: number) => {
         setValue(newValue);
@@ -38,15 +47,12 @@ export default function Nav({ setIsDrawerOpen, isDrawerOpen }: NavProps) {
             <Box sx={{ borderTop: `1px solid ${theme.palette.grey[300]}` }}></Box>
             <Toolbar variant="dense" sx={{ display: { xs: 'none', lg: 'flex' } }}>
                 <Container maxWidth="xl">
-                    <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
-                        <Tab label="HOME" />
-                        <Tab label="Sweets" />
-                        <Tab label="Hots" />
-                        <Tab label="Vadiyalu" />
-                        <Tab label="Godavari Specials" />
-                        <Tab label="Podulu" />
-                        <Tab label="Pickles" />
-                        <Tab label="Gift Packs" />
+                    <Tabs value={value} onChange={handleChange} aria-label="main-navigation">
+                        <Tab label="HOME" onClick={() => navigateTo("/")} />
+                        {favouriteCollections.map((collection) => (
+                            <Tab key={collection.collectionId} label={collection.name} onClick={() => navigateTo(`/collection/${collection.collectionId}`)} />
+                        ))}
+                        {isAdmin && <Tab label="ADMIN" onClick={() => navigateTo("/admin")} sx={{ color: '#9c27b0', fontWeight: 'bold' }} />}
                     </Tabs>
                 </Container>
             </Toolbar>
