@@ -697,7 +697,7 @@ function ProductInspectorImageTab() {
     const selectedProduct = products.find(p => p.productId === selectedProductId);
     const isDeleted = !!selectedProduct?.isDeleted;
 
-    const [isUploading, setIsUploading] = useState(false);
+    const [isImageProcessing, setIsImageProcessing] = useState(false);
 
     if (!selectedProduct) return null;
 
@@ -707,7 +707,7 @@ function ProductInspectorImageTab() {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        setIsUploading(true);
+        setIsImageProcessing(true);
         try {
             // Calculate MD5
             const arrayBuffer = await file.arrayBuffer();
@@ -733,7 +733,7 @@ function ProductInspectorImageTab() {
             console.error(error);
             globalAPI.showMessage("Failed to upload image", ESnackbarMsgVariant.error);
         } finally {
-            setIsUploading(false);
+            setIsImageProcessing(false);
             // Reset input
             event.target.value = '';
         }
@@ -741,6 +741,7 @@ function ProductInspectorImageTab() {
 
     async function handleDeleteImage(index: number) {
         const urlToDelete = imageUrls[index];
+        setIsImageProcessing(true);
         try {
             // Extract key from URL
             // URL format: https://bucket.s3.region.amazonaws.com/key
@@ -756,6 +757,8 @@ function ProductInspectorImageTab() {
         } catch (error) {
              console.error(error);
              globalAPI.showMessage("Failed to delete image", ESnackbarMsgVariant.error);
+        } finally {
+            setIsImageProcessing(false);
         }
     }
 
@@ -779,14 +782,14 @@ function ProductInspectorImageTab() {
                     variant="outlined"
                     size="small"
                     startIcon={<AddIcon />}
-                    disabled={isDeleted || isUploading}
+                    disabled={isDeleted || isImageProcessing}
                 >
                     Upload
                     <input type="file" hidden accept="image/*" onChange={handleUpload} />
                 </Button>
             </Box>
             
-            {isUploading && <LinearProgress />}
+            {isImageProcessing && <LinearProgress />}
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 {imageUrls.map((url, index) => (
