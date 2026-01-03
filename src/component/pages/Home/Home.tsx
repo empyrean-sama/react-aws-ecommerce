@@ -1,23 +1,18 @@
 import React from "react";
 import SearchBar from "../../ui/SearchBar";
 import ImageUploader from "./ImageUploader";
+import { Container, Typography } from "@mui/material";
 // import ImageViewer from "../Admin/ImageViewer";
 
 export default function Home() {
     return (
-        <div>
-            <SearchBar />
+        <Container maxWidth="xl" sx={{ paddingX: { xs: 0, sm: 3 }, marginY: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div style={{ marginTop: 16 }}>
-                {/* <ImageViewer 
-                    imageUrls={[
-                        "https://images.pexels.com/photos/35280980/pexels-photo-35280980.jpeg?_gl=1*1m0s82x*_ga*ODQ1MzAyNDA5LjE3NjY0ODQxNDM.*_ga_8JE65Q40S6*czE3NjY0ODQxNDMkbzEkZzEkdDE3NjY0ODQxNDUkajU4JGwwJGgw",
-                        "https://images.pexels.com/photos/33944537/pexels-photo-33944537.jpeg?_gl=1*1vq2mbf*_ga*ODQ1MzAyNDA5LjE3NjY0ODQxNDM.*_ga_8JE65Q40S6*czE3NjY0ODQxNDMkbzEkZzEkdDE3NjY0ODQyMDYkajU5JGwwJGgw",
-                        "https://images.pexels.com/photos/32784501/pexels-photo-32784501.jpeg?_gl=1*1s7h9zh*_ga*ODQ1MzAyNDA5LjE3NjY0ODQxNDM.*_ga_8JE65Q40S6*czE3NjY0ODQxNDMkbzEkZzEkdDE3NjY0ODQyMzEkajM0JGwwJGgw"
-                    ]}
-                    imageWidth="400px"
-                    aspectRatio="3 / 2"
-                /> */}
+                <Typography variant="h2" component="h2" textAlign="center" sx={{ mb: 3 }}>Welcome to the Home Page</Typography>
+                <Typography variant="body1" component="p" textAlign="center" sx={{ mb: 3 }}>
+                    Under Construction 🚧
+                </Typography>
             </div>
-        </div>
+        </Container>
     )
 }
