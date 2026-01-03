@@ -63,6 +63,8 @@ interface IItemDetailsPanelContextAPI {
     setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
     isItemListLoading: boolean;
     setIsItemListLoading: React.Dispatch<React.SetStateAction<boolean>>;
+    isVariantTableLoading: boolean;
+    setIsVariantTableLoading: React.Dispatch<React.SetStateAction<boolean>>;
 
     order: SortOrder;
     setOrder: React.Dispatch<React.SetStateAction<SortOrder>>;
@@ -103,13 +105,18 @@ export default function ProductDetailsPanel() {
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isItemListLoading, setIsItemListLoading] = useState<boolean>(false);
+    const [isVariantTableLoading, setIsVariantTableLoading] = useState<boolean>(false);
 
     const [order, setOrder] = useState<SortOrder>("asc");
     const [orderBy, setOrderBy] = useState<ProductOrderBy>("name");
 
     // Computed Properties
     const visibleProducts = useMemo(() => products,[products]);
-    const hasUnsavedChanges = useMemo(() => products.some(p => p.isEdited || p.isNew || p.isDeleted), [products]);
+    const hasUnsavedChanges = useMemo(() => {
+        const productsChanged = products.some(p => p.isEdited || p.isNew || p.isDeleted);
+        const variantsChanged = Object.values(variantsByProductId).some(variants => variants.some(v => v.isEdited || v.isNew || v.isDeleted));
+        return productsChanged || variantsChanged;
+    }, [products, variantsByProductId]);
     const filteredProducts = useMemo(() => {
         let list = visibleProducts;
         const query = productFilterText.trim();
@@ -242,7 +249,7 @@ export default function ProductDetailsPanel() {
 
     return (
         <PanelShell flexBasis='75%'>
-            <itemDetailsPanelContext.Provider value={{ products, setProducts, selectedProductId, setSelectedProductId, visibleProducts, productFilterText, setProductFilterText, filteredProducts, hasUnsavedChanges, isLoading, setIsLoading, isItemListLoading, setIsItemListLoading, order, setOrder, orderBy, setOrderBy, markDirty, handleProductFieldChange, selectedImageFile, setSelectedImageFile, isUploadingImage, setIsUploadingImage, imageUploadStatus, setImageUploadStatus, variantsByProductId, setVariantsByProductId, reloadProducts, handleUndoProduct }}>
+            <itemDetailsPanelContext.Provider value={{ products, setProducts, selectedProductId, setSelectedProductId, visibleProducts, productFilterText, setProductFilterText, filteredProducts, hasUnsavedChanges, isLoading, setIsLoading, isItemListLoading, setIsItemListLoading, isVariantTableLoading, setIsVariantTableLoading, order, setOrder, orderBy, setOrderBy, markDirty, handleProductFieldChange, selectedImageFile, setSelectedImageFile, isUploadingImage, setIsUploadingImage, imageUploadStatus, setImageUploadStatus, variantsByProductId, setVariantsByProductId, reloadProducts, handleUndoProduct }}>
                 <ProductDetailsPanelLoadingEnclosure />
             </itemDetailsPanelContext.Provider>    
         </PanelShell>
@@ -316,7 +323,7 @@ const productDetailsContext = createContext<IProductDetailsContextAPI | null>(nu
 
 function ProductDetails() {
     return (
-        <productDetailsContext.Provider value={{ magicMinPaneHeight: "calc(100dvh - 350px)", magicMaxPaneHeight: "calc(100dvh - 350px)" }}>
+        <productDetailsContext.Provider value={{ magicMinPaneHeight: "calc(100dvh - 350px)", magicMaxPaneHeight: "calc(100dvh - 294px)" }}>
             <Box sx={{flex: "1 1 100%", display: "flex"}}>
                 <PanelGroup direction="horizontal">
                     <SelectProductPane />
@@ -564,10 +571,11 @@ function ProductInspectorPane() {
 
     return (
         <Panel defaultSize={100 - itemDetailsPanelResizePaneLocationPercentage}>
-            <Box sx={{ minHeight: magicMinPaneHeight, maxHeight: magicMaxPaneHeight, display: "flex", flexDirection: "column" }}>
+            <Box sx={{ minHeight: magicMinPaneHeight, maxHeight: magicMaxPaneHeight, display: "flex", flexDirection: "column", overflowY: "auto" }}>
                 <ProductInspectorToolbar />
                 <ProductInspectorDetails />
                 <ProductInspectorImageTab />
+                <ProductInspectorVariantTable />
             </Box>
         </Panel>
     );
@@ -652,7 +660,7 @@ function ProductInspectorDetails() {
     }
 
     return (
-        <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
+        <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
                 label="Product Name"
                 value={selectedProduct.name}
@@ -817,7 +825,7 @@ function ProductActionPane() {
 
     // Global API
     const globalAPI = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
-    const { hasUnsavedChanges, isLoading, setIsLoading, products, reloadProducts } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
+    const { hasUnsavedChanges, isLoading, setIsLoading, products, reloadProducts, variantsByProductId } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
     const productService = ProductService.getInstance();
 
     // Handlers
@@ -829,18 +837,120 @@ function ProductActionPane() {
         setIsLoading(true);
         try {
             const promises: Promise<any>[] = [];
-            for (const product of products) {
-                if (product.isNew) {
-                    if (!product.isDeleted) {
-                         promises.push(productService.createProduct(product));
+            const tempVariantIdToRealIdMap = new Map<string, string>();
+            const productsToUpdateDefaultVariant: { productId: string, defaultVariantId: string }[] = [];
+
+            // 1. Delete variants
+            for (const [productId, variants] of Object.entries(variantsByProductId)) {
+                for (const variant of variants) {
+                    if (variant.isDeleted && !variant.isNew) {
+                        promises.push(productService.deleteVariant(variant.variantId));
                     }
-                } else if (product.isDeleted) {
-                    promises.push(productService.deleteProduct(product.productId));
-                } else if (product.isEdited) {
-                    promises.push(productService.updateProduct(product.productId, product));
                 }
             }
-            await Promise.allSettled(promises);
+            
+            // 2. Delete products
+            for (const product of products) {
+                if (product.isDeleted && !product.isNew) {
+                    promises.push(productService.deleteProduct(product.productId));
+                }
+            }
+            
+            await Promise.all(promises);
+            promises.length = 0;
+
+            // 3. Create New Products
+            const tempProductIdToRealIdMap = new Map<string, string>();
+            
+            for (const product of products) {
+                if (product.isNew && !product.isDeleted) {
+                    // Check if defaultVariantId is temporary
+                    let productToCreate = { ...product };
+                    const isDefaultVariantNew = product.defaultVariantId?.startsWith('new-');
+                    
+                    if (isDefaultVariantNew) {
+                        delete productToCreate.defaultVariantId;
+                    }
+
+                    const createdProduct = await productService.createProduct(productToCreate);
+                    tempProductIdToRealIdMap.set(product.productId, createdProduct.productId);
+                    
+                    if (isDefaultVariantNew && product.defaultVariantId) {
+                        productsToUpdateDefaultVariant.push({
+                            productId: createdProduct.productId,
+                            defaultVariantId: product.defaultVariantId // This is the temp ID, we'll resolve it later
+                        });
+                    }
+                }
+            }
+
+            // 4. Create New Variants (for both new and existing products)
+            const createVariantPromises: Promise<void>[] = [];
+
+            // Helper to create variant and update map
+            const createVariantAndMap = async (variant: EditableVariant, realProductId: string) => {
+                const { variantId, isNew, isDeleted, isEdited, ...variantData } = variant;
+                variantData.productId = realProductId;
+                const createdVariant = await productService.createVariant(variantData);
+                tempVariantIdToRealIdMap.set(variantId, createdVariant.variantId);
+            };
+
+            for (const product of products) {
+                if (product.isDeleted) continue;
+
+                const realProductId = product.isNew ? tempProductIdToRealIdMap.get(product.productId)! : product.productId;
+                const variants = variantsByProductId[product.productId] || [];
+
+                for (const variant of variants) {
+                    if (variant.isNew && !variant.isDeleted) {
+                        createVariantPromises.push(createVariantAndMap(variant, realProductId));
+                    }
+                }
+            }
+            
+            await Promise.all(createVariantPromises);
+
+            // 5. Update Existing Products & Variants
+            
+            // Update existing products
+            for (const product of products) {
+                if (product.isEdited && !product.isNew && !product.isDeleted) {
+                    let productToUpdate = { ...product };
+                    
+                    // If default variant is new, we need to resolve it
+                    if (product.defaultVariantId?.startsWith('new-')) {
+                        const realVariantId = tempVariantIdToRealIdMap.get(product.defaultVariantId);
+                        if (realVariantId) {
+                            productToUpdate.defaultVariantId = realVariantId;
+                        } else {
+                            delete productToUpdate.defaultVariantId; 
+                        }
+                    }
+                    
+                    promises.push(productService.updateProduct(product.productId, productToUpdate));
+                }
+            }
+
+            // Update existing variants
+             for (const [productId, variants] of Object.entries(variantsByProductId)) {
+                for (const variant of variants) {
+                    if (variant.isEdited && !variant.isNew && !variant.isDeleted) {
+                        const { variantId, isNew, isDeleted, isEdited, ...variantData } = variant;
+                        promises.push(productService.updateVariant(variant.variantId, variantData));
+                    }
+                }
+            }
+            
+            // 6. Apply deferred defaultVariantId updates for New Products
+            for (const item of productsToUpdateDefaultVariant) {
+                const realVariantId = tempVariantIdToRealIdMap.get(item.defaultVariantId);
+                if (realVariantId) {
+                    promises.push(productService.updateDefaultVariant(item.productId, realVariantId));
+                }
+            }
+
+            await Promise.all(promises);
+
             await reloadProducts();
         } catch (error) {
             console.error("Failed to save one or more changes", error); //TODO: maybe we can undo all changes if one fails (might require backend support)
@@ -865,6 +975,213 @@ function ProductActionPane() {
         >
             <Button variant="outlined" onClick={handleCancel} disabled={isLoading}>Cancel</Button>
             <Button variant="contained" onClick={handleOk} disabled={isLoading || !hasUnsavedChanges}>OK</Button>
+        </Box>
+    );
+}
+
+function ProductInspectorVariantTable() {
+    const { selectedProductId, variantsByProductId, setVariantsByProductId, products, handleProductFieldChange, isVariantTableLoading, setIsVariantTableLoading } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
+    const productService = ProductService.getInstance();
+    const isMounted = useIsMounted();
+
+    const selectedProduct = products.find(p => p.productId === selectedProductId);
+    const isDeleted = !!selectedProduct?.isDeleted;
+
+    useEffect(() => {
+        if (selectedProductId && !variantsByProductId[selectedProductId]) {
+            loadVariants(selectedProductId);
+        }
+    }, [selectedProductId]);
+
+    async function loadVariants(productId: string) {
+        if (isMounted.current) {
+            setIsVariantTableLoading(true);
+        }
+        try {
+            const variants = await productService.getVariantsByProductId(productId);
+            if (isMounted.current && variants) {
+                setVariantsByProductId(prev => ({ ...prev, [productId]: variants }));
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            if (isMounted.current) {
+                setIsVariantTableLoading(false);
+            }
+        }
+    }
+
+    if (!selectedProductId) return null;
+
+    const variants = variantsByProductId[selectedProductId] || [];
+    const visibleVariants = variants;
+
+    function handleVariantChange<K extends keyof EditableVariant>(variantId: string, field: K, value: EditableVariant[K]) {
+        setVariantsByProductId(prev => {
+            const currentVariants = prev[selectedProductId!] || [];
+            const updatedVariants = currentVariants.map(v => v.variantId === variantId ? { ...v, [field]: value, isEdited: true } : v);
+            return { ...prev, [selectedProductId!]: updatedVariants };
+        });
+    }
+
+    function handleAddVariant() {
+        const newVariantId = `new-${crypto.randomUUID()}`;
+        const newVariant: EditableVariant = {
+            variantId: newVariantId,
+            productId: selectedProductId!,
+            collectionId: selectedProduct?.collectionId || "",
+            name: "New Variant",
+            price: 0,
+            stock: 0,
+            maximumInOrder: 0,
+            relatedProductIds: [],
+            isNew: true,
+            isEdited: true
+        };
+
+        setVariantsByProductId(prev => {
+            const currentVariants = prev[selectedProductId!] || [];
+            return { ...prev, [selectedProductId!]: [...currentVariants, newVariant] };
+        });
+    }
+
+    function handleDeleteVariant(variantId: string) {
+        setVariantsByProductId(prev => {
+            const currentVariants = prev[selectedProductId!] || [];
+            const variant = currentVariants.find(v => v.variantId === variantId);
+            if (variant?.isNew) {
+                return { ...prev, [selectedProductId!]: currentVariants.filter(v => v.variantId !== variantId) };
+            } else {
+                return { ...prev, [selectedProductId!]: currentVariants.map(v => v.variantId === variantId ? { ...v, isDeleted: true } : v) };
+            }
+        });
+    }
+
+    function handleUndoVariant(variantId: string) {
+        setVariantsByProductId(prev => {
+            const currentVariants = prev[selectedProductId!] || [];
+            return { ...prev, [selectedProductId!]: currentVariants.map(v => v.variantId === variantId ? { ...v, isDeleted: false } : v) };
+        });
+    }
+
+    return (
+        <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2, flexGrow: 1, }}>
+             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="subtitle2">Variants</Typography>
+                <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddVariant}
+                    disabled={isDeleted}
+                >
+                    Add Variant
+                </Button>
+            </Box>
+            {isVariantTableLoading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", flexGrow: 1 }}>
+                    <CircularProgress />
+                </Box>
+            ) : (
+            <TableContainer component={Paper} variant="outlined" sx={{ flexGrow: 1, overflow: "auto" }}>
+                <Table size="small" stickyHeader>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Name</TableCell>
+                            <TableCell align="right">Price</TableCell>
+                            <TableCell align="right">Stock</TableCell>
+                            <TableCell align="right">Max Order</TableCell>
+                            <TableCell align="center">Actions</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {visibleVariants.map((variant) => {
+                            const isVariantDeleted = !!variant.isDeleted;
+                            return (
+                                <TableRow key={variant.variantId} sx={{ opacity: isVariantDeleted ? 0.5 : 1 }}>
+                                    <TableCell>
+                                        <TextField
+                                            value={variant.name}
+                                            onChange={(e) => handleVariantChange(variant.variantId, "name", e.target.value)}
+                                            variant="standard"
+                                            size="small"
+                                            disabled={isVariantDeleted || isDeleted}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <TextField
+                                            value={variant.price}
+                                            onChange={(e) => handleVariantChange(variant.variantId, "price", Number(e.target.value))}
+                                            variant="standard"
+                                            size="small"
+                                            type="number"
+                                            disabled={isVariantDeleted || isDeleted}
+                                            inputProps={{ style: { textAlign: 'right' } }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <TextField
+                                            value={variant.stock}
+                                            onChange={(e) => handleVariantChange(variant.variantId, "stock", Number(e.target.value))}
+                                            variant="standard"
+                                            size="small"
+                                            type="number"
+                                            disabled={isVariantDeleted || isDeleted}
+                                            inputProps={{ style: { textAlign: 'right' } }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <TextField
+                                            value={variant.maximumInOrder ?? ""}
+                                            onChange={(e) => handleVariantChange(variant.variantId, "maximumInOrder", e.target.value === "" ? undefined : Number(e.target.value))}
+                                            variant="standard"
+                                            size="small"
+                                            type="number"
+                                            disabled={isVariantDeleted || isDeleted}
+                                            inputProps={{ style: { textAlign: 'right' } }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                         <Box sx={{ display: "flex", justifyContent: "center" }}>
+                                            <Tooltip title={selectedProduct?.defaultVariantId === variant.variantId ? "Default variant" : "Set as default"}>
+                                                <span>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleProductFieldChange(selectedProduct!.productId, "defaultVariantId", variant.variantId)}
+                                                        disabled={isDeleted || isVariantDeleted}
+                                                        color={selectedProduct?.defaultVariantId === variant.variantId ? "warning" : "default"}
+                                                    >
+                                                        {selectedProduct?.defaultVariantId === variant.variantId ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                            {isVariantDeleted ? (
+                                                <Tooltip title="Undo delete">
+                                                    <IconButton size="small" onClick={() => handleUndoVariant(variant.variantId)} disabled={isDeleted}>
+                                                        <RestoreIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            ) : (
+                                                <Tooltip title="Delete variant">
+                                                    <IconButton size="small" color="error" onClick={() => handleDeleteVariant(variant.variantId)} disabled={isDeleted}>
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                        {visibleVariants.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={5} align="center">No variants</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+            )}
         </Box>
     );
 }
