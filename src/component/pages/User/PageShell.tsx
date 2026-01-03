@@ -28,9 +28,9 @@ export default function PageShell({ pageLabel, showBackButton = false, backTo, c
           key={location.pathname}
           style={{flexGrow: 1, display: "flex"}}
         >
-            <Box sx={{display: "flex", flexGrow: 1}}>
+            <Box sx={{display: "flex", flexGrow: 1 }}>
                 <Container maxWidth="sm" sx={{ py: 4, px: {xs: 0, sm: 3}, flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                    <Card>
+                    <Card sx={{ overflowY: "auto"}}>
                         <CardContent sx={{ p: { xs: 3, sm: 4 }, position: "relative" }}>
                             {showBackButton && (
                                 <IconButton 
