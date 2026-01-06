@@ -1,7 +1,8 @@
 import { App } from 'aws-cdk-lib';
 
-import AuthStack from './stack/AuthStack.cts';
+import AuthStack from './stack/AuthStack';
 import APIStack from './stack/APIStack';
+import AuthApiStack from './stack/AuthApiStack';
 import ProfileStack from './stack/ProfileStack';
 import MemoryStack from './stack/MemoryStack';
 import ProductStack from './stack/ProductStack';
@@ -17,6 +18,9 @@ const env = {
 
 const authStack = new AuthStack(app, Constants.authStackOutputKey, { env });
 const apiStack = new APIStack(app, Constants.apiStackOutputKey, { userPool: authStack.userPool, env });
+
+// Auth-related API endpoints
+new AuthApiStack(app, Constants.authApiStackOutputKey, { apiStack, userPoolClientId: authStack.userPoolClientId, env });
 
 // Create Profile Stack to manage user profiles
 new ProfileStack(app, Constants.profileStackOutputKey, { profilesTable: authStack.profilesTable, apiStack: apiStack, env });

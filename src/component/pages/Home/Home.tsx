@@ -1,6 +1,4 @@
 import React from "react";
-import SearchBar from "../../ui/SearchBar";
-import ImageUploader from "./ImageUploader";
 import { Container, Typography } from "@mui/material";
 // import ImageViewer from "../Admin/ImageViewer";
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { Outlet, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 import { Card, CardActionArea, Box, Typography } from "@mui/material";
 import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';

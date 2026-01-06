@@ -39,6 +39,16 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
     function setLoggedInDetails(userDetails: IUserDetails | null) {
         setLoginDetails(userDetails);
     }
+
+    async function refreshLoggedInDetails() {
+        try {
+            const userDetails = await authService.getCurrentUser(true);
+            setLoginDetails(userDetails);
+        } catch (error) {
+            console.error("Failed to refresh user details", error);
+        }
+    }
+
     async function logout() {
         try {
             await authService.signOut();
@@ -66,7 +76,7 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
     }
 
     return (
-        <appGlobalStateContext.Provider value={{ showMessage, getLoggedInDetails, setLoggedInDetails, logout, favouriteCollections, refreshFavouriteCollections }}>
+        <appGlobalStateContext.Provider value={{ showMessage, getLoggedInDetails, setLoggedInDetails, refreshLoggedInDetails, logout, favouriteCollections, refreshFavouriteCollections }}>
             {children}
         </appGlobalStateContext.Provider>
     );

@@ -1,22 +1,26 @@
 {
-  "ReactAwsEcommerce-MemoryStack": {
-    "ExportsOutputFnGetAttGeneratePresignedUploadUrlFunction32129FC0Arn758B4BC0": "arn:aws:lambda:us-east-1:044336537894:function:GeneratePresignedUploadUrl",
-    "ExportsOutputFnGetAttDeleteImageFunction98837557ArnF41960AC": "arn:aws:lambda:us-east-1:044336537894:function:DeleteImage",
-    "ReactAwsEcommerceMemoryBucketName": "reactawsecommerce-memorys-publicreadmemorybucket97-v599pw93mnrd"
+  "ReactAwsEcommerce-AuthStack": {
+    "ExportsOutputFnGetAttReactAwsEcommerceUserPool179A9025ArnF027E14B": "arn:aws:cognito-idp:us-east-1:044336537894:userpool/us-east-1_Rht47ZbfP",
+    "UserPoolClientId": "60qfm6n08br1ehjdqgb40u6621",
+    "UserPoolId": "us-east-1_Rht47ZbfP",
+    "ExportsOutputRefReactAwsEcommerceUserPoolReactAwsEcommerceUserPoolClient2598305C2BEB1BB0": "60qfm6n08br1ehjdqgb40u6621"
   },
   "ReactAwsEcommerce-ProfileStack": {
     "ExportsOutputFnGetAttProfileAddressFunction382822CDArn7F939DE2": "arn:aws:lambda:us-east-1:044336537894:function:AddressFunction",
     "ExportsOutputFnGetAttAutofillAddressFunction0ED0815FArnB5C9F1C1": "arn:aws:lambda:us-east-1:044336537894:function:AutofillAddressFunction"
   },
-  "ReactAwsEcommerce-AuthStack": {
-    "ExportsOutputFnGetAttReactAwsEcommerceUserPool179A9025ArnF027E14B": "arn:aws:cognito-idp:us-east-1:044336537894:userpool/us-east-1_Rht47ZbfP",
-    "UserPoolClientId": "60qfm6n08br1ehjdqgb40u6621",
-    "UserPoolId": "us-east-1_Rht47ZbfP"
+  "ReactAwsEcommerce-MemoryStack": {
+    "ExportsOutputFnGetAttGeneratePresignedUploadUrlFunction32129FC0Arn758B4BC0": "arn:aws:lambda:us-east-1:044336537894:function:GeneratePresignedUploadUrl",
+    "ExportsOutputFnGetAttDeleteImageFunction98837557ArnF41960AC": "arn:aws:lambda:us-east-1:044336537894:function:DeleteImage",
+    "ReactAwsEcommerceMemoryBucketName": "reactawsecommerce-memorys-publicreadmemorybucket97-v599pw93mnrd"
   },
   "ReactAwsEcommerce-ProductStack": {
     "ExportsOutputFnGetAttProductCollectionFunctionA7F7037CArn3C2BFDA2": "arn:aws:lambda:us-east-1:044336537894:function:ProductCollectionFunction",
     "ExportsOutputFnGetAttProductVariantFunction7E75517DArnEC8A579D": "arn:aws:lambda:us-east-1:044336537894:function:ProductVariantFunction",
     "ExportsOutputFnGetAttProductFunction5AC8A50BArn7F520BC3": "arn:aws:lambda:us-east-1:044336537894:function:ProductFunction"
+  },
+  "ReactAwsEcommerce-AuthApiStack": {
+    "ExportsOutputFnGetAttVerifyPasswordFunction13C3FFA7Arn5EFBD3A1": "arn:aws:lambda:us-east-1:044336537894:function:VerifyPasswordFunction"
   },
   "ReactAwsEcommerce-APIStack": {
     "ReactAwsEcommerceRestAPIGatewayEndpointE2AAA6E0": "https://r1hsmjv98h.execute-api.us-east-1.amazonaws.com/prod/",

@@ -6,6 +6,7 @@ export default class InfrastructureConstants {
     
     // Stack output keys
     static get authStackOutputKey(): string { return `${InfrastructureConstants.projectName}-AuthStack`; }
+    static get authApiStackOutputKey(): string { return `${InfrastructureConstants.projectName}-AuthApiStack`; }
     static get apiStackOutputKey(): string { return `${InfrastructureConstants.projectName}-APIStack`; }
     static get profileStackOutputKey(): string { return `${InfrastructureConstants.projectName}-ProfileStack`; }
     static get apiStackName(): string { return `${InfrastructureConstants.projectName}-APIStack`; }
@@ -51,6 +52,7 @@ export default class InfrastructureConstants {
     static get addressResourceName(): string { return `address`; }
     static get autofillAddressResourceName(): string { return `autofill-address`; }
     static get uploadUrlResourceName(): string { return `upload-url`; }
+    static get verifyPasswordResourceName(): string { return `verify-password`; }
     static get collectionResourceName(): string { return `collection`; }
     static get productResourceName(): string { return `product`; }
     static get productDefaultVariantResourceName(): string { return `product-default-variant`; }

@@ -1,7 +1,6 @@
-import React, {PropsWithChildren, useContext, useEffect, useState} from "react";
-import Box from "@mui/material/Box/Box";
+import React, { useContext, useEffect, useState } from "react";
 import SearchBar from "../ui/SearchBar";
-import { List, ListItem, ListItemButton, ListItemText, useTheme } from "@mui/material";
+import { Box, List, ListItem, ListItemButton, ListItemText, useTheme } from "@mui/material";
 import Constants from "../../Constants";
 import { useNavigate } from "react-router";
 import { appGlobalStateContext } from "../App/AppGlobalStateProvider";
@@ -18,7 +17,7 @@ export interface AppDrawerProps {
  * Shown only in mobile & tablet viewports.
  * @returns a JSX.Element representing the AppDrawer.
  */
-export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen, children }: PropsWithChildren<AppDrawerProps>) {
+export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen }: AppDrawerProps) {
     const theme = useTheme();
     const navigateTo = useNavigate();
     const { favouriteCollections } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;

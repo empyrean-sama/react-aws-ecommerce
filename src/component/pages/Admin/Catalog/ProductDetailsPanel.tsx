@@ -328,7 +328,7 @@ const productDetailsContext = createContext<IProductDetailsContextAPI | null>(nu
 
 function ProductDetails() {
     return (
-        <productDetailsContext.Provider value={{ magicMinPaneHeight: "calc(100dvh - 350px)", magicMaxPaneHeight: "calc(100dvh - 294px)" }}>
+        <productDetailsContext.Provider value={{ magicMinPaneHeight: "calc(100dvh - 350px)", magicMaxPaneHeight: "calc(100dvh - 350px)" }}>
             <Box sx={{flex: "1 1 100%", display: "flex"}}>
                 <PanelGroup direction="horizontal">
                     <SelectProductPane />
@@ -346,7 +346,6 @@ function SelectProductPane() {
     
     // Global API
     const { itemDetailsPanelResizePaneLocationPercentage, setItemDetailsPanelResizePaneLocationPercentage } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
-    const { productFilterText, setProductFilterText } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
 
     return (
         <Panel defaultSize={itemDetailsPanelResizePaneLocationPercentage} onResize={(size) => setItemDetailsPanelResizePaneLocationPercentage(size)}>
@@ -559,8 +558,7 @@ function SelectProductList() {
 function ProductInspectorPane() {
     const { itemDetailsPanelResizePaneLocationPercentage } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
     const { magicMinPaneHeight, magicMaxPaneHeight} = React.useContext(productDetailsContext) as IProductDetailsContextAPI;
-    const { selectedProductId, products, handleProductFieldChange, setProducts, setSelectedProductId } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
-    const { collections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
+    const { selectedProductId, products } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
 
     const selectedProduct = products.find(p => p.productId === selectedProductId);
 
@@ -590,7 +588,7 @@ function ProductInspectorPane() {
 function ProductInspectorToolbar() {
 
     // Global API
-    const { selectedProductId, products, setProducts, setSelectedProductId, handleProductFieldChange, handleUndoProduct } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
+    const { selectedProductId, products, setProducts, setSelectedProductId, handleUndoProduct } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
 
     // Computed
     const selectedProduct = products.find(p => p.productId === selectedProductId);
@@ -1009,7 +1007,7 @@ function ProductActionPane() {
             const productsToUpdateDefaultVariant: { productId: string, defaultVariantId: string }[] = [];
 
             // 1. Delete variants
-            for (const [productId, variants] of Object.entries(variantsByProductId)) {
+            for (const variants of Object.values(variantsByProductId)) {
                 for (const variant of variants) {
                     if (variant.isDeleted && !variant.isNew) {
                         promises.push(productService.deleteVariant(variant.variantId));
@@ -1100,7 +1098,7 @@ function ProductActionPane() {
             }
 
             // Update existing variants
-             for (const [productId, variants] of Object.entries(variantsByProductId)) {
+             for (const variants of Object.values(variantsByProductId)) {
                 for (const variant of variants) {
                     if (variant.isEdited && !variant.isNew && !variant.isDeleted) {
                         const { variantId, isNew, isDeleted, isEdited, ...variantData } = variant;

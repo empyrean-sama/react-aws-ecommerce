@@ -13,6 +13,7 @@ import SignUp from '../pages/User/SignUp';
 import VerifyUsername from '../pages/User/VerifyUsername';
 import ForgotPassword from '../pages/User/ForgotPassword';
 import ForgotPasswordVerify from '../pages/User/ForgotPasswordVerify';
+import CustomizeProfile from '../pages/User/CustomizeProfile';
 import AdminConsole from "../pages/Admin/AdminConsole";
 import AuthService from "../../service/AuthService";
 import CatalogPage from '../pages/Admin/Catalog/CatalogPage';
@@ -57,6 +58,7 @@ export default function AppLayout() {
                 <Route path="verify-username" element={<VerifyUsername />} />
                 <Route path="forgot-password" element={<ForgotPassword />} />
                 <Route path="forgot-password/verify" element={<ForgotPasswordVerify />} />
+                <Route path="profile" element={<CustomizeProfile />} />
             </Route>
             <Route path="*" element={<NotFound />} />
         </Route>

@@ -211,7 +211,6 @@ function Tools() {
 function CollectionPanelCollectionsEnclosure() {
     // Global API
     const catalogPageAPI = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
-    const collectionsPanelAPI = React.useContext(collectionsPanelContext) as ICollectionPanelAPI;
 
     // Magic numbers for height calculation
     const magicMaxHeight = "calc(100dvh - 290px)";
@@ -304,7 +303,7 @@ function CollectionTable({magicMaxHeight, magicMinHeight}: {magicMaxHeight: stri
         return catalogPageAPI.selectedCollections.indexOf(collectionId) !== -1;
     }
     
-    const Rows = filteredSortedCollectionRecords.map((row, index) => {
+    const Rows = filteredSortedCollectionRecords.map((row) => {
         const isItemSelected = isSelected(row.collectionId);
         const labelId = `collections-table-checkbox-${row.collectionId}`;
         return (

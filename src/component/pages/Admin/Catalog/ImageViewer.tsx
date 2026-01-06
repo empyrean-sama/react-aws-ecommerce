@@ -12,7 +12,7 @@ export interface ImageCarouselProps {
 }
 
 export default function ImageViewer(props: ImageCarouselProps) {
-    const { imageUrls, imageWidth, aspectRatio, sx } = props;
+    const { imageUrls, aspectRatio, sx } = props;
     const [activeIndex, setActiveIndex] = useState(0);
 
     // Set the active index to 0 when imageUrls change

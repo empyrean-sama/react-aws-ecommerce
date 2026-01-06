@@ -1,5 +1,5 @@
 import React from 'react';
-import { TextField, Box, Paper, List, ListItemButton, ListItemText, CircularProgress, Fade, TextFieldProps, Typography, InputAdornment } from '@mui/material';
+import { TextField, Box, Paper, List, ListItemButton, ListItemText, CircularProgress, Fade, TextFieldProps, InputAdornment } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { JsonLike } from '../../infrastructure/lambda/Helper';
 

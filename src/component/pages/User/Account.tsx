@@ -3,7 +3,8 @@ import AuthService from "../../../service/AuthService";
 import { useNavigate } from "react-router";
 import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
 import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
-import { Container, Typography, Box, Grid, Tab, Tabs } from "@mui/material";
+import { Container, Typography, Box, Grid, Tab, Tabs, IconButton } from "@mui/material";
+import EditIcon from '@mui/icons-material/Edit';
 import OrderCard from "./OrderCard";
 import AddressPanel from "./AddressPanel";
 
@@ -30,11 +31,18 @@ export default function Account() {
 
     return (
         <Container maxWidth="xl" sx={{ paddingX: { xs: 0, sm: 3 }, marginY: 4, display: "flex", flexDirection: "column" }}>
-            <Typography variant="h1" component="h1" sx={{textAlign: { xs: "center", sm: "left" }, mb: 3}} gutterBottom>Hi {getLoggedInDetails()?.givenName} {getLoggedInDetails()?.familyName},</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, justifyContent: { xs: "center", sm: "space-between" } }}>
+                <Typography variant="h1" component="h1">Hi {getLoggedInDetails()?.givenName} {getLoggedInDetails()?.familyName},</Typography>
+                <IconButton onClick={() => navigateTo("/account/profile")}>
+                    <EditIcon />
+                </IconButton>
+            </Box>
             
             <Tabs
                 value={tabLocation}
-                onChange={(e, newValue) => setTabLocation(newValue)}
+                onChange={(e, newValue) => {
+                    setTabLocation(newValue);
+                }}
                 variant="fullWidth"
                 sx={{ display: {xl: "none"} }}
             >
@@ -45,7 +53,7 @@ export default function Account() {
             <Grid container spacing={2}>
                 <Grid size={{xs: 12, xl: 7}}>
                     <Box sx={{display: { xs: tabLocation === "orders" ? "flex" : "none", xl: "flex" }, flexDirection: 'column', gap: 2}}>
-                        <OrderCard
+                        {/* <OrderCard
                             status="order placed"
                             itemData={[
                                 { name: "Product 1", cost: "50", quantity: "1", totalCost: "50", imageUrl: "https://placehold.co/400" },
@@ -97,15 +105,16 @@ export default function Account() {
                             paymentMode="Cash on Delivery"
                             phoneNumber="+1 234 567 8901"
                             email="simba@example.com"
-                        />
+                        /> */}
+                        <Typography variant="h5" component="p" sx={{ mb: 3 }}>
+                            Orders Under Construction 🚧
+                        </Typography>
                     </Box>
                 </Grid>
                 <Grid size={{xs: 12, xl: 5}} sx={{display: 'flex', justifyContent: "center"}}>
                     <AddressPanel sx={{display: { xs: tabLocation === "addresses" ? "flex" : "none", xl: "flex" }}} />
                 </Grid>
             </Grid>
-            
-            
         </Container>
     );
 }

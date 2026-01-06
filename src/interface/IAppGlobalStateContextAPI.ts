@@ -20,6 +20,11 @@ export default interface IAppGlobalStateContextAPI {
     setLoggedInDetails: (userDetails: IUserDetails | null) => void;
 
     /**
+     * Refreshes the logged in user details from the server
+     */
+    refreshLoggedInDetails: () => Promise<void>;
+
+    /**
      * This method gets the currently logged in user details
      * @returns The logged in user details or null if no user is logged in
      */

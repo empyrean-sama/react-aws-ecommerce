@@ -3,12 +3,9 @@ import { Link, useNavigate } from "react-router";
 import AuthService from "../../../service/AuthService";
 import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
 
-import { Typography, Box, Button, TextField, FormControl, InputLabel, Select, MenuItem, Tooltip } from "@mui/material";
+import { Typography, Box, Button, TextField, Tooltip } from "@mui/material";
 import PageShell from "./PageShell";
 import GetUsername from "./GetUsername";
-
-import GoogleSharpIcon from "../../ui/icons/GoogleSharpIcon";
-import FacebookSharpIcon from '../../ui/icons/FacebookSharpIcon';
 import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
 import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
 

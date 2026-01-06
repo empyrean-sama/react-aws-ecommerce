@@ -68,6 +68,14 @@ export default class OutputParser {
     }
 
     /**
+     * Verify-password endpoint URL.
+     * Used to verify the current user's password without changing the client auth session.
+     */
+    public static get VerifyPasswordEndPointURL(): URL {
+        return new URL(`${this.ApiEndpoint}${Constants.verifyPasswordResourceName}`);
+    }
+
+    /**
      * Get the public S3 bucket name used for memory uploads (public-read).
      */
     public static get MemoryBucketName(): string {

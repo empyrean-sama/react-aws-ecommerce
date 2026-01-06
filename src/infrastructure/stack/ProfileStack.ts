@@ -1,9 +1,8 @@
-import * as Cognito from 'aws-cdk-lib/aws-cognito'; 
 import * as Lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import * as DynamoDB from 'aws-cdk-lib/aws-dynamodb';
 
-import { CfnOutput, Duration, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"; 
+import { Duration, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib"; 
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import Constants from "../InfrastructureConstants";

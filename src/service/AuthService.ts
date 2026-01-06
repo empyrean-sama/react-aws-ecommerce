@@ -4,7 +4,7 @@ import { isEmailValid, isPhoneValid } from "../Helper";
 import ProjectConstants from "../Constants";
 
 import { Amplify } from "aws-amplify";
-import { signUp, SignUpOutput, confirmSignUp, resendSignUpCode, signIn, signOut, getCurrentUser, resetPassword, confirmResetPassword, signInWithRedirect, fetchAuthSession } from "@aws-amplify/auth";
+import { signUp, SignUpOutput, confirmSignUp, resendSignUpCode, signIn, signOut, getCurrentUser, resetPassword, confirmResetPassword, fetchAuthSession, updatePassword, updateUserAttributes } from "@aws-amplify/auth";
 
 import ISignUpInput from "../interface/ISignUpInput";
 import ISignUpOptions from "../interface/ISignUpOptions";
@@ -163,10 +163,10 @@ export default class AuthService {
      * @returns Promise<IUserDetails | null> - user object or null if not signed in
      * ! This will ignore any errors and just return null
      */
-    public async getCurrentUser(): Promise<IUserDetails | null> {
+    public async getCurrentUser(forceRefresh: boolean = false): Promise<IUserDetails | null> {
         try {
             const { username, userId } = await getCurrentUser();
-            const session = await fetchAuthSession();
+            const session = await fetchAuthSession({ forceRefresh });
             
             // Get user attributes from the ID token
             const idToken = session.tokens?.idToken;
@@ -269,6 +269,55 @@ export default class AuthService {
         const emailCheck = isEmailValid(username);
         const normalizedUsername = emailCheck.isValid ? username.trim().toLowerCase() : username.trim();
         await confirmResetPassword({username: normalizedUsername, newPassword, confirmationCode: verificationCode});
+    }
+
+    /**
+     * Updates the user's profile attributes.
+     * @param attributes The attributes to update (e.g., given_name, family_name)
+     */
+    public async updateProfile(oldPassword: string, attributes: { givenName?: string; familyName?: string }): Promise<void> {
+
+		const isPasswordValid = await this.verifyPassword(oldPassword);
+        if (!isPasswordValid) {
+            throw new Error("Current password is incorrect.");
+        }
+
+        const userAttributes: Record<string, string> = {};
+        if (attributes.givenName) userAttributes.given_name = attributes.givenName;
+        if (attributes.familyName) userAttributes.family_name = attributes.familyName;
+        if (Object.keys(userAttributes).length > 0) {
+            await updateUserAttributes({ userAttributes });
+        }
+    }
+
+    /**
+     * Updates the user's password.
+     * @param oldPassword The current password
+     * @param newPassword The new password
+     */
+    public async updatePassword(oldPassword: string, newPassword: string): Promise<void> {
+        await updatePassword({ oldPassword, newPassword });
+    }
+
+    /**
+     * Verify whether the provided password matches the currently signed-in user.
+     *
+     * Cognito/Amplify does not provide a pure client-side "check password" API while
+     * keeping the current session intact. This method calls a protected backend
+     * endpoint that performs a Cognito InitiateAuth and returns { ok: boolean }.
+     */
+    public async verifyPassword(password: string): Promise<boolean> {
+        const resp = await this.authorizedFetch(OutputParser.VerifyPasswordEndPointURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password }),
+        });
+        if (!resp.ok) {
+            const text = await resp.text();
+            throw new Error(text || 'Password verification failed');
+        }
+        const data = await resp.json() as { ok?: boolean };
+        return data.ok === true;
     }
 
     /**
