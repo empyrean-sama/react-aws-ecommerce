@@ -30,17 +30,37 @@ const COLLECTION_FAVOURITE_INDEX = process.env.COLLECTION_FAVOURITE_INDEX;
 
 function getCollectionFromInput(input: any): ICollection | null {
     function isValidCollection(input: any): input is ICollection {
-        return !!input && typeof input.name === 'string' && typeof input.description === 'string';
+        if (!input) return false;
+        if (typeof input.name !== 'string') return false;
+        if (typeof input.description !== 'string') return false;
+        if (typeof input.favouriteStrength !== 'undefined' && typeof input.favouriteStrength !== 'number') return false;
+        return true;
     }
 
     if (!isValidCollection(input)) {
         return null;
     }
+    const favourite = input.favourite === 'true' ? 'true' : 'false';
+    const favouriteStrength = favourite === 'true' && Number.isFinite(input.favouriteStrength)
+        ? Math.max(0, input.favouriteStrength)
+        : 0;
     return {
         name: input.name,
         description: input.description,
-        favourite: input.favourite === 'true' ? 'true' : 'false',
+        favourite,
+        favouriteStrength,
     };
+}
+
+function normalizeFavouriteFields(record: any): ICollectionRecord {
+    const favourite = record?.favourite === 'true' ? 'true' : 'false';
+    const rawStrength = typeof record?.favouriteStrength === 'number' ? record.favouriteStrength : 0;
+    const favouriteStrength = favourite === 'true' && Number.isFinite(rawStrength) ? Math.max(0, rawStrength) : 0;
+    return {
+        ...record,
+        favourite,
+        favouriteStrength,
+    } as ICollectionRecord;
 }
 
 export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
@@ -77,10 +97,10 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
                         KeyConditionExpression: 'favourite = :f',
                         ExpressionAttributeValues: { ':f': { S: 'true' } }
                     }));
-                    items = (queryResp.Items || []).map(i => unmarshall(i) as ICollectionRecord);
+                    items = (queryResp.Items || []).map(i => normalizeFavouriteFields(unmarshall(i) as ICollectionRecord));
                 } else {
                     const scanResp = await ddb.send(new ScanCommand({ TableName: COLLECTION_TABLE }));
-                    items = (scanResp.Items || []).map(i => unmarshall(i) as ICollectionRecord);
+                    items = (scanResp.Items || []).map(i => normalizeFavouriteFields(unmarshall(i) as ICollectionRecord));
                 }
                 return constructResponse(200, items);
             }

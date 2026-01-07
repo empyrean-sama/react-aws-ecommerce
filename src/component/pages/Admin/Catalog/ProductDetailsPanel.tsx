@@ -379,6 +379,7 @@ function SelectProductToolbar() {
             description: "",
             featured: "false",
             favourite: "false",
+            favouriteStrength: 0,
             fields: [],
             imageUrls: [],
             isNew: true,
@@ -635,7 +636,13 @@ function ProductInspectorToolbar() {
                             size="small"
                             aria-label="toggle favourite"
                             disabled={isDeleted}
-                            onClick={() => handleProductFieldChange(selectedProduct.productId, "favourite", selectedProduct.favourite === "true" ? "false" : "true")}
+                            onClick={() => {
+                                const next = selectedProduct.favourite === "true" ? "false" : "true";
+                                handleProductFieldChange(selectedProduct.productId, "favourite", next);
+                                if (next === "false") {
+                                    handleProductFieldChange(selectedProduct.productId, "favouriteStrength", 0);
+                                }
+                            }}
                         >
                             {selectedProduct.favourite === "true" ? <StarIcon fontSize="small" color="warning" /> : <StarBorderIcon fontSize="small" />}
                         </IconButton>
@@ -721,6 +728,19 @@ function ProductInspectorDetails() {
                 collections={collections}
                 onCollectionPick={(collectionId) => handleProductFieldChange(selectedProduct.productId, "collectionId", collectionId)}
                 disabled={isDeleted}
+            />
+            <TextField
+                label="Favourite Strength"
+                type="number"
+                value={selectedProduct.favouriteStrength ?? 0}
+                onChange={(e) => {
+                    const next = Number(e.target.value);
+                    handleProductFieldChange(selectedProduct.productId, "favouriteStrength", Number.isFinite(next) ? next : 0);
+                }}
+                fullWidth
+                size="small"
+                disabled={isDeleted || selectedProduct.favourite !== "true"}
+                slotProps={{ htmlInput: { min: 0, step: 1 } }}
             />
         </Box>
     );

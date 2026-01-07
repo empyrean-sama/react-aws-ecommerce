@@ -42,6 +42,8 @@ function generateProductFromInput(input: any): IProduct | null {
         if (typeof input.featured !== 'undefined' && input.featured !== 'true' && input.featured !== 'false') return false;
         const fav = (input as any).favourite;
         if (typeof fav !== 'undefined' && fav !== 'true' && fav !== 'false') return false;
+        const strength = (input as any).favouriteStrength;
+        if (typeof strength !== 'undefined' && typeof strength !== 'number') return false;
         if (!Array.isArray(input.fields)) return false;
         if (!Array.isArray(input.imageUrls)) return false;
         return true;
@@ -50,10 +52,16 @@ function generateProductFromInput(input: any): IProduct | null {
         return null;
     }
     const favourite = (input as any).favourite;
+    const favouriteStrengthRaw = (input as any).favouriteStrength;
+    const favouriteNormalized = favourite === 'true' ? 'true' : 'false';
+    const favouriteStrength = favouriteNormalized === 'true' && Number.isFinite(favouriteStrengthRaw)
+        ? Math.max(0, favouriteStrengthRaw)
+        : 0;
     return {
         name: input.name,
         featured: input.featured === 'true' ? 'true' : 'false',
-        favourite: favourite === 'true' ? 'true' : 'false',
+        favourite: favouriteNormalized,
+        favouriteStrength,
         fields: input.fields,
         imageUrls: input.imageUrls,
         ...(typeof input.collectionId === 'string' ? { collectionId: input.collectionId } : {}),
@@ -64,10 +72,13 @@ function generateProductFromInput(input: any): IProduct | null {
 
 function normalizeFlags(record: any): IProductRecord {
     const favourite = record?.favourite ?? record?.favourites;
+    const rawStrength = typeof record?.favouriteStrength === 'number' ? record.favouriteStrength : 0;
+    const favouriteNormalized = favourite === 'true' ? 'true' : 'false';
     return {
         ...record,
         featured: record?.featured === 'true' ? 'true' : 'false',
-        favourite: favourite === 'true' ? 'true' : 'false',
+        favourite: favouriteNormalized,
+        favouriteStrength: favouriteNormalized === 'true' && Number.isFinite(rawStrength) ? Math.max(0, rawStrength) : 0,
     } as IProductRecord;
 }
 

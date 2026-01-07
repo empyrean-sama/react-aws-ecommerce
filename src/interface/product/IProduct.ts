@@ -7,6 +7,7 @@ export default interface IProduct {
     defaultVariantId?: string, // Variants are created after product creation, so this is optional (but there is no use for an item with no variants)
     featured: "true" | "false", // Stored as string for DynamoDB GSI compatibility
     favourite: "true" | "false", // Stored as string for DynamoDB GSI compatibility
+    favouriteStrength: number,
     fields: IProductField[], // These are the custom fields defined for the product
     imageUrls: string[], // Images associated with the product
 }

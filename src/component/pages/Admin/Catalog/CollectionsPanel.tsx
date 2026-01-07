@@ -42,6 +42,8 @@ export interface ICollectionPanelAPI {
     setAddModifyCollectionDescription: React.Dispatch<React.SetStateAction<string>>;
     addModifyCollectionFavourite: boolean;
     setAddModifyCollectionFavourite: React.Dispatch<React.SetStateAction<boolean>>;
+    addModifyCollectionFavouriteStrength: number;
+    setAddModifyCollectionFavouriteStrength: React.Dispatch<React.SetStateAction<number>>;
 
     filteredCollections: ICollectionRecord[];
 }
@@ -60,6 +62,7 @@ export default function CollectionsPanel() {
     const [addModifyCollectionName, setAddModifyCollectionName] = useState<string>("");
     const [addModifyCollectionDescription, setAddModifyCollectionDescription] = useState<string>("");
     const [addModifyCollectionFavourite, setAddModifyCollectionFavourite] = useState<boolean>(false);
+    const [addModifyCollectionFavouriteStrength, setAddModifyCollectionFavouriteStrength] = useState<number>(0);
 
     const [addModifyCollectionDialogOpen, setAddModifyCollectionDialogOpen] = useState<boolean>(false);
     const [collectionIdToModify, setCollectionIdToModify] = useState<string | null>(null);
@@ -96,7 +99,7 @@ export default function CollectionsPanel() {
     }, [filterText, contextAPI.collections]);
 
     return (
-        <collectionsPanelContext.Provider value={{ filterText, setFilterText, order, setOrder, orderBy, setOrderBy, addModifyCollectionDialogOpen,setAddModifyCollectionDialogOpen, collectionIdToModify, setCollectionIdToModify, filteredCollections, addModifyCollectionName, setAddModifyCollectionName, addModifyCollectionDescription, setAddModifyCollectionDescription, addModifyCollectionFavourite, setAddModifyCollectionFavourite }}>
+        <collectionsPanelContext.Provider value={{ filterText, setFilterText, order, setOrder, orderBy, setOrderBy, addModifyCollectionDialogOpen,setAddModifyCollectionDialogOpen, collectionIdToModify, setCollectionIdToModify, filteredCollections, addModifyCollectionName, setAddModifyCollectionName, addModifyCollectionDescription, setAddModifyCollectionDescription, addModifyCollectionFavourite, setAddModifyCollectionFavourite, addModifyCollectionFavouriteStrength, setAddModifyCollectionFavouriteStrength }}>
             <PanelShell flexBasis="25%">
                 <Header />
                 <Tools  />
@@ -233,7 +236,7 @@ function CollectionTable({magicMaxHeight, magicMinHeight}: {magicMaxHeight: stri
     
     // Global API
     const catalogPageAPI = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
-    const { filteredCollections, orderBy, order, setOrder, setOrderBy, setAddModifyCollectionDialogOpen, setCollectionIdToModify, setAddModifyCollectionName, setAddModifyCollectionDescription, setAddModifyCollectionFavourite } = React.useContext(collectionsPanelContext) as ICollectionPanelAPI;
+    const { filteredCollections, orderBy, order, setOrder, setOrderBy, setAddModifyCollectionDialogOpen, setCollectionIdToModify, setAddModifyCollectionName, setAddModifyCollectionDescription, setAddModifyCollectionFavourite, setAddModifyCollectionFavouriteStrength } = React.useContext(collectionsPanelContext) as ICollectionPanelAPI;
     const globalAPI = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     // Computed properties
@@ -272,7 +275,8 @@ function CollectionTable({magicMaxHeight, magicMinHeight}: {magicMaxHeight: stri
         const updatedCollection: ICollection = {
             name: collection.name,
             description: collection.description,
-            favourite: newFavouriteStatus
+            favourite: newFavouriteStatus,
+            favouriteStrength: newFavouriteStatus === "true" ? (collection.favouriteStrength ?? 0) : 0
         };
 
         try {
@@ -293,6 +297,7 @@ function CollectionTable({magicMaxHeight, magicMinHeight}: {magicMaxHeight: stri
             setAddModifyCollectionName(collection.name);
             setAddModifyCollectionDescription(collection.description);
             setAddModifyCollectionFavourite(collection.favourite === "true");
+            setAddModifyCollectionFavouriteStrength(collection.favouriteStrength ?? 0);
             setCollectionIdToModify(collectionId);
             setAddModifyCollectionDialogOpen(true);
         }
@@ -408,6 +413,7 @@ function AddModifyCollectionDialog() {
         collectionsPanelAPI.setAddModifyCollectionName("");
         collectionsPanelAPI.setAddModifyCollectionDescription("");
         collectionsPanelAPI.setAddModifyCollectionFavourite(false);
+        collectionsPanelAPI.setAddModifyCollectionFavouriteStrength(0);
         collectionsPanelAPI.setCollectionIdToModify(null);
         collectionsPanelAPI.setAddModifyCollectionDialogOpen(false);
     }
@@ -417,7 +423,8 @@ function AddModifyCollectionDialog() {
         const collection: ICollection = {
             name: collectionsPanelAPI.addModifyCollectionName,
             description: collectionsPanelAPI.addModifyCollectionDescription,
-            favourite: collectionsPanelAPI.addModifyCollectionFavourite ? "true" : "false"
+            favourite: collectionsPanelAPI.addModifyCollectionFavourite ? "true" : "false",
+            favouriteStrength: collectionsPanelAPI.addModifyCollectionFavourite ? (collectionsPanelAPI.addModifyCollectionFavouriteStrength ?? 0) : 0
         };
 
         try {
@@ -481,6 +488,19 @@ function AddModifyCollectionDialog() {
                         label="Mark as Favourite"
                     />
                 </Box>
+                <TextField
+                    margin="dense"
+                    label="Favourite Strength"
+                    type="number"
+                    fullWidth
+                    value={collectionsPanelAPI.addModifyCollectionFavouriteStrength}
+                    onChange={(e) => {
+                        const next = Number(e.target.value);
+                        collectionsPanelAPI.setAddModifyCollectionFavouriteStrength(Number.isFinite(next) ? next : 0);
+                    }}
+                    disabled={!collectionsPanelAPI.addModifyCollectionFavourite}
+                    slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                />
             </DialogContent>
             <DialogActions>
                 <Button onClick={handleClose}>Cancel</Button>
