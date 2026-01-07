@@ -1,23 +1,33 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider, useLoaderData } from 'react-router';
 import { Box, CircularProgress } from '@mui/material';
 
-import Home from "../pages/Home/Home";
 import PageEnclosure from '../pages/PageEnclosure';
-import NotFound from "../pages/Error/NotFound";
-
-import AccountOutlet from '../pages/User/AccountOutlet';
-import Account from '../pages/User/Account';
-import Login from '../pages/User/Login';
-import SignUp from '../pages/User/SignUp';
-import VerifyUsername from '../pages/User/VerifyUsername';
-import ForgotPassword from '../pages/User/ForgotPassword';
-import ForgotPasswordVerify from '../pages/User/ForgotPasswordVerify';
-import CustomizeProfile from '../pages/User/CustomizeProfile';
-import AdminConsole from "../pages/Admin/AdminConsole";
 import AuthService from "../../service/AuthService";
-import CatalogPage from '../pages/Admin/Catalog/CatalogPage';
-import PagePicker from '../pages/Admin/PagePicker';
+
+// Helper to wrap Lazy components in Suspense
+const Loadable = (Component: React.LazyExoticComponent<any>) => (props: any) => (
+    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '50vh' }}><CircularProgress /></Box>}>
+        <Component {...props} />
+    </Suspense>
+);
+
+// Lazy Load Pages
+const Home = Loadable(React.lazy(() => import("../pages/Home/Home")));
+const NotFound = Loadable(React.lazy(() => import("../pages/Error/NotFound")));
+
+const AccountOutlet = Loadable(React.lazy(() => import('../pages/User/AccountOutlet')));
+const Account = Loadable(React.lazy(() => import('../pages/User/Account')));
+const Login = Loadable(React.lazy(() => import('../pages/User/Login')));
+const SignUp = Loadable(React.lazy(() => import('../pages/User/SignUp')));
+const VerifyUsername = Loadable(React.lazy(() => import('../pages/User/VerifyUsername')));
+const ForgotPassword = Loadable(React.lazy(() => import('../pages/User/ForgotPassword')));
+const ForgotPasswordVerify = Loadable(React.lazy(() => import('../pages/User/ForgotPasswordVerify')));
+const CustomizeProfile = Loadable(React.lazy(() => import('../pages/User/CustomizeProfile')));
+
+const AdminConsole = Loadable(React.lazy(() => import("../pages/Admin/AdminConsole")));
+const CatalogPage = Loadable(React.lazy(() => import('../pages/Admin/Catalog/CatalogPage')));
+const PagePicker = Loadable(React.lazy(() => import('../pages/Admin/PagePicker')));
 
 type AdminLoaderResult = { allowed: boolean };
 

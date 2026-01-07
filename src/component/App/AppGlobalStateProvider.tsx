@@ -76,7 +76,7 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
     }
 
     return (
-        <appGlobalStateContext.Provider value={{ showMessage, getLoggedInDetails, setLoggedInDetails, refreshLoggedInDetails, logout, favouriteCollections, refreshFavouriteCollections }}>
+        <appGlobalStateContext.Provider value={{ authService, showMessage, getLoggedInDetails, setLoggedInDetails, refreshLoggedInDetails, logout, favouriteCollections, refreshFavouriteCollections }}>
             {children}
         </appGlobalStateContext.Provider>
     );

@@ -1,19 +1,20 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { TextField, Button, Box, Typography, Divider, InputAdornment, IconButton } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
-import AuthService from "../../../service/AuthService";
-import PageShell from "./PageShell";
-import { isFirstNameValid, isLastNameValid, isPasswordValid } from "../../../Helper";
-
 import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
+
+import { TextField, Button, Box, Typography, Divider, InputAdornment, IconButton } from "@mui/material";
+import PageShell from "./PageShell";
+
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+
+import { isFirstNameValid, isLastNameValid, isPasswordValid } from "../../../Helper";
 import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
 import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
 
 export default function CustomizeProfile() {
     const navigateTo = useNavigate();
-    const authService = AuthService.getInstance();
-    const { showMessage, refreshLoggedInDetails } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { authService, showMessage, refreshLoggedInDetails } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     // Form State
     const [givenName, setGivenName] = useState("");

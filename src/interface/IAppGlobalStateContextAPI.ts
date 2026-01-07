@@ -1,8 +1,14 @@
 import ESnackbarMsgVariant from "../enum/ESnackbarMsgVariant";
 import IUserDetails from "./IUserDetails";
 import ICollectionRecord from "./product/ICollectionRecord";
+import AuthService from "../service/AuthService";
 
 export default interface IAppGlobalStateContextAPI {
+    /**
+     * The authentication service instance
+     */
+    authService: AuthService;
+
     /**
      * Use to show a snackbar message
      * @param msg The message to display in the snackbar
