@@ -8,7 +8,8 @@ import PageShell from './PageShell';
 
 import IAppGlobalStateContextAPI from '../../../interface/IAppGlobalStateContextAPI';
 import ESnackbarMsgVariant from '../../../enum/ESnackbarMsgVariant';
-import { isUsernameValid } from '../../../Helper';
+import { getErrorMessage, isUsernameValid } from '../../../Helper';
+import UserNotVerifiedException from '../../../error/UserNotVerifiedException';
 
 export default function ForgotPassword() {
     // State variables
@@ -32,9 +33,12 @@ export default function ForgotPassword() {
                 showMessage('Reset code sent successfully', ESnackbarMsgVariant.success);
                 navigate('/account/forgot-password/verify', { state: { username: username.trim() }, replace: true });
             } catch (error) {
-                if(error instanceof Error) {
-                    setUsernameErrorMessage(error.message);
+                if(error instanceof UserNotVerifiedException) {
+                    navigate('/account/verify-username', { state: { username: username.trim() }, replace: true });
+                    return;
                 }
+                const message = getErrorMessage(error);
+                setUsernameErrorMessage(message);
             } finally {
                 setLoading(false);
             }

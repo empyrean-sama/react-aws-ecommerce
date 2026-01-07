@@ -256,7 +256,16 @@ export default class AuthService {
     public async resetPassword(username: string): Promise<void> {
         const emailCheck = isEmailValid(username);
         const normalizedUsername = emailCheck.isValid ? username.trim().toLowerCase() : username.trim();
-        await resetPassword({username: normalizedUsername});
+
+        try {
+            await resetPassword({username: normalizedUsername});
+        } catch (error: unknown) {
+            const name = (error as { name?: unknown })?.name;
+            if (name === 'InvalidParameterException' ) {
+                throw new UserNotVerifiedException('Your account is not verified yet. Please verify your account first.');
+            }
+            throw error;
+        }
     }
 
     /**
