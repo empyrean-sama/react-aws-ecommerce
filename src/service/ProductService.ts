@@ -171,6 +171,38 @@ export default class ProductService {
     }
 
     /**
+     * Get all featured products across the backend.
+     * @returns An array of product records or null if request failed
+     */
+    public async getFeaturedProducts(): Promise<IProductRecord[] | null> {
+        const url = new URL(OutputParser.ProductsEndPointURL);
+        url.searchParams.set('featured', 'true');
+        const resp = await fetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined);
+        if (!resp.ok) {
+            return null;
+        }
+        return (json as IProductRecord[]) ?? [];
+    }
+
+    /**
+     * Get favourite products within a specific collection.
+     * @param collectionId The collection to query
+     * @returns An array of product records or null if request failed
+     */
+    public async getFavouriteProductsByCollectionId(collectionId: string): Promise<IProductRecord[] | null> {
+        const url = new URL(OutputParser.ProductsEndPointURL);
+        url.searchParams.set('collectionId', collectionId);
+        url.searchParams.set('favourite', 'true');
+        const resp = await fetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined);
+        if (!resp.ok) {
+            return null;
+        }
+        return (json as IProductRecord[]) ?? [];
+    }
+
+    /**
      * Create a new product in the backend service.
      * @param product: The product data to create
      * @returns The created product record

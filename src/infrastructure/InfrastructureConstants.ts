@@ -2,7 +2,7 @@ export default class InfrastructureConstants {
     
     // Project wide constants
     static get projectName(): string { return "ReactAwsEcommerce"; }
-    static get region(): string { return "us-east-1"; }
+    static get region(): string { return "ap-south-1"; }
     
     // Stack output keys
     static get authStackOutputKey(): string { return `${InfrastructureConstants.projectName}-AuthStack`; }
@@ -35,6 +35,8 @@ export default class InfrastructureConstants {
     static get collectionTableName(): string { return `${InfrastructureConstants.projectName}-collections`; }
     static get collectionGSINameOnFavourite(): string { return `FavouriteIndex`; }
     static get productGSINameOnCollectionId(): string { return `CollectionIdIndex`; }
+    static get productGSINameOnFeatured(): string { return `FeaturedIndex`; }
+    static get productGSINameOnCollectionFavourite(): string { return `CollectionFavouriteIndex`; }
     static get variantGSINameOnProductId(): string { return `ProductIdIndex`; }
     
     // Product Stack output key (for consistency)

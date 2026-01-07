@@ -2,7 +2,7 @@
  * Products Lambda function
  *
  * Admin-only write operations; read allowed to non-admin users.
- * - GET: fetch by productId or list by collectionId
+ * - GET: fetch by productId, list by collectionId, list featured products, or list favourite products within a collection
  * - POST: create new product (admin only)
  * - PUT: update existing product (admin only)
  * - DELETE: delete product and all existing variants of it (admin only)
@@ -10,6 +10,8 @@
  * API examples
  * - GET /product?productId={id}
  * - GET /product?collectionId={cid}
+ * - GET /product?featured=true
+ * - GET /product?collectionId={cid}&favourite=true
  * - POST /product { product: IProduct }
  * - PUT /product { productId: string, product: IProduct }
  * - PUT /product-default-variant { productId: string, defaultVariantId: string }
@@ -31,12 +33,15 @@ const PRODUCT_TABLE = process.env.PRODUCT_TABLE;
 const VARIANT_TABLE = process.env.VARIANT_TABLE;
 
 function generateProductFromInput(input: any): IProduct | null {
-    function isValidItem(input: any): input is IProduct {
+    function isValidItem(input: any): input is Partial<IProduct> & Pick<IProduct, 'name' | 'fields' | 'imageUrls'> {
         if (!input || typeof input !== 'object') return false;
         if (typeof input.name !== 'string') return false;
         if (typeof input.description !== 'undefined' && typeof input.description !== 'string') return false;
         if (typeof input.collectionId !== 'undefined' && typeof input.collectionId !== 'string') return false;
         if (typeof input.defaultVariantId !== 'undefined' && typeof input.defaultVariantId !== 'string') return false;
+        if (typeof input.featured !== 'undefined' && input.featured !== 'true' && input.featured !== 'false') return false;
+        const fav = (input as any).favourite;
+        if (typeof fav !== 'undefined' && fav !== 'true' && fav !== 'false') return false;
         if (!Array.isArray(input.fields)) return false;
         if (!Array.isArray(input.imageUrls)) return false;
         return true;
@@ -44,14 +49,26 @@ function generateProductFromInput(input: any): IProduct | null {
     if (!isValidItem(input)) {
         return null;
     }
+    const favourite = (input as any).favourite;
     return {
         name: input.name,
+        featured: input.featured === 'true' ? 'true' : 'false',
+        favourite: favourite === 'true' ? 'true' : 'false',
         fields: input.fields,
         imageUrls: input.imageUrls,
         ...(typeof input.collectionId === 'string' ? { collectionId: input.collectionId } : {}),
         ...(typeof input.description === 'string' ? { description: input.description } : {}),
         ...(typeof input.defaultVariantId === 'string' ? { defaultVariantId: input.defaultVariantId } : {})
     };
+}
+
+function normalizeFlags(record: any): IProductRecord {
+    const favourite = record?.favourite ?? record?.favourites;
+    return {
+        ...record,
+        featured: record?.featured === 'true' ? 'true' : 'false',
+        favourite: favourite === 'true' ? 'true' : 'false',
+    } as IProductRecord;
 }
 
 export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
@@ -119,18 +136,51 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
                 const qs = event.queryStringParameters || {};
                 const productId = qs.productId;
                 const collectionId = qs.collectionId;
+                const featured = qs.featured;
+                const favourite = qs.favourite;
 
                 if (productId) {
                     const resp = await ddb.send(new GetItemCommand({
                         TableName: PRODUCT_TABLE,
                         Key: marshall({ productId })
                     }));
-                    const item = resp.Item ? (unmarshall(resp.Item) as IProductRecord) : undefined;
+                    const item = resp.Item ? normalizeFlags(unmarshall(resp.Item) as IProductRecord) : undefined;
                     if (!item) {
                         return constructResponse(404, { message: 'Item not found' });
                     }
                     return constructResponse(200, item);
                 }
+
+                // Featured products across entire backend
+                if (featured) {
+                    if (featured !== 'true') {
+                        return constructResponse(400, { message: 'featured must be true' });
+                    }
+                    const queryResp = await ddb.send(new QueryCommand({
+                        TableName: PRODUCT_TABLE,
+                        IndexName: Constants.productGSINameOnFeatured,
+                        KeyConditionExpression: 'featured = :featured',
+                        ExpressionAttributeValues: marshall({ ':featured': 'true' })
+                    }));
+                    const items = (queryResp.Items || []).map(i => normalizeFlags(unmarshall(i) as IProductRecord));
+                    return constructResponse(200, items);
+                }
+
+                // Favourite products within a specific collection
+                if (collectionId && favourite) {
+                    if (favourite !== 'true') {
+                        return constructResponse(400, { message: 'favourite must be true' });
+                    }
+                    const queryResp = await ddb.send(new QueryCommand({
+                        TableName: PRODUCT_TABLE,
+                        IndexName: Constants.productGSINameOnCollectionFavourite,
+                        KeyConditionExpression: 'collectionId = :cid AND favourite = :fav',
+                        ExpressionAttributeValues: marshall({ ':cid': collectionId, ':fav': 'true' })
+                    }));
+                    const items = (queryResp.Items || []).map(i => normalizeFlags(unmarshall(i) as IProductRecord));
+                    return constructResponse(200, items);
+                }
+
                 if (collectionId) {
                     const queryResp = await ddb.send(new QueryCommand({
                         TableName: PRODUCT_TABLE,
@@ -138,10 +188,10 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
                         KeyConditionExpression: 'collectionId = :cid',
                         ExpressionAttributeValues: marshall({ ':cid': collectionId })
                     }));
-                    const items = (queryResp.Items || []).map(i => unmarshall(i) as IProductRecord);
+                    const items = (queryResp.Items || []).map(i => normalizeFlags(unmarshall(i) as IProductRecord));
                     return constructResponse(200, items);
                 }
-                return constructResponse(400, { message: 'Provide productId or collectionId' });
+                return constructResponse(400, { message: 'Provide productId, featured=true, collectionId, or collectionId with favourite=true' });
             }
             case 'POST': {
                 if (!isAdmin(event)) {

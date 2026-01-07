@@ -42,6 +42,16 @@ export default class ProductStack extends Stack {
 			indexName: Constants.productGSINameOnCollectionId,
 			partitionKey: { name: 'collectionId', type: DynamoDB.AttributeType.STRING },
 		});
+		this._productTable.addGlobalSecondaryIndex({
+			indexName: Constants.productGSINameOnFeatured,
+			partitionKey: { name: 'featured', type: DynamoDB.AttributeType.STRING },
+			sortKey: { name: 'productId', type: DynamoDB.AttributeType.STRING },
+		});
+		this._productTable.addGlobalSecondaryIndex({
+			indexName: Constants.productGSINameOnCollectionFavourite,
+			partitionKey: { name: 'collectionId', type: DynamoDB.AttributeType.STRING },
+			sortKey: { name: 'favourite', type: DynamoDB.AttributeType.STRING },
+		});
 
 		this._variantTable = new DynamoDB.Table(this, Constants.variantTableId, {
 			tableName: Constants.variantTableName,

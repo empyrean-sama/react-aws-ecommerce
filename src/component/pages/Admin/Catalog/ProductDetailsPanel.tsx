@@ -12,6 +12,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import Close from '@mui/icons-material/Close';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import AttachMoneyOutlinedIcon from '@mui/icons-material/AttachMoneyOutlined';
 import Fuse from "fuse.js";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import RestoreIcon from '@mui/icons-material/Restore';
@@ -375,6 +377,8 @@ function SelectProductToolbar() {
             collectionId: selectedCollections[0] || "",
             name: "New Product",
             description: "",
+            featured: "false",
+            favourite: "false",
             fields: [],
             imageUrls: [],
             isNew: true,
@@ -588,7 +592,7 @@ function ProductInspectorPane() {
 function ProductInspectorToolbar() {
 
     // Global API
-    const { selectedProductId, products, setProducts, setSelectedProductId, handleUndoProduct } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
+    const { selectedProductId, products, setProducts, setSelectedProductId, handleUndoProduct, handleProductFieldChange } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
 
     // Computed
     const selectedProduct = products.find(p => p.productId === selectedProductId);
@@ -623,28 +627,57 @@ function ProductInspectorToolbar() {
     }
 
     return (
-        <Toolbar variant="dense" sx={{ borderBottom: 1, borderColor: 'divider', justifyContent: 'flex-end', gap: 1 }}>
-            <Tooltip title="Clone item">
-                <span>
-                    <IconButton size="small" onClick={handleClone} disabled={isDeleted}>
-                        <ContentCopyIcon fontSize="small" />
-                    </IconButton>
-                </span>
-            </Tooltip>
-            <Tooltip title="Undo changes">
-                <span>
-                    <IconButton size="small" onClick={() => handleUndoProduct(selectedProduct.productId)} disabled={!isDeleted && !selectedProduct.isEdited && !selectedProduct.isNew}>
-                        <RestoreIcon fontSize="small" />
-                    </IconButton>
-                </span>
-            </Tooltip>
-            <Tooltip title="Delete item">
-                <span>
-                    <IconButton size="small" color="error" onClick={handleDelete} disabled={isDeleted}>
-                        <DeleteIcon fontSize="small" />
-                    </IconButton>
-                </span>
-            </Tooltip>
+        <Toolbar variant="dense" sx={{ borderBottom: 1, borderColor: 'divider', justifyContent: 'space-between', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Tooltip title={selectedProduct.favourite === "true" ? "Remove from favourites" : "Add to favourites"}>
+                    <span>
+                        <IconButton
+                            size="small"
+                            aria-label="toggle favourite"
+                            disabled={isDeleted}
+                            onClick={() => handleProductFieldChange(selectedProduct.productId, "favourite", selectedProduct.favourite === "true" ? "false" : "true")}
+                        >
+                            {selectedProduct.favourite === "true" ? <StarIcon fontSize="small" color="warning" /> : <StarBorderIcon fontSize="small" />}
+                        </IconButton>
+                    </span>
+                </Tooltip>
+                <Tooltip title={selectedProduct.featured === "true" ? "Remove featured" : "Mark as featured"}>
+                    <span>
+                        <IconButton
+                            size="small"
+                            aria-label="toggle featured"
+                            disabled={isDeleted}
+                            onClick={() => handleProductFieldChange(selectedProduct.productId, "featured", selectedProduct.featured === "true" ? "false" : "true")}
+                        >
+                            {selectedProduct.featured === "true" ? <AttachMoneyIcon fontSize="small" color="success" /> : <AttachMoneyOutlinedIcon fontSize="small" />}
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Tooltip title="Clone item">
+                    <span>
+                        <IconButton size="small" onClick={handleClone} disabled={isDeleted}>
+                            <ContentCopyIcon fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+                <Tooltip title="Undo changes">
+                    <span>
+                        <IconButton size="small" onClick={() => handleUndoProduct(selectedProduct.productId)} disabled={!isDeleted && !selectedProduct.isEdited && !selectedProduct.isNew}>
+                            <RestoreIcon fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+                <Tooltip title="Delete item">
+                    <span>
+                        <IconButton size="small" color="error" onClick={handleDelete} disabled={isDeleted}>
+                            <DeleteIcon fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            </Box>
         </Toolbar>
     );
 }
