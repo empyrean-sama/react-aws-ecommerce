@@ -379,6 +379,7 @@ function SelectProductToolbar() {
             description: "",
             tags: [],
             featured: "false",
+            featuredStrength: 0,
             favourite: "false",
             favouriteStrength: 0,
             fields: [],
@@ -655,7 +656,13 @@ function ProductInspectorToolbar() {
                             size="small"
                             aria-label="toggle featured"
                             disabled={isDeleted}
-                            onClick={() => handleProductFieldChange(selectedProduct.productId, "featured", selectedProduct.featured === "true" ? "false" : "true")}
+                            onClick={() => {
+                                const next = selectedProduct.featured === "true" ? "false" : "true";
+                                handleProductFieldChange(selectedProduct.productId, "featured", next);
+                                if (next === "false") {
+                                    handleProductFieldChange(selectedProduct.productId, "featuredStrength", 0);
+                                }
+                            }}
                         >
                             {selectedProduct.featured === "true" ? <AttachMoneyIcon fontSize="small" color="success" /> : <AttachMoneyOutlinedIcon fontSize="small" />}
                         </IconButton>
@@ -819,6 +826,19 @@ function ProductInspectorDetails() {
                 fullWidth
                 size="small"
                 disabled={isDeleted || selectedProduct.favourite !== "true"}
+                slotProps={{ htmlInput: { min: 0, step: 1 } }}
+            />
+            <TextField
+                label="Featured Strength"
+                type="number"
+                value={selectedProduct.featuredStrength ?? 0}
+                onChange={(e) => {
+                    const next = Number(e.target.value);
+                    handleProductFieldChange(selectedProduct.productId, "featuredStrength", Number.isFinite(next) ? next : 0);
+                }}
+                fullWidth
+                size="small"
+                disabled={isDeleted || selectedProduct.featured !== "true"}
                 slotProps={{ htmlInput: { min: 0, step: 1 } }}
             />
         </Box>

@@ -72,6 +72,8 @@ function generateProductFromInput(input: any): IProduct | null {
             if (tags.some((t: any) => typeof t !== 'string')) return false;
         }
         if (typeof input.featured !== 'undefined' && input.featured !== 'true' && input.featured !== 'false') return false;
+        const featuredStrength = (input as any).featuredStrength;
+        if (typeof featuredStrength !== 'undefined' && typeof featuredStrength !== 'number') return false;
         const fav = (input as any).favourite;
         if (typeof fav !== 'undefined' && fav !== 'true' && fav !== 'false') return false;
         const strength = (input as any).favouriteStrength;
@@ -89,9 +91,18 @@ function generateProductFromInput(input: any): IProduct | null {
     const favouriteStrength = favouriteNormalized === 'true' && Number.isFinite(favouriteStrengthRaw)
         ? Math.max(0, favouriteStrengthRaw)
         : 0;
+    
+    const featured = (input as any).featured;
+    const featuredStrengthRaw = (input as any).featuredStrength;
+    const featuredNormalized = featured === 'true' ? 'true' : 'false';
+    const featuredStrength = featuredNormalized === 'true' && Number.isFinite(featuredStrengthRaw)
+        ? Math.max(0, featuredStrengthRaw)
+        : 0;
+
     return {
         name: input.name,
-        featured: input.featured === 'true' ? 'true' : 'false',
+        featured: featuredNormalized,
+        featuredStrength,
         favourite: favouriteNormalized,
         favouriteStrength,
         tags: normalizeTags((input as any).tags),
@@ -105,13 +116,17 @@ function generateProductFromInput(input: any): IProduct | null {
 
 function normalizeProductRecord(record: any): IProductRecord {
     const favourite = record?.favourite ?? record?.favourites;
-    const rawStrength = typeof record?.favouriteStrength === 'number' ? record.favouriteStrength : 0;
+    const rawFavouriteStrength = typeof record?.favouriteStrength === 'number' ? record.favouriteStrength : 0;
     const favouriteNormalized = favourite === 'true' ? 'true' : 'false';
+
+    const rawFeaturedStrength = typeof record?.featuredStrength === 'number' ? record.featuredStrength : 0;
+    
     return {
         ...record,
         featured: record?.featured === 'true' ? 'true' : 'false',
+        featuredStrength: record?.featured === 'true' && Number.isFinite(rawFeaturedStrength) ? Math.max(0, rawFeaturedStrength) : 0,
         favourite: favouriteNormalized,
-        favouriteStrength: favouriteNormalized === 'true' && Number.isFinite(rawStrength) ? Math.max(0, rawStrength) : 0,
+        favouriteStrength: favouriteNormalized === 'true' && Number.isFinite(rawFavouriteStrength) ? Math.max(0, rawFavouriteStrength) : 0,
         tags: normalizeTags(record?.tags),
     } as IProductRecord;
 }

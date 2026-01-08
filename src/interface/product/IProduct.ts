@@ -7,6 +7,7 @@ export default interface IProduct {
     defaultVariantId?: string, // Variants are created after product creation, so this is optional (but there is no use for an item with no variants)
     tags?: string[], // Free-form tags used for filtering and grouping
     featured: "true" | "false", // Stored as string for DynamoDB GSI compatibility
+    featuredStrength: number,
     favourite: "true" | "false", // Stored as string for DynamoDB GSI compatibility
     favouriteStrength: number,
     fields: IProductField[], // These are the custom fields defined for the product
