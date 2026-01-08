@@ -3,7 +3,7 @@ import React, { createContext, useMemo, useState, useContext, useEffect } from "
 import IProductRecord from "../../../../interface/product/IProductRecord";
 import IProductVariantRecord from "../../../../interface/product/IProductVariantRecord";
 import PanelShell from "./PanelShell";
-import { Box, Button, Chip, CircularProgress, IconButton, InputAdornment, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, TextField, Toolbar, Tooltip, Typography, alpha, LinearProgress } from "@mui/material";
+import { Box, Button, Chip, CircularProgress, IconButton, InputAdornment, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, TextField, Toolbar, Tooltip, Typography, alpha, LinearProgress, Autocomplete } from "@mui/material";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 import AddIcon from '@mui/icons-material/Add';
@@ -377,6 +377,7 @@ function SelectProductToolbar() {
             collectionId: selectedCollections[0] || "",
             name: "New Product",
             description: "",
+            tags: [],
             featured: "false",
             favourite: "false",
             favouriteStrength: 0,
@@ -694,13 +695,45 @@ function ProductInspectorDetails() {
     // Global API
     const { collections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
     const { selectedProductId, products, handleProductFieldChange } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
+    const productService = ProductService.getInstance();
 
     // Computed
     const selectedProduct = products.find(p => p.productId === selectedProductId);
     const isDeleted = !!selectedProduct?.isDeleted;
 
+    // State
+    const [tagInput, setTagInput] = React.useState("");
+    const [availableTags, setAvailableTags] = React.useState<string[]>([]);
+    
+    // Load available tags when collection changes
+    React.useEffect(() => {
+        if (selectedProduct?.collectionId) {
+            productService.getUniqueTagsByCollectionId(selectedProduct.collectionId)
+                .then(tags => {
+                    if (tags) {
+                        setAvailableTags(tags);
+                    }
+                })
+                .catch(err => console.error('Failed to load tags:', err));
+        }
+    }, [selectedProduct?.collectionId, productService]);
+
     if(!selectedProduct) {
         return null;
+    }
+
+    const tags = Array.isArray(selectedProduct.tags) ? selectedProduct.tags : [];
+
+    function handleAddTag(tagValue?: string) {
+        const newTag = (tagValue || tagInput).trim().toLowerCase();
+        if (newTag && !tags.includes(newTag)) {
+            handleProductFieldChange(selectedProduct!.productId, "tags", [...tags, newTag] as any);
+            setTagInput("");
+        }
+    }
+
+    function handleDeleteTag(tagToDelete: string) {
+        handleProductFieldChange(selectedProduct!.productId, "tags", tags.filter(t => t !== tagToDelete) as any);
     }
 
     return (
@@ -723,6 +756,52 @@ function ProductInspectorDetails() {
                 size="small"
                 disabled={isDeleted}
             />
+            <Box>
+                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Tags</Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "flex-start" }}>
+                    {tags.map((tag) => (
+                        <Chip
+                            key={tag}
+                            label={tag}
+                            onDelete={isDeleted ? undefined : () => handleDeleteTag(tag)}
+                            size="small"
+                        />
+                    ))}
+                    <Autocomplete
+                        freeSolo
+                        options={availableTags.filter(t => !tags.includes(t))}
+                        inputValue={tagInput}
+                        onInputChange={(_, newInputValue, reason) => {
+                            if (reason !== 'reset') {
+                                setTagInput(newInputValue);
+                            }
+                        }}
+                        onChange={(_, value) => {
+                            if (value && typeof value === 'string') {
+                                handleAddTag(value);
+                            }
+                        }}
+                        disabled={isDeleted}
+                        size="small"
+                        sx={{ minWidth: 150, maxWidth: 200 }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Add tag..."
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && tagInput.trim()) {
+                                        e.preventDefault();
+                                        handleAddTag();
+                                    }
+                                }}
+                            />
+                        )}
+                    />
+                </Box>
+                <Typography variant="caption" color="text.secondary">
+                    Start typing to see suggestions. Press Enter to add. Click × to remove.
+                </Typography>
+            </Box>
             <PickCollection
                 currentCollectionId={selectedProduct.collectionId}
                 collections={collections}

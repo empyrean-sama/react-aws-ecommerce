@@ -171,6 +171,38 @@ export default class ProductService {
     }
 
     /**
+     * Get all products within a collection that contain a specific tag.
+     * @param collectionId The collection to query
+     * @param tag The tag to filter by (case-insensitive on the backend)
+     */
+    public async getProductsByCollectionIdAndTag(collectionId: string, tag: string): Promise<IProductRecord[] | null> {
+        const url = new URL(OutputParser.ProductsEndPointURL);
+        url.searchParams.set('collectionId', collectionId);
+        url.searchParams.set('tag', tag);
+        const resp = await fetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined);
+        if (!resp.ok) {
+            return null;
+        }
+        return (json as IProductRecord[]) ?? [];
+    }
+
+    /**
+     * List all unique tags across products in a given collection.
+     * @param collectionId The collection to aggregate tags for
+     */
+    public async getUniqueTagsByCollectionId(collectionId: string): Promise<string[] | null> {
+        const url = new URL(OutputParser.ProductTagsEndPointURL);
+        url.searchParams.set('collectionId', collectionId);
+        const resp = await fetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined);
+        if (!resp.ok) {
+            return null;
+        }
+        return (json as string[]) ?? [];
+    }
+
+    /**
      * Get all featured products across the backend.
      * @returns An array of product records or null if request failed
      */

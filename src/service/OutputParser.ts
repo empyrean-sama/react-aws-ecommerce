@@ -93,6 +93,9 @@ export default class OutputParser {
     public static get ProductsEndPointURL(): string {
         return `${this.ApiEndpoint}${Constants.productResourceName}`;
     }
+    public static get ProductTagsEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.productTagsResourceName}`;
+    }
     public static get ProductDefaultVariantEndPointURL(): string {
         return `${this.ApiEndpoint}${Constants.productDefaultVariantResourceName}`;
     }

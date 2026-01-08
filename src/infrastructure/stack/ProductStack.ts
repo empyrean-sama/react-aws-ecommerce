@@ -103,6 +103,8 @@ export default class ProductStack extends Stack {
 		props.apiStack.addMethodOnResource('product', 'POST', productIntegration);
 		props.apiStack.addMethodOnResource('product', 'PUT', productIntegration);
 		props.apiStack.addMethodOnResource('product', 'DELETE', productIntegration);
+		// Tags endpoint (read-only)
+		props.apiStack.addMethodOnResource(Constants.productTagsResourceName, 'GET', productIntegration, false);
 		// Special endpoint for default variant updates
 		props.apiStack.addMethodOnResource('product-default-variant', 'PUT', productIntegration);
 

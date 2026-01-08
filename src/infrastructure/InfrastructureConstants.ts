@@ -57,6 +57,7 @@ export default class InfrastructureConstants {
     static get verifyPasswordResourceName(): string { return `verify-password`; }
     static get collectionResourceName(): string { return `collection`; }
     static get productResourceName(): string { return `product`; }
+    static get productTagsResourceName(): string { return `product-tags`; }
     static get productDefaultVariantResourceName(): string { return `product-default-variant`; }
     static get variantResourceName(): string { return `variant`; }
     static get imageResourceName(): string { return `image`; }
