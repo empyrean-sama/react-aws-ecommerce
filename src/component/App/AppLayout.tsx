@@ -7,7 +7,7 @@ import AuthService from "../../service/AuthService";
 
 // Helper to wrap Lazy components in Suspense
 const Loadable = (Component: React.LazyExoticComponent<any>) => (props: any) => (
-    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '50vh' }}><CircularProgress /></Box>}>
+    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100dvh', width: "100dvw" }}><CircularProgress /></Box>}>
         <Component {...props} />
     </Suspense>
 );
@@ -55,7 +55,7 @@ function AdminRoute() {
 
 export default function AppLayout() {
     const router = createBrowserRouter(createRoutesFromElements(
-        <Route path="/" element={<PageEnclosure />} hydrateFallbackElement={<Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}><CircularProgress /></Box>}>
+        <Route path="/" element={<PageEnclosure />} hydrateFallbackElement={<Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100dvh', width: "100vw"}}><CircularProgress /></Box>}>
             <Route index element={<Home />} />
             <Route path="admin" element={<AdminRoute />} loader={adminLoader}>
                 <Route index element={<PagePicker />} />
