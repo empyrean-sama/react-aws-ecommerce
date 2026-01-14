@@ -121,7 +121,6 @@ export default function AppThemeProvider(props: React.PropsWithChildren) {
                         },
                     },
                     contained: {
-                        backgroundColor: '#030303',
                         color: '#ffffff',
                         '&:hover': {
                             backgroundColor: '#444444',  

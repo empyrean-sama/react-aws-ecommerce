@@ -39,7 +39,7 @@ export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen }: AppDrawerPr
             document.removeEventListener('keydown', handleEscape);
         };
     }, [isDrawerOpen]);
-    
+
     return (
         <>
             <Box 
@@ -72,7 +72,7 @@ export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen }: AppDrawerPr
                                 <ListItemText primary="HOME" />
                             </ListItemButton>
                         </ListItem>
-                        {favouriteCollections.map((collection) => (
+                        {[...favouriteCollections].sort((a,b) => b.favouriteStrength - a.favouriteStrength).map((collection) => (
                             <ListItem key={collection.collectionId} disablePadding>
                                 <ListItemButton onClick={() => { navigateTo(`/collection/${collection.collectionId}`); setIsDrawerOpen(false); }}>
                                     <ListItemText primary={collection.name} />
