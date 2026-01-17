@@ -11,6 +11,7 @@
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.940.0",
     "@aws-sdk/client-s3": "^3.952.0",
+    "@aws-sdk/lib-dynamodb": "^3.969.0",
     "@aws-sdk/s3-request-presigner": "^3.952.0",
     "@aws-sdk/util-dynamodb": "^3.940.0",
     "@mui/types": "^7.4.8",

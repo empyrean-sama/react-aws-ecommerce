@@ -11,6 +11,7 @@ import InfrastructureConstants from "../InfrastructureConstants";
 export default class AuthStack extends Stack {
 
     public readonly profilesTable: DynamoDB.Table;
+    public readonly cartTable: DynamoDB.Table;
     public readonly userPool: Cognito.UserPool;
     public readonly userPoolClientId: string;
     private readonly _userPoolClient: Cognito.UserPoolClient;
@@ -79,6 +80,14 @@ export default class AuthStack extends Stack {
         // Create the Profile DynamoDB table
         this.profilesTable = new DynamoDB.Table(this, InfrastructureConstants.profilesTableId, {
             tableName: InfrastructureConstants.profilesTableName,
+            partitionKey: { name: 'userId', type: DynamoDB.AttributeType.STRING },
+            billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+            removalPolicy: RemovalPolicy.DESTROY, //TODO: Change to RETAIN for production
+        });
+
+        // Create the Cart DynamoDB table
+        this.cartTable = new DynamoDB.Table(this, InfrastructureConstants.cartTableId, {
+            tableName: InfrastructureConstants.cartTableName,
             partitionKey: { name: 'userId', type: DynamoDB.AttributeType.STRING },
             billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.DESTROY, //TODO: Change to RETAIN for production

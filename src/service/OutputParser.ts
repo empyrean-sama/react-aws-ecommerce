@@ -76,6 +76,13 @@ export default class OutputParser {
     }
 
     /**
+     * Get the full Cart API endpoint URL
+     */
+    public static get CartEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.cartResourceName}`;
+    }
+
+    /**
      * Get the public S3 bucket name used for memory uploads (public-read).
      */
     public static get MemoryBucketName(): string {

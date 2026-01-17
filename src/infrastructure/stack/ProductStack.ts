@@ -8,9 +8,11 @@ import { RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import Constants from '../InfrastructureConstants';
 import APIStack from './APIStack';
+import AuthApiStack from './AuthApiStack';
 
 export interface ProductStackProps extends StackProps {
 	apiStack: APIStack;
+	authAPIStack: AuthApiStack;
 }
 
 export default class ProductStack extends Stack {
@@ -63,6 +65,8 @@ export default class ProductStack extends Stack {
 			indexName: Constants.variantGSINameOnProductId,
 			partitionKey: { name: 'productId', type: DynamoDB.AttributeType.STRING },
 		});
+
+		this._variantTable.grantReadData(props.authAPIStack._manageCartLambda);
 
 		// Lambda: Collections
 		const collectionLambda = new NodejsFunction(this, 'ProductCollectionFunction', {

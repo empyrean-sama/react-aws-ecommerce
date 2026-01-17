@@ -45,9 +45,14 @@ export default class InfrastructureConstants {
     // API Gateway constants
     static get restAPIGatewayId(): string { return `${InfrastructureConstants.projectName}-RestAPIGateway`; }
     static get restAPIgatewayName(): string { return `${InfrastructureConstants.projectName}-RestAPIGateway`; }
+    static get cartResourceName(): string { return `cart`; }
     // Address Table constants
     static get addressTableId(): string { return `${InfrastructureConstants.projectName}-AddressesTable`; }
     static get addressTableName(): string { return `${InfrastructureConstants.projectName}-addresses`; }
+
+    // Cart Table constants
+    static get cartTableId(): string { return `${InfrastructureConstants.projectName}-CartTable`; }
+    static get cartTableName(): string { return `${InfrastructureConstants.projectName}-cart`; }
     static get addressGSINameOnUserId(): string { return `UserIdIndex`; }
 
     // API Resource names

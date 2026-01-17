@@ -13,6 +13,9 @@ import IUserDetails from "../interface/IUserDetails";
 import UserNotVerifiedException from "../error/UserNotVerifiedException";
 import UserAlreadyExistsException from "../error/UserAlreadyExistsException";
 import Constants from "../Constants";
+import ProductService from "./ProductService";
+import ICartEntryRecord from "../interface/product/ICartEntryRecord";
+import ICartEntry from "../interface/product/ICartEntry";
 export default class AuthService {
 
     private static _instance: AuthService;
@@ -407,6 +410,169 @@ export default class AuthService {
             throw new Error(errText || 'Upload failed');
         }
         return presignData.key;
+    }
+
+    /**
+     * Try to Get the user's cart 
+     * ! Will make a request to the backend only if the user is authenticated
+     * ! Will get cart from local storage if the user is not authenticated
+     * @returns the array of cart items
+     * @throws Error if unable to retrieve the cart
+     */
+    public async getCart(): Promise<ICartEntryRecord> {
+        const session = await fetchAuthSession();
+        const token = session.tokens?.idToken?.toString();
+        
+        if(token) {
+            const response = await this.authorizedFetch(new URL(OutputParser.CartEndPointURL), {method: 'GET'});
+            if(!response.ok) {
+                const responseText = await response.text();
+                throw new Error(responseText || 'Failed to get cart');
+            }
+            const data = await response.json();
+            return data || [];
+        }
+        else {
+            // The user is not authenticated, check the local storage and return the cart if any
+            const localCart = localStorage.getItem(Constants.LOCAL_STORAGE_CART_KEY);
+            if(!localCart) {
+                return { userId: "localStorage", products: []};
+            }
+
+            try {
+                const data = JSON.parse(localCart);
+                if(!Array.isArray(data)) {
+                    return { userId: "localStorage", products: []};
+                }
+
+                return {userId: "localStorage", products: data
+                    .map((item: any) => ({
+                        productId: String(item?.productId ?? ''),
+                        quantity: Number(item?.quantity ?? 0),
+                        variantId: String(item?.variantId ?? ''),
+                    }))
+                    .filter((item: { productId: string, quantity: number, variantId: string }) => item.productId.length > 0 && item.variantId.length > 0 && Number.isFinite(item.quantity) && item.quantity > 0)};
+            }
+            catch {
+                return { userId: "localStorage", products: []};
+            }
+        }
+    }
+
+    /**
+     * Try to Set the user's cart
+     * ! Will make a request to the backend only if the user is authenticated
+     * ! Will set cart in local storage if the user is not authenticated
+     * 
+     * @returns void
+     * @throws Error if unable to update the cart
+     */
+    public async setCart(items: ICartEntry): Promise<void> {
+        const session = await fetchAuthSession();
+        const token = session.tokens?.idToken?.toString();
+
+        if(token) {
+            const response = await this.authorizedFetch(new URL(OutputParser.CartEndPointURL), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...items })
+            });
+
+            if (!response.ok) {
+                const responseText = await response.text();
+                throw new Error(responseText || 'Failed to update cart');
+            }
+        }
+        else {
+            // The user is not authenticated, store cart in local storage
+            localStorage.setItem(Constants.LOCAL_STORAGE_CART_KEY, JSON.stringify(items || []));
+        }
+    }
+
+    /**
+     * Try to Update the user's cart
+     * ! Will make a request to the backend only if the user is authenticated
+     * ! Will set cart in local storage if the user is not authenticated
+     * @param items the array of cart items to be updated
+     * @returns void
+     * @throws an Error if unable to set the cart
+     */
+    public async updateCart(cartEntry: ICartEntry): Promise<void> {
+        const session = await fetchAuthSession();
+        const token = session.tokens?.idToken?.toString();
+        if(token) {
+            // The user is authenticated, update the cart on backend
+            const promises = [];
+            for(const item of cartEntry.products) {
+                const response = this.authorizedFetch(new URL(OutputParser.CartEndPointURL), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...item })
+                });
+                promises.push(response);
+            }
+            const responses = await Promise.all(promises);
+            for(const response of responses) {
+                if (!response.ok) {
+                    const responseText = await response.text();
+                    throw new Error(responseText || 'Failed to update cart');
+                }
+            }
+        }
+        else {
+            // The user is not authenticated, update cart in local storage
+            const localCart = localStorage.getItem(Constants.LOCAL_STORAGE_CART_KEY);
+            let currentItems: { productId: string, quantity: number }[] = [];
+            if(localCart) {
+                try {
+                    const data = JSON.parse(localCart);
+                    if(Array.isArray(data)) {
+                        currentItems = data
+                            .map((item: any) => ({
+                                productId: String(item?.productId ?? ''),
+                                quantity: Number(item?.quantity ?? 0)
+                            }))
+                            .filter((item: { productId: string, quantity: number }) => item.productId.length > 0 && Number.isFinite(item.quantity) && item.quantity > 0);
+                    }
+                } catch {}
+            }
+            // Update current items with new items
+            for(const newItem of cartEntry.products) {
+                const existingIndex = currentItems.findIndex(item => item.productId === newItem.productId);
+                if(existingIndex >= 0) {
+                    // update existing
+                    currentItems[existingIndex].quantity = newItem.quantity;
+                } else {
+                    // add new
+                    currentItems.push({ productId: newItem.productId, quantity: newItem.quantity });
+                }
+            }
+            localStorage.setItem(Constants.LOCAL_STORAGE_CART_KEY, JSON.stringify(currentItems));
+        }
+    }
+
+    /**
+     * Try to Delete the user's cart
+     * ! Will make a request to the backend only if the user is authenticated
+     * ! Will delete cart from local storage if the user is not authenticated
+     * @returns void
+     * @throws Error if unable to delete the cart
+     */
+    public async deleteCart(): Promise<void> {
+        const session = await fetchAuthSession();
+        const token = session.tokens?.idToken?.toString();
+        
+        if(token) {
+            const response = await this.authorizedFetch(new URL(OutputParser.CartEndPointURL), { method: 'DELETE' });
+            if (!response.ok) {
+                const responseText = await response.text();
+                throw new Error(responseText || 'Failed to delete cart');
+            }
+        }
+        else {
+            // The user is not authenticated, remove cart from local storage
+            localStorage.removeItem(Constants.LOCAL_STORAGE_CART_KEY);
+        }
     }
 
     /**

@@ -20,7 +20,7 @@ const authStack = new AuthStack(app, Constants.authStackOutputKey, { env });
 const apiStack = new APIStack(app, Constants.apiStackOutputKey, { userPool: authStack.userPool, env });
 
 // Auth-related API endpoints
-new AuthApiStack(app, Constants.authApiStackOutputKey, { apiStack, userPoolClientId: authStack.userPoolClientId, env });
+const authApiStack = new AuthApiStack(app, Constants.authApiStackOutputKey, { apiStack, userPoolClientId: authStack.userPoolClientId, cartTable: authStack.cartTable, env });
 
 // Create Profile Stack to manage user profiles
 new ProfileStack(app, Constants.profileStackOutputKey, { profilesTable: authStack.profilesTable, apiStack: apiStack, env });
@@ -29,4 +29,4 @@ new ProfileStack(app, Constants.profileStackOutputKey, { profilesTable: authStac
 new MemoryStack(app, Constants.memoryStackOutputKey, { apiStack, env });
 
 // Create Product Stack to host product/collection/variant APIs and tables
-new ProductStack(app, Constants.productStackOutputKey, { apiStack, env });
+new ProductStack(app, Constants.productStackOutputKey, { apiStack, env, authAPIStack: authApiStack });

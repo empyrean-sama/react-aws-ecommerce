@@ -4,4 +4,5 @@ export default class Constants {
 
     static readonly IMAGE_UPLOAD_MAX_BYTES: number = 5_000_000;
     static readonly IMAGE_UPLOAD_ALLOWED_TYPES: string[] = ['image/jpeg','image/png','image/webp','image/avif'];
+    static readonly LOCAL_STORAGE_CART_KEY: string = "ecommerce-app-cart";
 }
