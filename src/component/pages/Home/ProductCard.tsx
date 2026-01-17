@@ -2,6 +2,7 @@ import React from 'react';
 import { appGlobalStateContext } from '../../App/AppGlobalStateProvider';
 
 import { Typography, Box, Paper, Button, Chip,  } from '@mui/material';
+import red from '@mui/material/colors/red';
 
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import placeHolderImageString from 'url:./placeholderImage.png';
@@ -71,6 +72,15 @@ export default function ProductCard(props: IProductCardProps) {
         showMessage(`Clicked on product: ${props.productRecord.name}`, ESnackbarMsgVariant.info);
     }
 
+    function handleAddToCart(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        e.preventDefault();
+        showMessage(`Added to cart: ${props.productRecord.name}`, ESnackbarMsgVariant.success);
+    }
+
+    function handleBuyNow(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        showMessage(`Buy now not implemented yet!`, ESnackbarMsgVariant.error);
+    }
+
     return(
         <Paper 
             sx={{
@@ -81,37 +91,31 @@ export default function ProductCard(props: IProductCardProps) {
                     boxShadow: 6,
                     transform: 'scale(1.01)',
                 }, 
-                "&:active": {
-                    boxShadow: 2,
-                    transform: 'scale(0.99)',
-                },
-                width: { xs: 200, md: 250 }
+                width: { xs: 175, md: 250 }
             }}
-            onClick={handleCardClick}
         >
-            {ratingsComponent}
-            {stockStatusComponent}
-            <Box component='img' src={cardImage} alt={cardImageAlt} sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover' }} />
-            <Box>
-                <Typography variant='subtitle1' fontWeight='bold' sx={{ mx: 2, textAlign: "center" }} noWrap>
-                    {props.productRecord.name}
-                </Typography>
-                <Typography variant='body2' color='text.secondary' sx={{ mx: 2, textAlign: "left" }} noWrap>
-                    {currency} { defaultVariantRecord ? (defaultVariantRecord.price / 100).toFixed(2) : 'N/A' }
-                </Typography>
+            <Box onClick={handleCardClick}>
+                {ratingsComponent}
+                {stockStatusComponent}
+                <Box component='img' src={cardImage} alt={cardImageAlt} sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover' }} />
+                <Box sx={{display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Typography variant='subtitle1' fontWeight='bold' sx={{ mx: 2, textAlign: "left", lineHeight: 1.2 }}>
+                        {props.productRecord.name}
+                    </Typography>
+                    <Typography variant='body2' sx={{ mx: 2, textAlign: "left", color: red[700], fontWeight: 'bold' }} noWrap>
+                        ₹{ defaultVariantRecord ? (defaultVariantRecord.price / 100).toFixed(2) : 'N/A' }
+                    </Typography>
+                </Box>
             </Box>
             <Box sx={{ display: 'flex' }}>
                 <Button 
                     color='primary' variant="contained" sx={{p: 1, flexBasis: '50%'}}
                     startIcon={<ShoppingCartOutlinedIcon />}
+                    onClick={handleAddToCart}
                 >
                     Add
                 </Button>
-                <Button 
-                    color='info' variant="contained" sx={{p: 1, flexBasis: '50%'}}
-                >
-                    Buy Now
-                </Button>
+                <Button color='info' variant="contained" sx={{p: 1, flexBasis: '50%'}} onClick={handleBuyNow}>Buy Now</Button>
             </Box>
         </Paper>
     );
