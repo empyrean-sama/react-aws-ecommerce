@@ -1,7 +1,7 @@
 import React from 'react';
 import { appGlobalStateContext } from '../../App/AppGlobalStateProvider';
 
-import { Typography, Box, Paper, Button, Chip,  } from '@mui/material';
+import { Typography, Box, Paper, Button, Chip, IconButton } from '@mui/material';
 import red from '@mui/material/colors/red';
 
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
@@ -10,10 +10,11 @@ import placeHolderImageString from 'url:./placeholderImage.png';
 import IProductRecord from '../../../interface/product/IProductRecord';
 import IProductVariantRecord from '../../../interface/product/IProductVariantRecord';
 import IAppGlobalStateContextAPI from '../../../interface/IAppGlobalStateContextAPI';
-import EProductFieldType from '../../../enum/EProductFieldType';
 import ESnackbarMsgVariant from '../../../enum/ESnackbarMsgVariant';
 import StarOutlined from '@mui/icons-material/StarOutlined';
 import { getStockStatus } from './Helper';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 
 interface IProductCardProps {
     productRecord: IProductRecord;
@@ -27,7 +28,7 @@ interface IProductCardProps {
 export default function ProductCard(props: IProductCardProps) {
 
     // Global Api
-    const { showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { showMessage, cart, setCart } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     // Component State
     const [isHovered, setIsHovered] = React.useState<boolean>(false);
@@ -39,6 +40,8 @@ export default function ProductCard(props: IProductCardProps) {
     const defaultVariantRecord: IProductVariantRecord | null = props.productVariantRecord.find(variant => variant.variantId === props.productRecord.defaultVariantId) || props.productVariantRecord[0] || null;
     const stockCount: number = defaultVariantRecord ? defaultVariantRecord.stock : 0;
     const stockStatus = getStockStatus(stockCount);
+    const maximumInOrder = defaultVariantRecord?.maximumInOrder;
+    const cartQuantity = cart?.products?.find(item => item.productId === props.productRecord.productId && item.variantId === defaultVariantRecord?.variantId)?.quantity ?? 0;
 
     let ratingsComponent: React.ReactNode = null;
 
@@ -72,8 +75,49 @@ export default function ProductCard(props: IProductCardProps) {
         showMessage(`Clicked on product: ${props.productRecord.name}`, ESnackbarMsgVariant.info);
     }
 
+    /**
+     * Check if the given quantity exceeds the maximum allowed per order
+     * @param quantity: The quantity to check
+     * @returns True if the quantity exceeds the maximum allowed per order, otherwise false
+     */
+    function isExceedingMaxQuantityPerOrder(quantity: number): boolean {
+        if (typeof maximumInOrder === 'number' && Number.isFinite(maximumInOrder)) {
+            return quantity > maximumInOrder;
+        }
+        return true;
+    }
+
+    function handleSetQuantity(newQuantity: number) {
+        if (!defaultVariantRecord) return;
+        if (newQuantity < 0) return;
+
+        if (isExceedingMaxQuantityPerOrder(newQuantity)) {
+            showMessage(`Maximum quantity per order is ${maximumInOrder}.`, ESnackbarMsgVariant.warning);
+            return;
+        }
+
+        const existingItems = cart?.products ?? [];
+        const filteredItems = existingItems.filter(item => !(item.productId === props.productRecord.productId && item.variantId === defaultVariantRecord.variantId));
+        const nextItems = newQuantity > 0
+            ? [...filteredItems, { productId: props.productRecord.productId, variantId: defaultVariantRecord.variantId, quantity: newQuantity }]
+            : filteredItems;
+
+        setCart({ products: nextItems });
+    }
+
     function handleAddToCart(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         e.preventDefault();
+        if (!defaultVariantRecord) return;
+        if (stockCount <= 0) {
+            showMessage(`This item is out of stock.`, ESnackbarMsgVariant.error);
+            return;
+        }
+        const nextQuantity = cartQuantity + 1;
+        if (isExceedingMaxQuantityPerOrder(nextQuantity)) {
+            showMessage(`Maximum quantity per order is ${maximumInOrder}.`, ESnackbarMsgVariant.warning);
+            return;
+        }
+        handleSetQuantity(nextQuantity);
         showMessage(`Added to cart: ${props.productRecord.name}`, ESnackbarMsgVariant.success);
     }
 
@@ -108,14 +152,35 @@ export default function ProductCard(props: IProductCardProps) {
                 </Box>
             </Box>
             <Box sx={{ display: 'flex' }}>
-                <Button 
-                    color='primary' variant="contained" sx={{p: 1, flexBasis: '50%'}}
-                    startIcon={<ShoppingCartOutlinedIcon />}
-                    onClick={handleAddToCart}
-                >
-                    Add
-                </Button>
-                <Button color='info' variant="contained" sx={{p: 1, flexBasis: '50%'}} onClick={handleBuyNow}>Buy Now</Button>
+                {cartQuantity > 0 ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexBasis: '50%', px: 1 }}>
+                        <IconButton
+                            size="small"
+                            onClick={() => handleSetQuantity(cartQuantity - 1)}
+                            disabled={cartQuantity <= 0}
+                        >
+                            <RemoveIcon fontSize="small" />
+                        </IconButton>
+                        <Typography variant="subtitle1" fontWeight="bold">{cartQuantity}</Typography>
+                        <IconButton
+                            size="small"
+                            onClick={() => handleSetQuantity(cartQuantity + 1)}
+                            disabled={stockCount <= 0}
+                        >
+                            <AddIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+                ) : (
+                    <Button 
+                        color='primary' variant="contained" sx={{p: 1, flexBasis: '50%'}}
+                        startIcon={<ShoppingCartOutlinedIcon />}
+                        onClick={handleAddToCart}
+                        disabled={stockCount <= 0}
+                    >
+                        Add
+                    </Button>
+                )}
+                <Button color='info' variant="contained" sx={{p: 1, flexBasis: '50%'}} onClick={handleBuyNow} disabled={stockCount <= 0}>Buy Now</Button>
             </Box>
         </Paper>
     );
