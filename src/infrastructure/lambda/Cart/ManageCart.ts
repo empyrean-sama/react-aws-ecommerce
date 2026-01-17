@@ -26,7 +26,7 @@ const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
 const CART_TABLE_NAME = process.env.CART_TABLE_NAME || '';
-const VARIANT_TABLE_NAME   = process.env.VARIANT_TABLE || '';
+const VARIANT_TABLE_NAME = process.env.VARIANT_TABLE_NAME || '';
 
 /**
  * Checks if the cart is valid by verifying each product configuration.

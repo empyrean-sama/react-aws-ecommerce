@@ -1,9 +1,4 @@
 {
-  "ReactAwsEcommerce-MemoryStack": {
-    "ExportsOutputFnGetAttGeneratePresignedUploadUrlFunction32129FC0Arn758B4BC0": "arn:aws:lambda:ap-south-1:044336537894:function:GeneratePresignedUploadUrl",
-    "ExportsOutputFnGetAttDeleteImageFunction98837557ArnF41960AC": "arn:aws:lambda:ap-south-1:044336537894:function:DeleteImage",
-    "ReactAwsEcommerceMemoryBucketName": "reactawsecommerce-memorys-publicreadmemorybucket97-0jkqjte49apx"
-  },
   "ReactAwsEcommerce-AuthStack": {
     "ExportsOutputFnGetAttReactAwsEcommerceUserPool179A9025ArnF027E14B": "arn:aws:cognito-idp:ap-south-1:044336537894:userpool/ap-south-1_Sd7hewtZ2",
     "UserPoolClientId": "4glcc0vkopf71jel3op65pg6ha",
@@ -15,6 +10,11 @@
   "ReactAwsEcommerce-ProfileStack": {
     "ExportsOutputFnGetAttProfileAddressFunction382822CDArn7F939DE2": "arn:aws:lambda:ap-south-1:044336537894:function:AddressFunction",
     "ExportsOutputFnGetAttAutofillAddressFunction0ED0815FArnB5C9F1C1": "arn:aws:lambda:ap-south-1:044336537894:function:AutofillAddressFunction"
+  },
+  "ReactAwsEcommerce-MemoryStack": {
+    "ExportsOutputFnGetAttGeneratePresignedUploadUrlFunction32129FC0Arn758B4BC0": "arn:aws:lambda:ap-south-1:044336537894:function:GeneratePresignedUploadUrl",
+    "ExportsOutputFnGetAttDeleteImageFunction98837557ArnF41960AC": "arn:aws:lambda:ap-south-1:044336537894:function:DeleteImage",
+    "ReactAwsEcommerceMemoryBucketName": "reactawsecommerce-memorys-publicreadmemorybucket97-0jkqjte49apx"
   },
   "ReactAwsEcommerce-ProductStack": {
     "ExportsOutputFnGetAttProductCollectionFunctionA7F7037CArn3C2BFDA2": "arn:aws:lambda:ap-south-1:044336537894:function:ProductCollectionFunction",
