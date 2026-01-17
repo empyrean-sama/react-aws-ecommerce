@@ -6,6 +6,8 @@ import IUserDetails from "../../interface/IUserDetails";
 import AuthService from "../../service/AuthService";
 import ICollectionRecord from "../../interface/product/ICollectionRecord";
 import ProductService from "../../service/ProductService";
+import ICartEntryRecord from "../../interface/product/ICartEntryRecord";
+import ICartEntry from "../../interface/product/ICartEntry";
 
 export const appGlobalStateContext = createContext<IAppGlobalStateContextAPI | null>(null);
 
@@ -17,6 +19,7 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
     const productService = ProductService.getInstance();
     const [loginDetails, setLoginDetails] = React.useState<IUserDetails | null>(null);
     const [favouriteCollections, setFavouriteCollections] = React.useState<ICollectionRecord[]>([]);
+    const [cart, setCart] = React.useState<ICartEntryRecord | null>(null);
     
     // Effects
     useEffect(() => {
@@ -30,7 +33,15 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
 
         // Fetch favourite collections
         refreshFavouriteCollections();
+
+        // Fetch cart
+        refreshCart();
     }, []);
+
+    useEffect(() => {
+        // Refresh cart when login details change
+        refreshCart();
+    }, [loginDetails?.userId]);
 
     // Global API implementations
     function getLoggedInDetails(): IUserDetails | null {
@@ -57,6 +68,7 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
         }
         finally {
             setLoginDetails(null);
+            refreshCart();
         }
     }
 
@@ -75,8 +87,37 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
         }
     }
 
+    async function refreshCart() {
+        try {
+            const cartRecord = await authService.getCart();
+            setCart(cartRecord);
+        } catch (error) {
+            console.error("Failed to fetch cart", error);
+        }
+    }
+
+    async function setCartItems(cartEntry: ICartEntry) {
+        try {
+            await authService.setCart(cartEntry);
+            await refreshCart();
+        } catch (error) {
+            console.error("Failed to set cart", error);
+        }
+    }
+
+    async function updateCartItems(cartEntry: ICartEntry) {
+        try {
+            await authService.updateCart(cartEntry);
+            await refreshCart();
+        } catch (error) {
+            console.error("Failed to update cart", error);
+        }
+    }
+
+    const cartItemCount = cart?.products?.reduce((total, item) => total + (item.quantity || 0), 0) ?? 0;
+
     return (
-        <appGlobalStateContext.Provider value={{ authService, showMessage, getLoggedInDetails, setLoggedInDetails, refreshLoggedInDetails, logout, favouriteCollections, refreshFavouriteCollections }}>
+        <appGlobalStateContext.Provider value={{ authService, showMessage, getLoggedInDetails, setLoggedInDetails, refreshLoggedInDetails, logout, favouriteCollections, refreshFavouriteCollections, cart, cartItemCount, refreshCart, setCart: setCartItems, updateCart: updateCartItems }}>
             {children}
         </appGlobalStateContext.Provider>
     );

@@ -21,7 +21,7 @@ export interface NavProps {
 export default function Nav({ setIsDrawerOpen, isDrawerOpen }: NavProps) {
     const theme = useTheme();
     const navigateTo = useNavigate();
-    const { favouriteCollections } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { favouriteCollections, cartItemCount } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const [value, setValue] = React.useState(0); //todo: remove
     const [isAdmin, setIsAdmin] = useState(false);
 
@@ -40,7 +40,7 @@ export default function Nav({ setIsDrawerOpen, isDrawerOpen }: NavProps) {
                 <Typography variant="h1" component="h1" sx={{ flexGrow: {xs: 0, lg: 1}, textAlign: { xs: 'center', lg: 'left' }, cursor: 'pointer' }} onClick={() => navigateTo("/")}>Srividhya-Foods</Typography>
                 <Box sx={{ mx: {xs: 0, lg: 2}, display: 'flex', alignItems: 'center' }}>
                     <SearchBar placeholder="Search products..." sx={{ width: '450px', display: { xs: 'none', lg: 'block' } }} />
-                    <ShoppingCartButton itemCount={3} sx={{ ml: {xs: 0, lg: 1} }} />
+                    <ShoppingCartButton itemCount={cartItemCount} sx={{ ml: {xs: 0, lg: 1} }} onClick={() => navigateTo("/cart")} />
                     <AccountButtons sx={{ ml: 2, display: { xs: 'none', md: 'block' } }} />
                 </Box>
             </Toolbar>

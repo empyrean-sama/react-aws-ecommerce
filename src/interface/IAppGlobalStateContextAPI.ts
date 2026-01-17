@@ -1,6 +1,8 @@
 import ESnackbarMsgVariant from "../enum/ESnackbarMsgVariant";
 import IUserDetails from "./IUserDetails";
 import ICollectionRecord from "./product/ICollectionRecord";
+import ICartEntryRecord from "./product/ICartEntryRecord";
+import ICartEntry from "./product/ICartEntry";
 import AuthService from "../service/AuthService";
 
 export default interface IAppGlobalStateContextAPI {
@@ -51,4 +53,29 @@ export default interface IAppGlobalStateContextAPI {
      * Refreshes the list of favourite collections
      */
     refreshFavouriteCollections: () => Promise<void>;
+
+    /**
+     * The user's cart state
+     */
+    cart: ICartEntryRecord | null;
+
+    /**
+     * The total number of items in the cart
+     */
+    cartItemCount: number;
+
+    /**
+     * Refreshes the cart from the backend or local storage
+     */
+    refreshCart: () => Promise<void>;
+
+    /**
+     * Sets the cart (replaces contents)
+     */
+    setCart: (cart: ICartEntry) => Promise<void>;
+
+    /**
+     * Updates the cart (patches entries)
+     */
+    updateCart: (cartEntry: ICartEntry) => Promise<void>;
 }
