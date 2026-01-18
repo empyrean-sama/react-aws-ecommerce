@@ -6,8 +6,10 @@ import IUserDetails from "../../interface/IUserDetails";
 import AuthService from "../../service/AuthService";
 import ICollectionRecord from "../../interface/product/ICollectionRecord";
 import ProductService from "../../service/ProductService";
-import ICartEntryRecord from "../../interface/product/ICartEntryRecord";
 import ICartEntry from "../../interface/product/ICartEntry";
+import IProductRecord from "../../interface/product/IProductRecord";
+import IProductVariantRecord from "../../interface/product/IProductVariantRecord";
+import IAppGlobalCartState from "../../interface/IAppGlobalCartState";
 
 export const appGlobalStateContext = createContext<IAppGlobalStateContextAPI | null>(null);
 
@@ -19,7 +21,8 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
     const productService = ProductService.getInstance();
     const [loginDetails, setLoginDetails] = React.useState<IUserDetails | null>(null);
     const [favouriteCollections, setFavouriteCollections] = React.useState<ICollectionRecord[]>([]);
-    const [cart, setCart] = React.useState<ICartEntryRecord | null>(null);
+    
+    const [cartState, setCartState] = React.useState<IAppGlobalCartState>({cartEntryRecord: null, productIdToProductRecordMap: {}, productIdToVariantsRecordMap: {}});
     
     // Effects
     useEffect(() => {
@@ -90,7 +93,19 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
     async function refreshCart() {
         try {
             const cartRecord = await authService.getCart();
-            setCart(cartRecord);
+            const tempProductIdToProductRecordMap = {} as Record<string, IProductRecord>;
+            const tempProductIdToVariantsRecordMap = {} as Record<string, IProductVariantRecord[]>;
+            for (const product of cartRecord?.products || []) {
+                const productRecord = await productService.getProductById(product.productId);
+                const variants = await productService.getVariantsByProductId(product.productId);
+                if (productRecord) {
+                    tempProductIdToProductRecordMap[product.productId] = productRecord;
+                }
+                if(variants) {
+                    tempProductIdToVariantsRecordMap[product.productId] = variants;
+                }
+            }
+            setCartState({cartEntryRecord: cartRecord, productIdToProductRecordMap: tempProductIdToProductRecordMap, productIdToVariantsRecordMap: tempProductIdToVariantsRecordMap});
         } catch (error) {
             console.error("Failed to fetch cart", error);
         }
@@ -114,10 +129,10 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
         }
     }
 
-    const cartItemCount = cart?.products?.reduce((total, item) => total + (item.quantity || 0), 0) ?? 0;
+    const cartItemCount = cartState.cartEntryRecord?.products?.reduce((total, item) => total + (item.quantity || 0), 0) ?? 0;
 
     return (
-        <appGlobalStateContext.Provider value={{ authService, showMessage, getLoggedInDetails, setLoggedInDetails, refreshLoggedInDetails, logout, favouriteCollections, refreshFavouriteCollections, cart, cartItemCount, refreshCart, setCart: setCartItems, updateCart: updateCartItems }}>
+        <appGlobalStateContext.Provider value={{ authService, showMessage, getLoggedInDetails, setLoggedInDetails, refreshLoggedInDetails, logout, favouriteCollections, refreshFavouriteCollections, cartState, cartItemCount, refreshCart, setCart: setCartItems, updateCart: updateCartItems }}>
             {children}
         </appGlobalStateContext.Provider>
     );

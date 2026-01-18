@@ -59,7 +59,7 @@ export default function Home() {
     }, []);
 
     return (
-        <Container maxWidth="xl" sx={{ paddingX: { xs: 2, sm: 3 }, marginY: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <Container maxWidth="xl" sx={{ paddingX: { xs: 2, sm: 3 }, marginY: 4, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             <Typography variant="h2" component="h1" sx={{ alignSelf: "flex-start", mb: 2 }}>Featured Products</Typography>
 
             {isLoading && (
@@ -75,6 +75,7 @@ export default function Home() {
             {!isLoading && featuredProducts.length > 0 && (
                 featuredProducts.map((product) => (
                     <ProductCard
+                        key={product.productId}
                         productRecord={product}
                         productVariantRecord={productVariants[product.productId] ?? []}
                     />

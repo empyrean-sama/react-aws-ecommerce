@@ -28,7 +28,7 @@ interface IProductCardProps {
 export default function ProductCard(props: IProductCardProps) {
 
     // Global Api
-    const { showMessage, cart, setCart } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { showMessage, cartState, setCart } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     // Component State
     const [isHovered, setIsHovered] = React.useState<boolean>(false);
@@ -41,7 +41,7 @@ export default function ProductCard(props: IProductCardProps) {
     const stockCount: number = defaultVariantRecord ? defaultVariantRecord.stock : 0;
     const stockStatus = getStockStatus(stockCount);
     const maximumInOrder = defaultVariantRecord?.maximumInOrder;
-    const cartQuantity = cart?.products?.find(item => item.productId === props.productRecord.productId && item.variantId === defaultVariantRecord?.variantId)?.quantity ?? 0;
+    const cartQuantity = cartState.cartEntryRecord?.products?.find(item => item.productId === props.productRecord.productId && item.variantId === defaultVariantRecord?.variantId)?.quantity ?? 0;
 
     let ratingsComponent: React.ReactNode = null;
 
@@ -96,7 +96,7 @@ export default function ProductCard(props: IProductCardProps) {
             return;
         }
 
-        const existingItems = cart?.products ?? [];
+        const existingItems = cartState.cartEntryRecord?.products ?? [];
         const filteredItems = existingItems.filter(item => !(item.productId === props.productRecord.productId && item.variantId === defaultVariantRecord.variantId));
         const nextItems = newQuantity > 0
             ? [...filteredItems, { productId: props.productRecord.productId, variantId: defaultVariantRecord.variantId, quantity: newQuantity }]

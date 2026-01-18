@@ -1,7 +1,7 @@
 import ESnackbarMsgVariant from "../enum/ESnackbarMsgVariant";
 import IUserDetails from "./IUserDetails";
 import ICollectionRecord from "./product/ICollectionRecord";
-import ICartEntryRecord from "./product/ICartEntryRecord";
+import IAppGlobalCartState from "./IAppGlobalCartState";
 import ICartEntry from "./product/ICartEntry";
 import AuthService from "../service/AuthService";
 
@@ -57,7 +57,7 @@ export default interface IAppGlobalStateContextAPI {
     /**
      * The user's cart state
      */
-    cart: ICartEntryRecord | null;
+    cartState: IAppGlobalCartState;
 
     /**
      * The total number of items in the cart
