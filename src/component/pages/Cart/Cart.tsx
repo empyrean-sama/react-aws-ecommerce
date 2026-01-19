@@ -1,18 +1,16 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { Avatar, Box, Button, CircularProgress, Container, Divider, Grid, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Chip, IconButton } from "@mui/material";
-
 import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
-import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
-import ProductService from "../../../service/ProductService";
-import placeHolderImageString from "url:../Home/placeholderImage.png";
-import IProductRecord from "../../../interface/product/IProductRecord";
-import IProductVariantRecord from "../../../interface/product/IProductVariantRecord";
 import AuthService from "../../../service/AuthService";
-import ICartEntryRecord from "../../../interface/product/ICartEntryRecord";
-import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
-import { ICartEntryItem } from "../../../interface/product/ICartEntry";
+import ProductService from "../../../service/ProductService";
 
+import { Avatar, Box, Button, CircularProgress, Container, Divider, Grid, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, IconButton } from "@mui/material";
+
+import { ICartEntryItem } from "../../../interface/product/ICartEntry";
+import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
+import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
+
+import placeHolderImageString from "url:../Home/placeholderImage.png";
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -91,16 +89,36 @@ function LoadingEnclosure(props: { isLoading: boolean, children?: React.ReactNod
 function CartHeader() {
 
     // Global State & Services
-    const { cartState, showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { cartState, showMessage, refreshCart, authService } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const { isLoading, setIsLoading } = React.useContext(cartPageContext) as ICartPageContextAPI;
 
     // Private routines
     async function handleRefresh(): Promise<void> {
-
+        if (isLoading) return;
+        try {
+            setIsLoading(true);
+            await refreshCart();
+        } catch (error) {
+            console.error("Failed to refresh cart", error);
+            showMessage("Failed to refresh cart", ESnackbarMsgVariant.error);
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     async function handleClearCart(): Promise<void> {
-
+        if (isLoading) return;
+        try {
+            setIsLoading(true);
+            await authService.deleteCart();
+            await refreshCart();
+            showMessage("Cart cleared", ESnackbarMsgVariant.success);
+        } catch (error) {
+            console.error("Failed to clear cart", error);
+            showMessage("Failed to clear cart", ESnackbarMsgVariant.error);
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
@@ -130,16 +148,83 @@ function CartHeader() {
 
 function CartItemViewerPanel() {
 
-    // Global State & Services
-    const { cartState } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    // Global Services
+    const { cartState, setCart, showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+
+    // State variables
+    const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
     // Private routines
     async function handleIncreaseQuantity(productId: string, variantId: string): Promise<void> {
+        if (isLoading) {
+            return;
+        }
 
+        const cartEntryRecord = cartState.cartEntryRecord;
+        if (!cartEntryRecord) {
+            return;
+        }
+
+        const variants = cartState.productIdToVariantsRecordMap[productId] ?? [];
+        const variant = variants.find(item => item.variantId === variantId);
+        if (!variant) {
+            showMessage("Unable to find product variant.", ESnackbarMsgVariant.error);
+            return;
+        }
+
+        const currentItems = cartEntryRecord.products ?? [];
+        const currentItem = currentItems.find(item => item.productId === productId && item.variantId === variantId);
+        const currentQuantity = currentItem?.quantity ?? 0;
+        const nextQuantity = currentQuantity + 1;
+
+        if (Number.isFinite(variant.stock) && nextQuantity > variant.stock) {
+            showMessage(`Only ${variant.stock} left in stock.`, ESnackbarMsgVariant.warning);
+            return;
+        }
+
+        if (typeof variant.maximumInOrder === "number" && Number.isFinite(variant.maximumInOrder) && nextQuantity > variant.maximumInOrder) {
+            showMessage(`Maximum quantity per order is ${variant.maximumInOrder}.`, ESnackbarMsgVariant.warning);
+            return;
+        }
+
+        const remainingItems = currentItems.filter(item => !(item.productId === productId && item.variantId === variantId));
+        const nextItems = [...remainingItems, { productId, variantId, quantity: nextQuantity }];
+
+        try {
+            setIsLoading(true);
+            await setCart({ products: nextItems }); //todo: handle if set cart fails due to the product no longer existing in catalog or stock issues
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     async function handleDecreaseQuantity(productId: string, variantId: string): Promise<void> {
+        if (isLoading) {
+            return;
+        }
+        const cartEntryRecord = cartState.cartEntryRecord;
+        if (!cartEntryRecord) return;
 
+        const currentItems = cartEntryRecord.products ?? [];
+        const currentItem = currentItems.find(item => item.productId === productId && item.variantId === variantId);
+        if (!currentItem) {
+            console.error("Attempted to decrease quantity of an item not in cart");
+            return;
+        }
+
+        const nextQuantity = currentItem.quantity - 1;
+
+        const remainingItems = currentItems.filter(item => !(item.productId === productId && item.variantId === variantId));
+        const nextItems = nextQuantity > 0
+            ? [...remainingItems, { productId, variantId, quantity: nextQuantity }]
+            : remainingItems;
+
+        try {
+            setIsLoading(true);
+            await setCart({ products: nextItems }); //todo: handle if set cart fails due to the product no longer existing in catalog or stock issues
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
@@ -184,17 +269,33 @@ function CartItemViewerPanel() {
                                         <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' }}}><Typography variant="body1">₹{priceInRupees}</Typography></TableCell>
                                         <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' }}}>
                                             <Stack direction="row" alignItems="center" justifyContent="center" spacing={2}>
-                                                <IconButton aria-label="decrease quantity" size="small" sx={{ display: { xs: 'none', md: 'table-cell' }}} onClick={() => handleDecreaseQuantity(cartEntry.productId, cartEntry.variantId)}>
+                                                <IconButton 
+                                                    aria-label="decrease quantity" 
+                                                    size="small" 
+                                                    sx={{ display: { xs: 'none', md: 'table-cell' }}} 
+                                                    onClick={() => handleDecreaseQuantity(cartEntry.productId, cartEntry.variantId)}
+                                                    disabled={isLoading}
+                                                >
                                                     <RemoveIcon fontSize="inherit" />
                                                 </IconButton>
-                                                <Typography variant="body1" sx={{pb: {xs: 0, md: .5}}}>{cartEntry.quantity}</Typography>
-                                                <IconButton aria-label="increase quantity" size="small" sx={{ display: { xs: 'none', md: 'table-cell' }}} onClick={() => handleIncreaseQuantity(cartEntry.productId, cartEntry.variantId)}>
+                                                <Box sx={{pb: {xs: 0, md: .5}, width: "16px", overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
+                                                    {isLoading ? <CircularProgress  size={9} /> : (
+                                                        <Typography variant="body1">{cartEntry.quantity}</Typography>
+                                                    )}
+                                                </Box>
+                                                <IconButton 
+                                                    aria-label="increase quantity" 
+                                                    size="small" 
+                                                    sx={{ display: { xs: 'none', md: 'table-cell' }}} 
+                                                    onClick={() => handleIncreaseQuantity(cartEntry.productId, cartEntry.variantId)}
+                                                    disabled={isLoading}
+                                                >
                                                     <AddIcon fontSize="inherit" />
                                                 </IconButton>
                                             </Stack>
                                         </TableCell>
                                         <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' }}}>
-                                            <Typography variant="body1">₹{priceInRupees * cartEntry.quantity}</Typography>
+                                            <Typography variant="body1" sx={{minWidth: "72px"}}>₹{priceInRupees * cartEntry.quantity}</Typography>
                                         </TableCell>
                                         <TableCell align="right" sx={{ display: { xs: 'table-cell', md: 'none' }}}><Typography variant="body1" textAlign="center">₹{priceInRupees} x {cartEntry.quantity} = ₹{priceInRupees * cartEntry.quantity}</Typography></TableCell>
                                         <TableCell align="center" sx={{ display: { xs: 'table-cell', md: 'none' }}}>
@@ -262,7 +363,7 @@ function CartSummaryPanel() {
                     </Box>
                 </Stack>
                 <Stack>
-                    <Button variant="contained" color="info" fullWidth size="large">Proceed to checkout</Button>
+                    <Button variant="contained" color="info" fullWidth size="large" disabled={cartItemCount === 0}>Proceed to checkout</Button>
                     <Button variant="outlined" fullWidth size="small" onClick={() => navigateTo("/")}>Continue shopping</Button>
                 </Stack>
             </Stack>
