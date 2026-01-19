@@ -1,86 +1,110 @@
 import React from "react";
+import { appGlobalStateContext } from "../../App/AppGlobalStateProvider"; 
+import ProductService from "../../../service/ProductService";
 
 import { Container, Typography, Grid, CircularProgress, Box } from "@mui/material";
 import ProductCard from "./ProductCard";
+import ProductRack from "./ProductRack";
 
 import IProductRecord from "../../../interface/product/IProductRecord";
 import IProductVariantRecord from "../../../interface/product/IProductVariantRecord";
-import ProductService from "../../../service/ProductService";
-import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
 import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
 import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
+import { Product } from "aws-cdk-lib/aws-servicecatalog";
+
+export interface IHomeContextAPI {
+    isLoading: boolean;
+    setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+}
+const homeContext = React.createContext<IHomeContextAPI | null>(null);
 
 export default function Home() {
-    const productService = ProductService.getInstance();
-    const { showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
-
-    const [featuredProducts, setFeaturedProducts] = React.useState<IProductRecord[]>([]);
-    const [productVariants, setProductVariants] = React.useState<Record<string, IProductVariantRecord[]>>({});
+    
+    // State variables
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
+    const [featuredProducts, setFeaturedProducts] = React.useState<Array<{productRecord: IProductRecord, variantRecords: IProductVariantRecord[]}>>([]);
+    
+    // Global API & Services
+    const { showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const productService = ProductService.getInstance();
 
+    // Effects
     React.useEffect(() => {
+        // Fetch featured products on mount
         let isMounted = true;
-        (async () => {
+        (async function() {
             try {
                 setIsLoading(true);
                 const products = await productService.getFeaturedProducts();
-                if (!isMounted) {
-                    return;
-                }
-                const items = products ?? [];
-                setFeaturedProducts(items);
-
-                const variantsEntries = await Promise.all(
-                    items.map(async (product) => {
+                if(isMounted && products) {
+                    const variantsEntries = await Promise.all(products.map(async (product) => {
                         const variants = await productService.getVariantsByProductId(product.productId);
-                        return [product.productId, variants ?? []] as const;
-                    })
-                );
+                        return [product, variants ?? []] as const;
+                    }));
 
-                if (!isMounted) {
-                    return;
+                    const featuredProductsData: Array<{productRecord: IProductRecord, variantRecords: IProductVariantRecord[]}> = [];
+                    for(const entry of variantsEntries) {
+                        const [product, variants] = entry;
+                        featuredProductsData.push({ productRecord: product, variantRecords: variants });
+                    }
+                    if(isMounted) {
+                        setFeaturedProducts(featuredProductsData);
+                    }
                 }
-                const variantsMap: Record<string, IProductVariantRecord[]> = {};
-                for (const [productId, variants] of variantsEntries) {
-                    variantsMap[productId] = variants;
-                }
-                setProductVariants(variantsMap);
             } catch (error) {
-                console.error("Failed to load featured products", error);
-                showMessage("Failed to load featured products", ESnackbarMsgVariant.error);
+                if(isMounted) {
+                    console.error("Error fetching featured products:", error);
+                    showMessage('An unknown error occurred while fetching featured products', ESnackbarMsgVariant.error);
+                }
             } finally {
-                if (isMounted) setIsLoading(false);
+                if(isMounted) {
+                    setIsLoading(false);
+                }
             }
         })();
-
-        return () => {
-            isMounted = false;
-        };
+        return () => { isMounted = false };
     }, []);
 
     return (
-        <Container maxWidth="xl" sx={{ paddingX: { xs: 2, sm: 3 }, marginY: 4, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-            <Typography variant="h2" component="h1" sx={{ alignSelf: "flex-start", mb: 2 }}>Featured Products</Typography>
+        <homeContext.Provider value={{ isLoading, setIsLoading }}>
+            <Container 
+                maxWidth="xl" 
+                sx={{ 
+                    paddingX: { xs: 2, sm: 3 }, marginY: 4, 
+                    display: "flex", flexDirection: "column", alignItems: "flex-start" 
+                }}
+            >
+                <LoadingEnclosure>
+                    <ProductRack label="Featured Products">
+                        {featuredProducts.map(({ productRecord, variantRecords }) => (
+                            <ProductCard 
+                                key={productRecord.productId}
+                                productRecord={productRecord}
+                                productVariantRecord={variantRecords}
+                                currency="INR"
+                            />
+                        ))}
+                    </ProductRack>
+                </LoadingEnclosure>
+            </Container>
+        </homeContext.Provider>
+    );
+}
 
-            {isLoading && (
-                <Box sx={{ py: 6 }}>
-                    <CircularProgress />
-                </Box>
-            )}
-
-            {!isLoading && featuredProducts.length === 0 && (
-                <Typography variant="body1" color="text.secondary">No featured products available.</Typography>
-            )}
-
-            {!isLoading && featuredProducts.length > 0 && (
-                featuredProducts.map((product) => (
-                    <ProductCard
-                        key={product.productId}
-                        productRecord={product}
-                        productVariantRecord={productVariants[product.productId] ?? []}
-                    />
-                ))
-            )}
-        </Container>
-    )
+function LoadingEnclosure(props: React.PropsWithChildren<{}>) {
+    const { isLoading } = React.useContext(homeContext) as IHomeContextAPI;
+    if(isLoading) {
+        return (
+            <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+    else {
+        return (
+            <>
+                {props.children}
+            </>
+        );
+    }
 }
