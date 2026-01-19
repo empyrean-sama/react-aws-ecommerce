@@ -2,15 +2,16 @@ import React from "react";
 import { appGlobalStateContext } from "../../App/AppGlobalStateProvider"; 
 import ProductService from "../../../service/ProductService";
 
-import { Container, Typography, Grid, CircularProgress, Box } from "@mui/material";
+import { Container, CircularProgress, Box, useTheme, useMediaQuery } from "@mui/material";
 import ProductCard from "./ProductCard";
 import ProductRack from "./ProductRack";
+import ImageCarousel, { ICarouselItem } from "./ImageCarousel";
+import placeHolderImageString from "url:./placeholderImage.png";
 
 import IProductRecord from "../../../interface/product/IProductRecord";
 import IProductVariantRecord from "../../../interface/product/IProductVariantRecord";
 import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
 import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
-import { Product } from "aws-cdk-lib/aws-servicecatalog";
 
 export interface IHomeContextAPI {
     isLoading: boolean;
@@ -27,6 +28,15 @@ export default function Home() {
     // Global API & Services
     const { showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const productService = ProductService.getInstance();
+    const theme = useTheme();
+
+    // Computed Values
+    const isNotMobile = useMediaQuery(theme.breakpoints.up('md')); 
+    const testCarouselItems: ICarouselItem[] = [
+        { id: "1", imageUrl: placeHolderImageString },
+        { id: "2", imageUrl: placeHolderImageString },
+        { id: "3", imageUrl: placeHolderImageString },
+    ];
 
     // Effects
     React.useEffect(() => {
@@ -67,26 +77,31 @@ export default function Home() {
 
     return (
         <homeContext.Provider value={{ isLoading, setIsLoading }}>
-            <Container 
-                maxWidth="xl" 
-                sx={{ 
-                    paddingX: { xs: 2, sm: 3 }, marginY: 4, 
-                    display: "flex", flexDirection: "column", alignItems: "flex-start" 
-                }}
-            >
-                <LoadingEnclosure>
-                    <ProductRack label="Featured Products">
-                        {featuredProducts.map(({ productRecord, variantRecords }) => (
-                            <ProductCard 
-                                key={productRecord.productId}
-                                productRecord={productRecord}
-                                productVariantRecord={variantRecords}
-                                currency="INR"
-                            />
-                        ))}
-                    </ProductRack>
-                </LoadingEnclosure>
-            </Container>
+            <Box sx={{display: "flex" , flexDirection: "column", width: "100%"}}>
+                <ImageCarousel items={testCarouselItems} sx={{ marginTop: 2, display: isNotMobile ? 'none' : 'block' }} />
+                <Container 
+                    maxWidth="xl" 
+                    sx={{ 
+                        marginTop: isNotMobile ? 4 : 2, 
+                        display: "flex", flexDirection: "column", alignItems: "flex-start", 
+                        gap: 2
+                    }}
+                >
+                    <LoadingEnclosure>                    
+                        <ImageCarousel items={testCarouselItems} sx={{ display: isNotMobile ? 'block' : 'none' }} />
+                        <ProductRack label="Featured Products">
+                            {featuredProducts.map(({ productRecord, variantRecords }) => (
+                                <ProductCard 
+                                    key={productRecord.productId}
+                                    productRecord={productRecord}
+                                    productVariantRecord={variantRecords}
+                                    currency="INR"
+                                />
+                            ))}
+                        </ProductRack>
+                    </LoadingEnclosure>
+                </Container>
+            </Box>
         </homeContext.Provider>
     );
 }
