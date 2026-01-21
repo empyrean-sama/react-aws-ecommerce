@@ -95,5 +95,26 @@ export default class MemoryStack extends Stack {
 
         const deleteImageIntegration = new LambdaIntegration(deleteImageLambda);
         props.apiStack.addMethodOnResource('image', 'DELETE', deleteImageIntegration);
+
+        // Lambda to Get Home Configuration (Public/Admin)
+        const manageLists = new NodejsFunction(this, 'manageListsFunction', {
+            functionName: 'ManageLists',
+            entry: path.join(__dirname, '..', 'lambda', 'Memory', 'ManageLists.ts'),
+            handler: 'Handle',
+            runtime: Lambda.Runtime.NODEJS_22_X,
+            environment: {
+                BUCKET_NAME: bucket.bucketName,
+                FILE_KEY: 'config/home-banners.json' 
+            },
+            bundling: { minify: true, sourceMap: true, target: 'node22' },
+        });
+        bucket.grantRead(manageLists);
+        bucket.grantPut(manageLists);
+        bucket.grantDelete(manageLists);
+
+        const manageListsIntegration = new LambdaIntegration(manageLists);
+        props.apiStack.addMethodOnResource('list', 'GET', manageListsIntegration);
+        props.apiStack.addMethodOnResource('list', 'PUT', manageListsIntegration, true);
+        props.apiStack.addMethodOnResource('list', 'DELETE', manageListsIntegration, true);
     }
 }

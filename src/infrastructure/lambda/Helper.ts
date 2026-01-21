@@ -1,4 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { Readable } from "stream";
 
 export type JsonLike = { [key: string]: any };
 
@@ -84,4 +85,18 @@ export function isAuthorized(event: APIGatewayProxyEvent, targetUserId: string |
  */
 export function isAdmin(event: APIGatewayProxyEvent): boolean {
     return getGroups(event).includes('admin');
+}
+
+/**
+ * USeful utility to convert a Readable stream to a string
+ * @param stream: the Readable stream to convert
+ * @returns a Promise resolving to the string contents of the stream
+ */
+export async function streamToString(stream: Readable): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const chunks: Uint8Array[] = [];
+        stream.on("data", (chunk) => chunks.push(chunk));
+        stream.on("error", reject);
+        stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
+    });
 }

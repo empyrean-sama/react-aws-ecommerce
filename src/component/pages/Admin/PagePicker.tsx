@@ -9,11 +9,18 @@ export default function PagePicker() {
     const navigateTo = useNavigate();
 
     return (
-        <PagePickerCard 
-            heading="View & Edit Your Store Catalog" 
-            description="View & Customize products available in your store, manage inventory, and update product details to keep your catalog up-to-date."
-            handleAction={() => navigateTo("/admin/catalog")}
-        />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <PagePickerCard 
+                heading="View & Edit Your Store Catalog" 
+                description="View & Customize products available in your store, manage inventory, and update product details to keep your catalog up-to-date."
+                handleAction={() => navigateTo("/admin/catalog")}
+            />
+            <PagePickerCard 
+                heading="Promotion Management" 
+                description="Various promotions can be created to boost sales and attract customers. Manage existing promotions or create new ones here."
+                handleAction={() => navigateTo("/admin/promotions")}
+            />
+        </Box>
     );
 }
 
