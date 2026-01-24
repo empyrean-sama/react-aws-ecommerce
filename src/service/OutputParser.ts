@@ -112,4 +112,11 @@ export default class OutputParser {
     public static get ImageEndPointURL(): string {
         return `${this.ApiEndpoint}${Constants.imageResourceName}`;
     }
+
+    /**
+     * Get the full List API endpoint URL
+     */
+    public static get ListEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.listResourceName}`;
+    }
 }

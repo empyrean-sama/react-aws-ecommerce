@@ -1,6 +1,8 @@
 import React from "react";
 import { appGlobalStateContext } from "../../App/AppGlobalStateProvider"; 
 import ProductService from "../../../service/ProductService";
+import UtilityService from "../../../service/UtilityService";
+import Constants from "../../../Constants";
 
 import { Container, CircularProgress, Box, useTheme, useMediaQuery } from "@mui/material";
 import ProductCard from "./ProductCard";
@@ -24,19 +26,16 @@ export default function Home() {
     // State variables
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [featuredProducts, setFeaturedProducts] = React.useState<Array<{productRecord: IProductRecord, variantRecords: IProductVariantRecord[]}>>([]);
+    const [carouselItems, setCarouselItems] = React.useState<ICarouselItem[]>([]);
     
     // Global API & Services
     const { showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const productService = ProductService.getInstance();
+    const utilityService = UtilityService.getInstance();
     const theme = useTheme();
 
     // Computed Values
     const isNotMobile = useMediaQuery(theme.breakpoints.up('md')); 
-    const testCarouselItems: ICarouselItem[] = [
-        { id: "1", imageUrl: placeHolderImageString },
-        { id: "2", imageUrl: placeHolderImageString },
-        { id: "3", imageUrl: placeHolderImageString },
-    ];
 
     // Effects
     React.useEffect(() => {
@@ -75,10 +74,41 @@ export default function Home() {
         return () => { isMounted = false };
     }, []);
 
+    React.useEffect(() => {
+        // Set Carousel items
+        let isMounted = true;
+        (async function() {
+            try {
+                const banners = await utilityService.getList(Constants.PROMOTION_BANNER_LIST_KEY);
+                if (!isMounted) {
+                    return;
+                }
+
+                const mappedItems = (banners || [])
+                    .map((banner, index) => ({
+                        id: banner?.id?.toString?.() ?? `promotion-${index + 1}`,
+                        imageUrl: typeof banner?.image === 'string' ? banner.image : '',
+                        altText: typeof banner?.altText === 'string' ? banner.altText : `Promotion ${index + 1}`
+                    }))
+                    .filter((item) => !!item.imageUrl);
+
+                setCarouselItems(mappedItems.length > 0 ? mappedItems : []);
+            } catch (error) {
+                if (isMounted) {
+                    console.error("Error fetching promotion banners:", error);
+                    showMessage('Unable to load promotion banners right now', ESnackbarMsgVariant.warning);
+                    setCarouselItems([]);
+                }
+            }
+        })();
+
+        return () => { isMounted = false; };
+    }, []);
+
     return (
         <homeContext.Provider value={{ isLoading, setIsLoading }}>
             <Box sx={{display: "flex" , flexDirection: "column", width: "100%"}}>
-                <ImageCarousel items={testCarouselItems} sx={{ marginTop: 2, display: isNotMobile ? 'none' : 'block' }} />
+                <ImageCarousel items={carouselItems} sx={{ marginTop: 2, display: isNotMobile ? 'none' : 'block' }} />
                 <Container 
                     maxWidth="xl" 
                     sx={{ 
@@ -88,7 +118,7 @@ export default function Home() {
                     }}
                 >
                     <LoadingEnclosure>                    
-                        <ImageCarousel items={testCarouselItems} sx={{ display: isNotMobile ? 'block' : 'none' }} />
+                        <ImageCarousel items={carouselItems} sx={{ display: isNotMobile ? 'block' : 'none' }} />
                         <ProductRack label="Featured Products">
                             {featuredProducts.map(({ productRecord, variantRecords }) => (
                                 <ProductCard 

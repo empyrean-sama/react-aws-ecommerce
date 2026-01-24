@@ -9,6 +9,7 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 export interface ICarouselItem {
     id: string;
     imageUrl: string;
+    altText: string;
     link?: string;
 }
 
@@ -121,7 +122,7 @@ export default function ImageCarousel({ items, sx }: IImageCarouselProps) {
             <Slider {...settings}>
                 {items?.map((item) => (
                     <Box key={item.id} sx={{ outline: 'none' }}>
-                        <Box component="img" src={item.imageUrl} alt={`Carousel item ${item.id}`} 
+                        <Box component="img" src={item.imageUrl} alt={`Carousel Image ${item.altText || item.id}`} 
                             sx={{ 
                                 width: '100%',
                                 aspectRatio: '23/8',

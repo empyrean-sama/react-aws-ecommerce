@@ -29,6 +29,7 @@ const CustomizeProfile = Loadable(React.lazy(() => import('../pages/User/Customi
 const AdminConsole = Loadable(React.lazy(() => import("../pages/Admin/AdminConsole")));
 const CatalogPage = Loadable(React.lazy(() => import('../pages/Admin/Catalog/CatalogPage')));
 const PagePicker = Loadable(React.lazy(() => import('../pages/Admin/PagePicker')));
+const PromotionManagement = Loadable(React.lazy(() => import('../pages/Admin/PromotionManagement/PromotionManagement')));
 
 type AdminLoaderResult = { allowed: boolean };
 
@@ -62,6 +63,7 @@ export default function AppLayout() {
             <Route path="admin" element={<AdminRoute />} loader={adminLoader}>
                 <Route index element={<PagePicker />} />
                 <Route path="catalog" element={<CatalogPage />} />
+                <Route path="promotions" element={<PromotionManagement />} />
             </Route>
             <Route path="account" element={<AccountOutlet />}>
                 <Route index element={<Account />} />
