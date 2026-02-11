@@ -4,11 +4,15 @@ import { appGlobalStateContext } from '../App/AppGlobalStateProvider';
 import IAppGlobalStateContextAPI from '../../interface/IAppGlobalStateContextAPI';
 import ESnackbarMsgVariant from '../../enum/ESnackbarMsgVariant';
 
-import { Paper, Toolbar, LinearProgress, Box, Button, Table, TableContainer, TableHead, TableRow, TableCell, TableBody, IconButton, Typography, TextField, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Checkbox } from '@mui/material';
+import { Paper, Toolbar, LinearProgress, Box, Button, Table, TableContainer, TableHead, TableRow, TableCell, TableBody, IconButton, Typography, TextField, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Checkbox, MenuItem } from '@mui/material';
 
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+
+import { IAllowableValue } from '../../interface/IAllowableValue';
 
 enum EListItemType {
     string = "string",
@@ -16,12 +20,15 @@ enum EListItemType {
     boolean = "boolean",
     date = "date",
     picture = "picture",
+    list = "list",
 }
 export { EListItemType };
 
 export interface IListItem {
     type: EListItemType;
     name: string;
+    allowableValues?: IAllowableValue[];
+    readonly?: boolean;
 }
 
 export interface ListManagerProps {
@@ -104,6 +111,20 @@ export default function ListManager(props: ListManagerProps) {
         setList(prev => prev.filter((_, i) => i !== index));
     }
 
+    function handleMoveRow(index: number, direction: 'up' | 'down') {
+        setList(prev => {
+            const newIndex = direction === 'up' ? index - 1 : index + 1;
+            if (newIndex < 0 || newIndex >= prev.length) {
+                return prev;
+            }
+
+            const newList = [...prev];
+            const [moved] = newList.splice(index, 1);
+            newList.splice(newIndex, 0, moved);
+            return newList;
+        });
+    }
+
     async function handleAddRow() {
         if (list.length >= props.maxItems) {
             appGlobalState?.showMessage?.(`You have reached the maximum of ${props.maxItems} items.`, ESnackbarMsgVariant.warning);
@@ -129,6 +150,9 @@ export default function ListManager(props: ListManagerProps) {
                     case EListItemType.picture:
                         acc[item.name] = '';
                         break;
+                    case EListItemType.list:
+                        acc[item.name] = item.allowableValues?.[0]?.key ?? '';
+                        break;
                     case EListItemType.string:
                     default:
                         acc[item.name] = '';
@@ -142,6 +166,7 @@ export default function ListManager(props: ListManagerProps) {
     }
 
     function renderInputField(listItem: IListItem, value: any, onChange: (newValue: any) => void) {
+        const isReadOnly = !!listItem.readonly;
         switch (listItem.type) {
             case EListItemType.string:
                 return (
@@ -150,6 +175,7 @@ export default function ListManager(props: ListManagerProps) {
                         onChange={(e) => onChange(e.target.value)}
                         variant="outlined"
                         size="small"
+                        slotProps={{ input: { readOnly: isReadOnly } }}
                     />
                 );
             case EListItemType.number:
@@ -160,17 +186,19 @@ export default function ListManager(props: ListManagerProps) {
                         onChange={(e) => onChange(Number(e.target.value))}
                         variant="outlined"
                         size="small"
+                        slotProps={{ input: { readOnly: isReadOnly } }}
                     />
                 );
             case EListItemType.picture:
                 return (
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
-                        <Button variant="outlined" component="label" size="small">
+                        <Button variant="outlined" component="label" size="small" disabled={isReadOnly}>
                             Choose File
                             <input
                                 type="file"
                                 hidden
                                 accept="image/*"
+                                disabled={isReadOnly}
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (!file) {
@@ -207,6 +235,7 @@ export default function ListManager(props: ListManagerProps) {
                         checked={!!value}
                         onChange={(e) => onChange(e.target.checked)}
                         size="small"
+                        disabled={isReadOnly}
                     />
                 );
             case EListItemType.date:
@@ -217,7 +246,26 @@ export default function ListManager(props: ListManagerProps) {
                         onChange={(e) => onChange(e.target.value)}
                         variant="outlined"
                         size="small"
+                        slotProps={{ input: { readOnly: isReadOnly } }}
                     />
+                );
+            case EListItemType.list:
+                return (
+                    <TextField
+                        select
+                        value={value ?? ''}
+                        onChange={(e) => onChange(e.target.value)}
+                        variant="outlined"
+                        size="small"
+                        sx={{ minWidth: 160 }}
+                        disabled={isReadOnly}
+                    >
+                        {(listItem.allowableValues ?? []).map((option) => (
+                            <MenuItem key={option.key} value={option.key}>
+                                {option.displayValue}
+                            </MenuItem>
+                        ))}
+                    </TextField>
                 );
             default:
                 return <Typography variant="body2" color="text.secondary">Unsupported type</Typography>;
@@ -268,9 +316,24 @@ export default function ListManager(props: ListManagerProps) {
                                         </TableCell>
                                     ))}
                                     <TableCell align="right">
+                                        <IconButton
+                                            onClick={() => handleMoveRow(index, 'up')}
+                                            aria-label="Move row up"
+                                            disabled={index === 0}
+                                        >
+                                            <ArrowUpwardIcon />
+                                        </IconButton>
+                                        <IconButton
+                                            onClick={() => handleMoveRow(index, 'down')}
+                                            aria-label="Move row down"
+                                            disabled={index === list.length - 1}
+                                        >
+                                            <ArrowDownwardIcon />
+                                        </IconButton>
                                         <IconButton color="error" onClick={() => handleDeleteRow(index)} aria-label="Delete row">
                                             <DeleteIcon />
                                         </IconButton>
+                                        
                                     </TableCell>
                                 </TableRow>
                             ))
