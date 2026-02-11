@@ -113,7 +113,7 @@ export default class MemoryStack extends Stack {
         bucket.grantDelete(manageLists);
 
         const manageListsIntegration = new LambdaIntegration(manageLists);
-        props.apiStack.addMethodOnResource('list', 'GET', manageListsIntegration);
+        props.apiStack.addMethodOnResource('list', 'GET', manageListsIntegration, false);
         props.apiStack.addMethodOnResource('list', 'PUT', manageListsIntegration, true);
         props.apiStack.addMethodOnResource('list', 'DELETE', manageListsIntegration, true);
     }
