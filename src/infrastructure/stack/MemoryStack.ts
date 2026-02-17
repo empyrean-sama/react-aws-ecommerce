@@ -17,6 +17,8 @@ export interface MemoryStackProps extends StackProps {
 }
 
 export default class MemoryStack extends Stack {
+    public readonly memoryBucket: S3.Bucket;
+
     constructor(scope: Construct, id: string, props: MemoryStackProps) {
         super(scope, id, props);
 
@@ -33,6 +35,7 @@ export default class MemoryStack extends Stack {
             removalPolicy: RemovalPolicy.DESTROY, // TODO: change to RETAIN for production
             enforceSSL: true,
         });
+        this.memoryBucket = bucket;
 
         // Allow browser uploads via presigned URL (CORS for S3)
         bucket.addCorsRule({

@@ -39,7 +39,9 @@ export default function Nav({ setIsDrawerOpen, isDrawerOpen }: NavProps) {
                 <IconButton size="large" edge="start" color="inherit" aria-label="menu" sx={{ display: { xs: 'block', lg: 'none' }, lineHeight: 0 }} onClick={() => setIsDrawerOpen((prevValue) => !prevValue)}>{isDrawerOpen ? <CloseSharpIcon /> : <MenuIcon />}</IconButton>
                 <Typography variant="h1" component="h1" sx={{ flexGrow: {xs: 0, lg: 1}, textAlign: { xs: 'center', lg: 'left' }, cursor: 'pointer' }} onClick={() => navigateTo("/")}>Srividhya-Foods</Typography>
                 <Box sx={{ mx: {xs: 0, lg: 2}, display: 'flex', alignItems: 'center' }}>
-                    <SearchBar placeholder="Search products..." sx={{ width: '450px', display: { xs: 'none', lg: 'block' } }} />
+                    <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+                        <SearchBar placeholder="Search products..." sx={{ width: '450px' }} />
+                    </Box>
                     <ShoppingCartButton itemCount={cartItemCount} sx={{ ml: {xs: 0, lg: 1} }} onClick={() => navigateTo("/cart")} />
                     <AccountButtons sx={{ ml: 2, display: { xs: 'none', md: 'block' } }} />
                 </Box>

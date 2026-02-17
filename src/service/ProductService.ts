@@ -7,6 +7,7 @@ import IProduct from "../interface/product/IProduct";
 import IProductRecord from "../interface/product/IProductRecord";
 import IReview from "../interface/product/IReview";
 import IReviewRecord from "../interface/product/IReviewRecord";
+import IProductSearchIndex from "../interface/product/IProductSearchIndex";
 import IProductVariant from "../interface/product/IProductVariant";
 import IProductVariantRecord from "../interface/product/IProductVariantRecord";
 
@@ -533,6 +534,38 @@ export default class ProductService {
         }
 
         return map;
+    }
+
+    // Product Search Index
+    public async regenerateProductSearchIndex(): Promise<{ message: string; objectKey: string; totalProducts: number; generatedAt: number }> {
+        const url = new URL(OutputParser.ProductSearchIndexEndPointURL);
+        const resp = await AuthService.getInstance().authorizedFetch(url, { method: 'POST' });
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok) {
+            throw new Error(json?.message || 'Failed to regenerate product search index');
+        }
+
+        return {
+            message: typeof json?.message === 'string' ? json.message : 'Search index regenerated successfully',
+            objectKey: typeof json?.objectKey === 'string' ? json.objectKey : '',
+            totalProducts: typeof json?.totalProducts === 'number' ? json.totalProducts : 0,
+            generatedAt: typeof json?.generatedAt === 'number' ? json.generatedAt : Date.now(),
+        };
+    }
+
+    public async getPublicProductSearchIndex(): Promise<IProductSearchIndex | null> {
+        const resp = await fetch(OutputParser.ProductSearchIndexPublicURL, {
+            method: 'GET',
+            cache: 'no-store',
+        });
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok || !json || typeof json !== 'object') {
+            return null;
+        }
+        if (typeof json.generatedAt !== 'number' || typeof json.totalProducts !== 'number' || typeof json.productsByName !== 'object' || json.productsByName === null) {
+            return null;
+        }
+        return json as IProductSearchIndex;
     }
 
     public async createReview(review: IReviewWriteInput): Promise<IReviewRecord> {

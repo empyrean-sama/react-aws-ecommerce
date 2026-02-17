@@ -26,7 +26,7 @@ const authApiStack = new AuthApiStack(app, Constants.authApiStackOutputKey, { ap
 new ProfileStack(app, Constants.profileStackOutputKey, { profilesTable: authStack.profilesTable, apiStack: apiStack, env });
 
 // Create Memory Stack to host public-read assets
-new MemoryStack(app, Constants.memoryStackOutputKey, { apiStack, env });
+const memoryStack = new MemoryStack(app, Constants.memoryStackOutputKey, { apiStack, env });
 
 // Create Product Stack to host product/collection/variant APIs and tables
-new ProductStack(app, Constants.productStackOutputKey, { apiStack, env, authAPIStack: authApiStack });
+new ProductStack(app, Constants.productStackOutputKey, { apiStack, env, authAPIStack: authApiStack, memoryBucket: memoryStack.memoryBucket });

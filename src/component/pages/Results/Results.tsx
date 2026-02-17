@@ -50,6 +50,8 @@ export default function Results() {
 
     const source = searchParams.get('source');
     const collectionId = searchParams.get('collectionId');
+    const searchQuery = searchParams.get('query');
+    const productIdsParam = searchParams.get('productIds');
 
     React.useEffect(() => {
         let isMounted = true;
@@ -79,6 +81,32 @@ export default function Results() {
                     if (collection) {
                         nextCollectionNameById[collection.collectionId] = collection.name;
                     }
+                } else if (source === 'search') {
+                    const queryText = searchQuery?.trim() ?? '';
+                    computedLabel = queryText.length > 0 ? `Search Results for "${queryText}"` : 'Search Results';
+
+                    const productIds = Array.from(new Set(
+                        (productIdsParam ?? '')
+                            .split(',')
+                            .map((id) => id.trim())
+                            .filter(Boolean)
+                    ));
+
+                    const resolvedProducts = await Promise.all(productIds.map((productId) => productService.getProductById(productId)));
+                    products = resolvedProducts.filter((product): product is IProductRecord => Boolean(product));
+
+                    const collections = await productService.listCollections();
+                    for (const collection of collections ?? []) {
+                        nextCollectionNameById[collection.collectionId] = collection.name;
+                    }
+                } else {
+                    const collections = await productService.listCollections();
+                    for (const collection of collections ?? []) {
+                        nextCollectionNameById[collection.collectionId] = collection.name;
+                    }
+                    const allProductsBatches = await Promise.all((collections ?? []).map((collection) => productService.getProductsByCollectionId(collection.collectionId)));
+                    products = allProductsBatches.flatMap((batch) => batch ?? []);
+                    computedLabel = 'All Products';
                 }
             
                 const variantsByProduct = await Promise.all(products.map(async (product) => {
@@ -115,7 +143,7 @@ export default function Results() {
         return () => {
             isMounted = false;
         };
-    }, [source, collectionId]);
+    }, [source, collectionId, searchQuery, productIdsParam]);
 
     const availableTags = React.useMemo(() => {
         const tags = new Set<string>();

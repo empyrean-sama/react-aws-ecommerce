@@ -109,6 +109,16 @@ export default class OutputParser {
     public static get ReviewAverageEndPointURL(): string {
         return `${this.ApiEndpoint}${Constants.reviewAverageResourceName}`;
     }
+    public static get ProductSearchIndexEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.productSearchIndexResourceName}`;
+    }
+    public static get ProductSearchIndexPublicURL(): string {
+        const encodedKey = Constants.productSearchIndexObjectKey
+            .split('/')
+            .map((segment) => encodeURIComponent(segment))
+            .join('/');
+        return `https://${this.MemoryBucketName}.s3.${Constants.region}.amazonaws.com/${encodedKey}`;
+    }
     public static get ProductTagsEndPointURL(): string {
         return `${this.ApiEndpoint}${Constants.productTagsResourceName}`;
     }

@@ -1,6 +1,7 @@
 
 import * as DynamoDB from 'aws-cdk-lib/aws-dynamodb';
 import * as Lambda from 'aws-cdk-lib/aws-lambda';
+import * as S3 from 'aws-cdk-lib/aws-s3';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as path from 'path';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
@@ -13,6 +14,7 @@ import AuthApiStack from './AuthApiStack';
 export interface ProductStackProps extends StackProps {
 	apiStack: APIStack;
 	authAPIStack: AuthApiStack;
+	memoryBucket: S3.IBucket;
 }
 
 export default class ProductStack extends Stack {
@@ -174,5 +176,24 @@ export default class ProductStack extends Stack {
 		props.apiStack.addMethodOnResource(Constants.reviewResourceName, 'POST', reviewIntegration, true);
 		props.apiStack.addMethodOnResource(Constants.reviewResourceName, 'PUT', reviewIntegration, true);
 		props.apiStack.addMethodOnResource(Constants.reviewResourceName, 'DELETE', reviewIntegration, true);
+
+		// Lambda: Product Search Index regeneration
+		const productSearchIndexLambda = new NodejsFunction(this, 'ProductSearchIndexFunction', {
+			functionName: 'ProductSearchIndexFunction',
+			entry: path.join(__dirname, '..', 'lambda', 'Product', 'SearchIndex.ts'),
+			handler: 'Handle',
+			runtime: Lambda.Runtime.NODEJS_22_X,
+			environment: {
+				PRODUCT_TABLE: this._productTable.tableName,
+				SEARCH_INDEX_BUCKET: props.memoryBucket.bucketName,
+				SEARCH_INDEX_KEY: Constants.productSearchIndexObjectKey,
+			},
+			bundling: { minify: true, sourceMap: true, target: 'node22' },
+		});
+		this._productTable.grantReadData(productSearchIndexLambda);
+		props.memoryBucket.grantPut(productSearchIndexLambda);
+
+		const productSearchIndexIntegration = new LambdaIntegration(productSearchIndexLambda);
+		props.apiStack.addMethodOnResource(Constants.productSearchIndexResourceName, 'POST', productSearchIndexIntegration, true);
 	}
 }

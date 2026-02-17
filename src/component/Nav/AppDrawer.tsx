@@ -64,7 +64,11 @@ export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen }: AppDrawerPr
                     gap: 2,
                 }}
             >
-                <SearchBar placeholder="Search products..." sx={{ backgroundColor: theme.palette.background.default, marginLeft: 1, width: {xs: `calc(${Constants.DRAWER_WIDTH_MOBILE} - ${theme.spacing(1)}px)`, sm: `calc(${Constants.DRAWER_WIDTH_TABLET} - ${theme.spacing(1)}px)`} }}/>
+                <SearchBar
+                    placeholder="Search products..."
+                    sx={{ backgroundColor: theme.palette.background.default, marginLeft: 1, width: {xs: `calc(${Constants.DRAWER_WIDTH_MOBILE} - ${theme.spacing(1)}px)`, sm: `calc(${Constants.DRAWER_WIDTH_TABLET} - ${theme.spacing(1)}px)`} }}
+                    onSearchTriggered={() => setIsDrawerOpen(false)}
+                />
                 <Box sx={{backgroundColor: theme.palette.background.paper, flexGrow: 1}}>
                     <List>
                         <ListItem disablePadding>
