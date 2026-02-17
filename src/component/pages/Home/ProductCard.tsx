@@ -16,6 +16,9 @@ import { getStockStatus } from './Helper';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 
+const CARD_WIDTH = { xs: 175, md: 250 };
+const ACTION_HALF_WIDTH = { p: 1, flexBasis: '50%' };
+
 interface IProductCardProps {
     productRecord: IProductRecord;
     productVariantRecord: IProductVariantRecord[];
@@ -25,49 +28,80 @@ interface IProductCardProps {
     reviewCount?: number; // defaults to number.NaN, which means no review count shown
 }
 
+function getDefaultVariantRecord(productRecord: IProductRecord, variants: IProductVariantRecord[]): IProductVariantRecord | null {
+    return variants.find((variant) => variant.variantId === productRecord.defaultVariantId) || variants[0] || null;
+}
+
+function formatPrice(priceInMinorUnit?: number): string {
+    if (typeof priceInMinorUnit !== 'number') {
+        return 'N/A';
+    }
+    return (priceInMinorUnit / 100).toFixed(2);
+}
+
+function getCartQuantity(
+    cartProducts: Array<{ productId: string; variantId: string; quantity: number }> | undefined,
+    productId: string,
+    variantId: string | undefined
+): number {
+    return cartProducts?.find((item) => item.productId === productId && item.variantId === variantId)?.quantity ?? 0;
+}
+
+function RatingBadge(props: { rating?: number }) {
+    if (!props.rating) {
+        return null;
+    }
+
+    return (
+        <Box
+            sx={{
+                backdropFilter: 'blur(5px)',
+                backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                px: 1,
+            }}
+            position='absolute'
+            top={8}
+            left={8}
+        >
+            <StarOutlined sx={{ color: 'goldenrod', fontSize: 20, verticalAlign: 'middle' }} />
+            <Typography variant='subtitle2' component='span' fontWeight='bold' sx={{ ml: 0.5, verticalAlign: 'middle' }}>
+                {props.rating.toFixed(1)}
+            </Typography>
+        </Box>
+    );
+}
+
+function StockBadge(props: { stockCount: number }) {
+    const stockStatus = getStockStatus(props.stockCount);
+    return (
+        <Chip
+            label={stockStatus.statusText}
+            color={stockStatus.statusColor}
+            sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                padding: 0.5,
+            }}
+        />
+    );
+}
+
 export default function ProductCard(props: IProductCardProps) {
 
     // Global Api
     const { showMessage, cartState, setCart } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
-    // Component State
-    const [isHovered, setIsHovered] = React.useState<boolean>(false);
-
     // Computed properties
     const cardImage = props.productRecord.imageUrls[0] || placeHolderImageString;
     const cardImageAlt = `${props.productRecord.name} Image`;
-    const currency = props.currency || 'INR';
-    const defaultVariantRecord: IProductVariantRecord | null = props.productVariantRecord.find(variant => variant.variantId === props.productRecord.defaultVariantId) || props.productVariantRecord[0] || null;
+    const defaultVariantRecord = getDefaultVariantRecord(props.productRecord, props.productVariantRecord);
     const stockCount: number = defaultVariantRecord ? defaultVariantRecord.stock : 0;
-    const stockStatus = getStockStatus(stockCount);
     const maximumInOrder = defaultVariantRecord?.maximumInOrder;
-    const cartQuantity = cartState.cartEntryRecord?.products?.find(item => item.productId === props.productRecord.productId && item.variantId === defaultVariantRecord?.variantId)?.quantity ?? 0;
-
-    let ratingsComponent: React.ReactNode = null;
-
-    if(props.rating) {
-        ratingsComponent = (
-            <Box sx={{ 
-                backdropFilter: 'blur(5px)',
-                backgroundColor: 'rgba(255, 255, 255, 0.5)', px: 1}}
-                position='absolute' top={8} left={8} 
-            >
-                <StarOutlined sx={{ color: 'goldenrod', fontSize: 20, verticalAlign: 'middle' }} />
-                <Typography variant='subtitle2' component='span' fontWeight='bold' sx={{ ml: 0.5, verticalAlign: 'middle' }}>
-                    { props.rating.toFixed(1) }
-                </Typography>
-            </Box>
-        );
-    }
-
-    const stockStatusComponent: React.ReactNode = (
-        <Chip 
-            label={stockStatus.statusText} color={stockStatus.statusColor} 
-            sx={{
-                position: 'absolute', top: 8, right: 8,
-                padding: 0.5,
-            }}
-        />
+    const cartQuantity = getCartQuantity(
+        cartState.cartEntryRecord?.products,
+        props.productRecord.productId,
+        defaultVariantRecord?.variantId
     );
 
     // Private Methods
@@ -126,28 +160,31 @@ export default function ProductCard(props: IProductCardProps) {
     }
 
     return(
-        <Paper 
+        <Paper
             sx={{
                 transition: 'all 0.3s ease-in-out',
-                display: 'flex', flexDirection: 'column', gap: 1, 
-                position: "relative", cursor: 'pointer',
-                "&:hover": {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                position: 'relative',
+                cursor: 'pointer',
+                '&:hover': {
                     boxShadow: 6,
                     transform: 'scale(1.01)',
-                }, 
-                width: { xs: 175, md: 250 }
+                },
+                width: CARD_WIDTH
             }}
         >
             <Box onClick={handleCardClick}>
-                {ratingsComponent}
-                {stockStatusComponent}
+                <RatingBadge rating={props.rating} />
+                <StockBadge stockCount={stockCount} />
                 <Box component='img' src={cardImage} alt={cardImageAlt} sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover' }} />
                 <Box sx={{display: "flex", flexDirection: "column", gap: 1 }}>
                     <Typography variant='subtitle1' fontWeight='bold' sx={{ mx: 2, textAlign: "left", lineHeight: 1.2 }}>
                         {props.productRecord.name}
                     </Typography>
                     <Typography variant='body2' sx={{ mx: 2, textAlign: "left", color: red[700], fontWeight: 'bold' }} noWrap>
-                        ₹{ defaultVariantRecord ? (defaultVariantRecord.price / 100).toFixed(2) : 'N/A' }
+                        ₹{formatPrice(defaultVariantRecord?.price)}
                     </Typography>
                 </Box>
             </Box>
@@ -171,8 +208,10 @@ export default function ProductCard(props: IProductCardProps) {
                         </IconButton>
                     </Box>
                 ) : (
-                    <Button 
-                        color='primary' variant="contained" sx={{p: 1, flexBasis: '50%'}}
+                    <Button
+                        color='primary'
+                        variant="contained"
+                        sx={ACTION_HALF_WIDTH}
                         startIcon={<ShoppingCartOutlinedIcon />}
                         onClick={handleAddToCart}
                         disabled={stockCount <= 0}
@@ -180,7 +219,7 @@ export default function ProductCard(props: IProductCardProps) {
                         Add
                     </Button>
                 )}
-                <Button color='info' variant="contained" sx={{p: 1, flexBasis: '50%'}} onClick={handleBuyNow} disabled={stockCount <= 0}>Buy Now</Button>
+                <Button color='info' variant="contained" sx={ACTION_HALF_WIDTH} onClick={handleBuyNow} disabled={stockCount <= 0}>Buy Now</Button>
             </Box>
         </Paper>
     );

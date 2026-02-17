@@ -8,54 +8,68 @@ import placeHolderImageString from 'url:./placeholderImage.png';
 import IAppGlobalStateContextAPI from '../../../interface/IAppGlobalStateContextAPI';
 import ESnackbarMsgVariant from '../../../enum/ESnackbarMsgVariant';
 
+const RACK_CARD_WIDTH = { xs: 175, md: 250 };
+const LABEL_CHIP_SX = { backgroundColor: '#000', color: '#fff', py: 1, px: 2, my: 0.2, width: 'fit-content' };
+
 export interface IProductRackProps {
     label: string;
     children: React.ReactElement<typeof ProductCard> | Array<React.ReactElement<typeof ProductCard>>;
 }
 
+function getRackHeroImage(children: IProductRackProps['children']): string {
+    const childrenArray = React.Children.toArray(children) as Array<React.ReactElement<typeof ProductCard>>;
+    return (childrenArray[0] as any)?.props?.productRecord?.imageUrls?.[0] || placeHolderImageString;
+}
+
+function renderRackLabel(label: string): React.ReactNode {
+    return label.split(' ').map((word, index) => (
+        <Box key={`${word}-${index}`} sx={LABEL_CHIP_SX}>
+            {word}
+        </Box>
+    ));
+}
+
 export default function ProductRack(props: IProductRackProps) {
 
     // Global API
-    const {showMessage} = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     // Card State
     const [hovered, setHovered] = React.useState(false);
 
     // Computed Properties
-    const childrenArray = React.Children.toArray(props.children) as Array<React.ReactElement<typeof ProductCard>>;
-    const firstImage = (childrenArray[0] as any)?.props?.productRecord?.imageUrls[0] || placeHolderImageString;
-    const labelComponents = props.label.split(' ').map((word,index) => {
-        return (
-            <Box key={word+index} sx={{ backgroundColor: '#000', color: '#fff', py: 1, px: 2, my: 0.2, width: 'fit-content' }}>
-                {word}
-            </Box>
-        );
-    });
+    const heroImage = getRackHeroImage(props.children);
+    const labelComponents = renderRackLabel(props.label);
 
     // Private Routines
-    async function handleRackClick() {
+    function handleRackClick() {
         showMessage(`Clicked on rack: ${props.label}`, ESnackbarMsgVariant.info);
     }
 
     return (
-        <Stack direction="row" spacing={1} flexWrap={'wrap'}>
-            <Paper 
+        <Stack direction="row" flexWrap={'wrap'} rowGap={2} columnGap={2} justifyContent={'center'}>
+            <Paper
                 sx={{
-                    display: 'flex', flexDirection: 'column', gap: 1, 
-                    position: "relative", cursor: 'pointer', 
-                    width: { xs: 175, md: 250 }
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                    position: 'relative',
+                    cursor: 'pointer',
+                    width: RACK_CARD_WIDTH,
                 }}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
                 onClick={handleRackClick}
             >
                 <Box
-                    component="img" 
-                    src={firstImage} 
-                    alt="Product Rack Banner" 
+                    component="img"
+                    src={heroImage}
+                    alt="Product Rack Banner"
                     sx={{
                         transition: 'all 0.3s ease-in-out',
-                        width: '100%', height: '100%', objectFit: 'cover',
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
                         filter: hovered ? 'brightness(60%) blur(3px)' : 'brightness(80%) blur(3px)',
                     }}
                 />
