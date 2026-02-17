@@ -201,7 +201,7 @@ export default function Home() {
                 sx={{ paddingX: { xs: 0, md: 2 } }}
             />
 
-            <Container maxWidth="xl" sx={{ marginTop: isNotMobile ? 6 : 4 }}>
+            <Container maxWidth="xl" sx={{ marginY: isNotMobile ? 6 : 4 }}>
                 <LoadingEnclosure isLoading={isLoading}>
                     <Box sx={{ display: "flex", flexDirection: "column", rowGap: 6, width: '100%' }}>
                         <ProductRack label="Featured Products">

@@ -1,8 +1,9 @@
 import React, { Suspense } from 'react';
-import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider, useLoaderData } from 'react-router';
+import { createBrowserRouter, createRoutesFromElements, Outlet, Route, RouterProvider, useLoaderData } from 'react-router';
 import { Box, CircularProgress } from '@mui/material';
 
 import PageEnclosure from '../pages/PageEnclosure';
+import SiteFooter from '../ui/SiteFooter';
 import AuthService from "../../service/AuthService";
 
 // Helper to wrap Lazy components in Suspense
@@ -55,26 +56,40 @@ function AdminRoute() {
     return <AdminConsole />;
 }
 
+function NonAdminLayout() {
+    return (
+        <Box sx={{ width: '100%', minHeight: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <Outlet />
+            </Box>
+            <SiteFooter />
+        </Box>
+    );
+}
+
 export default function AppLayout() {
     const router = createBrowserRouter(createRoutesFromElements(
         <Route path="/" element={<PageEnclosure />} hydrateFallbackElement={<Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100dvh', width: "100vw"}}><CircularProgress /></Box>}>
-            <Route index element={<Home />} />
-            <Route path="cart" element={<Cart />} />
+            <Route element={<NonAdminLayout />}>
+                <Route index element={<Home />} />
+                <Route path="cart" element={<Cart />} />
+                <Route path="account" element={<AccountOutlet />}>
+                    <Route index element={<Account />} />
+                    <Route path="login" element={<Login />} />
+                    <Route path="signup" element={<SignUp />} />
+                    <Route path="verify-username" element={<VerifyUsername />} />
+                    <Route path="forgot-password" element={<ForgotPassword />} />
+                    <Route path="forgot-password/verify" element={<ForgotPasswordVerify />} />
+                    <Route path="profile" element={<CustomizeProfile />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+            </Route>
+
             <Route path="admin" element={<AdminRoute />} loader={adminLoader}>
                 <Route index element={<PagePicker />} />
                 <Route path="catalog" element={<CatalogPage />} />
                 <Route path="promotions" element={<PromotionManagement />} />
             </Route>
-            <Route path="account" element={<AccountOutlet />}>
-                <Route index element={<Account />} />
-                <Route path="login" element={<Login />} />
-                <Route path="signup" element={<SignUp />} />
-                <Route path="verify-username" element={<VerifyUsername />} />
-                <Route path="forgot-password" element={<ForgotPassword />} />
-                <Route path="forgot-password/verify" element={<ForgotPasswordVerify />} />
-                <Route path="profile" element={<CustomizeProfile />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
         </Route>
     ))
 
