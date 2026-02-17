@@ -278,7 +278,7 @@ function CartItemViewerPanel() {
                                     priceInRupees = priceInPaise / 100;
                                 }
                                 return( 
-                                    <TableRow key={cartEntry.productId}>
+                                    <TableRow key={`${cartEntry.productId}-${cartEntry.variantId}`}>
                                         <TableCell>
                                             <ButtonBase
                                                 onClick={() => handleOpenProductDetails(cartEntry.productId, cartState.productIdToProductRecordMap[cartEntry.productId]?.name || 'item')}

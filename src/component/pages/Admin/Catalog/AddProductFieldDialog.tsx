@@ -12,6 +12,9 @@ interface AddProductFieldDialogProps {
 }
 
 export default function AddProductFieldDialog({ open, onClose, onAdd }: AddProductFieldDialogProps) {
+    const typeLabelId = 'add-product-field-type-label';
+    const typeSelectId = 'add-product-field-type-select';
+
     const [type, setType] = useState<EProductFieldType>(EProductFieldType.section);
     
     // Section state
@@ -61,8 +64,10 @@ export default function AddProductFieldDialog({ open, onClose, onAdd }: AddProdu
             <DialogContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                     <FormControl fullWidth size="small">
-                        <InputLabel>Type</InputLabel>
+                        <InputLabel id={typeLabelId}>Type</InputLabel>
                         <Select
+                            labelId={typeLabelId}
+                            id={typeSelectId}
                             value={type}
                             label="Type"
                             onChange={(e) => setType(e.target.value as EProductFieldType)}

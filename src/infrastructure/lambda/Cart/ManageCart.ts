@@ -9,8 +9,8 @@
  *
  * API
  * - GET /cart - get user's cart
- * - POST /cart - add/update one item (body: { productId: string, quantity: number })
- *              - OR replace cart (body: { products: { productId: string, quantity: number }[] })
+ * - POST /cart - add/update one item (body: { productId: string, variantId: string, quantity: number })
+ *              - OR replace cart (body: { products: { productId: string, variantId: string, quantity: number }[] })
  * - DELETE /cart - delete user's cart
  */
 
@@ -135,13 +135,15 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
 
             // Payload options:
             // 1) Replace: { products: [{ productId, quantity, variantId }, ...] }
-            // 2) Upsert single item: { productId: string, quantity: number }
+            // 2) Upsert single item: { productId: string, variantId: string, quantity: number }
             if(Array.isArray(parsed.products)) { 
                 /* Should Replace the entire cart */
-                // Filter out duplicate productId entries, keeping the last occurrence
+                // Filter out duplicate product+variant entries, keeping the last occurrence
                 const uniqueProductsMap: { [key: string]: ICartEntryItem } = {};
                 for (let i = parsed.products.length - 1; i >= 0; i--) {
-                    uniqueProductsMap[parsed.products[i].productId] = parsed.products[i];
+                    const item = parsed.products[i] as ICartEntryItem;
+                    const compositeKey = `${item.productId}::${item.variantId}`;
+                    uniqueProductsMap[compositeKey] = item;
                 }
                 parsed.products = Object.values(uniqueProductsMap);
 
