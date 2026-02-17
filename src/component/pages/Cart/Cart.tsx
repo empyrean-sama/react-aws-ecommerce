@@ -4,7 +4,7 @@ import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
 import AuthService from "../../../service/AuthService";
 import ProductService from "../../../service/ProductService";
 
-import { Avatar, Box, Button, CircularProgress, Container, Divider, Grid, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, IconButton } from "@mui/material";
+import { Avatar, Box, Button, ButtonBase, CircularProgress, Container, Divider, Grid, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, IconButton } from "@mui/material";
 
 import { ICartEntryItem } from "../../../interface/product/ICartEntry";
 import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
@@ -150,6 +150,7 @@ function CartItemViewerPanel() {
 
     // Global Services
     const { cartState, setCart, showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const navigateTo = useNavigate();
 
     // State variables
     const [isLoading, setIsLoading] = React.useState<boolean>(false);
@@ -227,6 +228,10 @@ function CartItemViewerPanel() {
         }
     }
 
+    function handleOpenProductDetails(productId: string): void {
+        navigateTo(`/product/${productId}`);
+    }
+
     return (
         <Paper sx={{ p: {xs: 0, md: 2}, flexBasis: { xs: '100%', md: "66%", lg: "60%" },  width: "100%" }}>
             <Typography variant="h4" component="h2" sx={{ textAlign: { xs: 'center', md: 'left' }, pt: { xs: 2, md: 0 }}}>
@@ -256,15 +261,20 @@ function CartItemViewerPanel() {
                                 return( 
                                     <TableRow key={cartEntry.productId}>
                                         <TableCell>
-                                            <Stack direction="row" spacing={2} alignItems="center">
-                                                <Avatar 
-                                                    variant="square"
-                                                    src={cartState.productIdToProductRecordMap[cartEntry.productId]?.imageUrls?.[0] || placeHolderImageString}
-                                                    alt={cartState.productIdToProductRecordMap[cartEntry.productId]?.name || 'Product Image'}
-                                                    sx={{ width: { xs: 64, sm: 96, md: 128 }, height: { xs: 64, sm: 96, md: 128 } }}
-                                                />
-                                                <Typography variant="body1">{cartState.productIdToProductRecordMap[cartEntry.productId]?.name || 'Unnamed Product'} ({cartState.productIdToVariantsRecordMap[cartEntry.productId]?.find(variant => variant.variantId === cartEntry.variantId)?.name || ''})</Typography>
-                                            </Stack>
+                                            <ButtonBase
+                                                onClick={() => handleOpenProductDetails(cartEntry.productId)}
+                                                sx={{ width: '100%', textAlign: 'left', justifyContent: 'flex-start' }}
+                                            >
+                                                <Stack direction="row" spacing={2} alignItems="center">
+                                                    <Avatar 
+                                                        variant="square"
+                                                        src={cartState.productIdToProductRecordMap[cartEntry.productId]?.imageUrls?.[0] || placeHolderImageString}
+                                                        alt={cartState.productIdToProductRecordMap[cartEntry.productId]?.name || 'Product Image'}
+                                                        sx={{ width: { xs: 64, sm: 96, md: 128 }, height: { xs: 64, sm: 96, md: 128 } }}
+                                                    />
+                                                    <Typography variant="body1">{cartState.productIdToProductRecordMap[cartEntry.productId]?.name || 'Unnamed Product'} ({cartState.productIdToVariantsRecordMap[cartEntry.productId]?.find(variant => variant.variantId === cartEntry.variantId)?.name || ''})</Typography>
+                                                </Stack>
+                                            </ButtonBase>
                                         </TableCell>
                                         <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' }}}><Typography variant="body1">₹{priceInRupees}</Typography></TableCell>
                                         <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' }}}>

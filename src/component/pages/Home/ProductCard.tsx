@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router';
 import { appGlobalStateContext } from '../../App/AppGlobalStateProvider';
 
 import { Typography, Box, Paper, Button, Chip, IconButton } from '@mui/material';
@@ -88,6 +89,7 @@ function StockBadge(props: { stockCount: number }) {
 }
 
 export default function ProductCard(props: IProductCardProps) {
+    const navigateTo = useNavigate();
 
     // Global Api
     const { showMessage, cartState, setCart } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
@@ -106,7 +108,7 @@ export default function ProductCard(props: IProductCardProps) {
 
     // Private Methods
     function handleCardClick() {
-        showMessage(`Clicked on product: ${props.productRecord.name}`, ESnackbarMsgVariant.info);
+        navigateTo(`/product/${props.productRecord.productId}`);
     }
 
     /**
@@ -141,6 +143,7 @@ export default function ProductCard(props: IProductCardProps) {
 
     function handleAddToCart(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         e.preventDefault();
+        e.stopPropagation();
         if (!defaultVariantRecord) return;
         if (stockCount <= 0) {
             showMessage(`This item is out of stock.`, ESnackbarMsgVariant.error);
@@ -156,11 +159,14 @@ export default function ProductCard(props: IProductCardProps) {
     }
 
     function handleBuyNow(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        e.preventDefault();
+        e.stopPropagation();
         showMessage(`Buy now not implemented yet!`, ESnackbarMsgVariant.error);
     }
 
     return(
         <Paper
+            onClick={handleCardClick}
             sx={{
                 transition: 'all 0.3s ease-in-out',
                 display: 'flex',
@@ -175,7 +181,7 @@ export default function ProductCard(props: IProductCardProps) {
                 width: CARD_WIDTH
             }}
         >
-            <Box onClick={handleCardClick}>
+            <Box>
                 <RatingBadge rating={props.rating} />
                 <StockBadge stockCount={stockCount} />
                 <Box component='img' src={cardImage} alt={cardImageAlt} sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover' }} />
@@ -193,7 +199,11 @@ export default function ProductCard(props: IProductCardProps) {
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexBasis: '50%', px: 1 }}>
                         <IconButton
                             size="small"
-                            onClick={() => handleSetQuantity(cartQuantity - 1)}
+                            onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                handleSetQuantity(cartQuantity - 1);
+                            }}
                             disabled={cartQuantity <= 0}
                         >
                             <RemoveIcon fontSize="small" />
@@ -201,7 +211,11 @@ export default function ProductCard(props: IProductCardProps) {
                         <Typography variant="subtitle1" fontWeight="bold">{cartQuantity}</Typography>
                         <IconButton
                             size="small"
-                            onClick={() => handleSetQuantity(cartQuantity + 1)}
+                            onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                handleSetQuantity(cartQuantity + 1);
+                            }}
                             disabled={stockCount <= 0}
                         >
                             <AddIcon fontSize="small" />
