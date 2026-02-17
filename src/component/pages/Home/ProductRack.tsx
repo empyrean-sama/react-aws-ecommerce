@@ -14,6 +14,7 @@ const LABEL_CHIP_SX = { backgroundColor: '#000', color: '#fff', py: 1, px: 2, my
 export interface IProductRackProps {
     label: string;
     children: React.ReactElement<typeof ProductCard> | Array<React.ReactElement<typeof ProductCard>>;
+    onViewAll?: () => void;
 }
 
 function getRackHeroImage(children: IProductRackProps['children']): string {
@@ -43,6 +44,10 @@ export default function ProductRack(props: IProductRackProps) {
 
     // Private Routines
     function handleRackClick() {
+        if (props.onViewAll) {
+            props.onViewAll();
+            return;
+        }
         showMessage(`Clicked on rack: ${props.label}`, ESnackbarMsgVariant.info);
     }
 

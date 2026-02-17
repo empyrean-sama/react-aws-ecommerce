@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router";
 import { appGlobalStateContext } from "../../App/AppGlobalStateProvider"; 
 import ProductService from "../../../service/ProductService";
 import UtilityService from "../../../service/UtilityService";
@@ -134,6 +135,7 @@ export default function Home() {
     const { showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const productService = ProductService.getInstance();
     const utilityService = UtilityService.getInstance();
+    const navigateTo = useNavigate();
     const theme = useTheme();
 
     // Computed Values
@@ -213,7 +215,10 @@ export default function Home() {
             <Container maxWidth="xl" sx={{ marginY: isNotMobile ? 6 : 4 }}>
                 <LoadingEnclosure isLoading={isLoading}>
                     <Box sx={{ display: "flex", flexDirection: "column", rowGap: 6, width: '100%' }}>
-                        <ProductRack label="Featured Products">
+                        <ProductRack
+                            label="Featured Products"
+                            onViewAll={() => navigateTo('/results?source=featured')}
+                        >
                             {featuredProducts.map(({ productRecord, variantRecords }) => {
                                 const collectionName = collections.find((item) => item.collectionId === productRecord.collectionId)?.name;
                                 return (
@@ -233,6 +238,7 @@ export default function Home() {
                                 key={collection.collectionId}
                                 collection={collection}
                                 showMessage={showMessage}
+                                navigateToResults={(url) => navigateTo(url)}
                                 averageReviewScoreByProductId={averageReviewScoreByProductId}
                                 onAverageScoresLoaded={(scores) => {
                                     setAverageReviewScoreByProductId((prev) => ({ ...prev, ...scores }));
@@ -274,12 +280,13 @@ function CarouselLoadingSpinner(props: { sx?: SxProps<Theme> }) {
 interface ILazyCollectionRackProps {
     collection: ICollectionRecord;
     showMessage: IAppGlobalStateContextAPI['showMessage'];
+    navigateToResults: (url: string) => void;
     onAverageScoresLoaded?: (scores: Record<string, number>) => void;
     averageReviewScoreByProductId?: Record<string, number>;
 }
 
 function LazyCollectionRack(props: ILazyCollectionRackProps) {
-    const { collection, showMessage } = props;
+    const { collection, showMessage, navigateToResults } = props;
     const productService = ProductService.getInstance();
     const rackRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -353,7 +360,10 @@ function LazyCollectionRack(props: ILazyCollectionRackProps) {
             {!hasLoaded || isLoading ? (
                 <RackLoadingPlaceholder />
             ) : products.length > 0 ? (
-                <ProductRack label={collection.name}>
+                <ProductRack
+                    label={collection.name}
+                    onViewAll={() => navigateToResults(`/results?source=collection&collectionId=${encodeURIComponent(collection.collectionId)}`)}
+                >
                     {products.map(({ productRecord, variantRecords }) => (
                         <ProductCard 
                             key={productRecord.productId}

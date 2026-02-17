@@ -16,6 +16,7 @@ const Loadable = (Component: React.LazyExoticComponent<any>) => (props: any) => 
 // Lazy Load Pages
 const Home = Loadable(React.lazy(() => import("../pages/Home/Home")));
 const ProductDetails = Loadable(React.lazy(() => import('../pages/Product/ProductDetails')));
+const Results = Loadable(React.lazy(() => import('../pages/Results/Results')));
 const NotFound = Loadable(React.lazy(() => import("../pages/Error/NotFound")));
 const Cart = Loadable(React.lazy(() => import("../pages/Cart/Cart")));
 
@@ -73,6 +74,7 @@ export default function AppLayout() {
         <Route path="/" element={<PageEnclosure />} hydrateFallbackElement={<Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100dvh', width: "100vw"}}><CircularProgress /></Box>}>
             <Route element={<NonAdminLayout />}>
                 <Route index element={<Home />} />
+                <Route path="results" element={<Results />} />
                 <Route path="product/:collectionSlug/:productSlug" element={<ProductDetails />} />
                 <Route path="cart" element={<Cart />} />
                 <Route path="account" element={<AccountOutlet />}>
