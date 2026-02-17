@@ -36,6 +36,29 @@ const ddb = new DynamoDBClient({});
 const PRODUCT_TABLE = process.env.PRODUCT_TABLE;
 const VARIANT_TABLE = process.env.VARIANT_TABLE;
 
+function toProductSlug(value: string): string {
+    return value
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+}
+
+async function hasDuplicateProductSlugInCollection(collectionId: string, productName: string, excludeProductId?: string): Promise<boolean> {
+    const incomingSlug = toProductSlug(productName);
+    const existingProductsRaw = await queryAll({
+        TableName: PRODUCT_TABLE,
+        IndexName: Constants.productGSINameOnCollectionId,
+        KeyConditionExpression: 'collectionId = :cid',
+        ExpressionAttributeValues: marshall({ ':cid': collectionId })
+    });
+
+    return existingProductsRaw
+        .map((item) => normalizeProductRecord(unmarshall(item) as IProductRecord))
+        .some((item) => item.productId !== excludeProductId && toProductSlug(item.name) === incomingSlug);
+}
+
 function normalizeTags(input: unknown): string[] {
     if (!Array.isArray(input)) return [];
     const normalized = input
@@ -187,6 +210,15 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
                         return constructResponse(404, { message: 'Item not found' });
                     }
 
+                    if (!product.collectionId) {
+                        return constructResponse(400, { message: 'collectionId is required to update a product' });
+                    }
+
+                    const hasDuplicateSlug = await hasDuplicateProductSlugInCollection(product.collectionId, product.name, productId);
+                    if (hasDuplicateSlug) {
+                        return constructResponse(409, { message: `A product named "${product.name}" already exists in this collection.` });
+                    }
+
                     const record: IProductRecord = { productId, ...product };
                     await ddb.send(new PutItemCommand({ TableName: PRODUCT_TABLE, Item: marshall(record) }));
                     return constructResponse(200, { message: 'Item updated', item: record });
@@ -299,6 +331,15 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
                 const product = generateProductFromInput(parsed.product);
                 if (!product) {
                     return constructResponse(400, { message: 'Invalid product' });
+                }
+                if (!product.collectionId) {
+                    return constructResponse(400, { message: 'collectionId is required to create a product' });
+                }
+
+                const hasDuplicateSlug = await hasDuplicateProductSlugInCollection(product.collectionId, product.name);
+
+                if (hasDuplicateSlug) {
+                    return constructResponse(409, { message: `A product named "${product.name}" already exists in this collection.` });
                 }
 
                 const productId = randomUUID();

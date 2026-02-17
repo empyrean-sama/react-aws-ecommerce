@@ -27,6 +27,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import AddShoppingCartRoundedIcon from '@mui/icons-material/AddShoppingCartRounded';
+import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
 import ShoppingCartCheckoutRoundedIcon from '@mui/icons-material/ShoppingCartCheckoutRounded';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import SellOutlinedIcon from '@mui/icons-material/SellOutlined';
@@ -47,6 +48,7 @@ import EProductFieldType from '../../../enum/EProductFieldType';
 import ESnackbarMsgVariant from '../../../enum/ESnackbarMsgVariant';
 import { getStockStatus } from '../Home/Helper';
 import placeHolderImageString from 'url:../Home/placeholderImage.png';
+import { getProductPath, toProductSlug } from '../../../helper/ProductUrlHelper';
 
 const CURRENCY_SYMBOL = '₹';
 
@@ -143,7 +145,7 @@ function ProductFieldRenderer(props: { field: IProductField; index: number }) {
 }
 
 export default function ProductDetails() {
-    const { productId } = useParams();
+    const { collectionSlug, productSlug } = useParams();
     const navigateTo = useNavigate();
     const productService = ProductService.getInstance();
 
@@ -155,6 +157,28 @@ export default function ProductDetails() {
     const [selectedVariantId, setSelectedVariantId] = React.useState<string>('');
     const [selectedImageIndex, setSelectedImageIndex] = React.useState<number>(0);
 
+    async function resolveProductBySlugs(collectionSlugValue: string, productSlugValue: string): Promise<{ product: IProductRecord; collectionName: string } | null> {
+        const normalizedCollectionSlug = toProductSlug(collectionSlugValue);
+        const normalizedProductSlug = toProductSlug(productSlugValue);
+        const collections = await productService.listCollections();
+        if (!collections || collections.length === 0) {
+            return null;
+        }
+
+        const targetCollection = collections.find((collection) => toProductSlug(collection.name) === normalizedCollectionSlug);
+        if (!targetCollection) {
+            return null;
+        }
+
+        const products = await productService.getProductsByCollectionId(targetCollection.collectionId);
+        const matchedProduct = (products ?? []).find((productRecord) => toProductSlug(productRecord.name) === normalizedProductSlug);
+        if (!matchedProduct) {
+            return null;
+        }
+
+        return { product: matchedProduct, collectionName: targetCollection.name };
+    }
+
     React.useEffect(() => {
         let isMounted = true;
 
@@ -162,7 +186,7 @@ export default function ProductDetails() {
             try {
                 setIsLoading(true);
 
-                if (!productId) {
+                if (!collectionSlug || !productSlug) {
                     if (isMounted) {
                         setProduct(null);
                         setVariants([]);
@@ -170,10 +194,11 @@ export default function ProductDetails() {
                     return;
                 }
 
-                const [fetchedProduct, fetchedVariants] = await Promise.all([
-                    productService.getProductById(productId),
-                    productService.getVariantsByProductId(productId),
-                ]);
+                const resolvedProduct = await resolveProductBySlugs(collectionSlug, productSlug);
+                const fetchedProduct = resolvedProduct?.product ?? null;
+                const fetchedVariants = fetchedProduct
+                    ? await productService.getVariantsByProductId(fetchedProduct.productId)
+                    : [];
 
                 if (!isMounted) {
                     return;
@@ -183,9 +208,15 @@ export default function ProductDetails() {
                 const resolvedVariants = fetchedVariants ?? [];
                 setVariants(resolvedVariants);
 
-                if (fetchedProduct) {
+                if (fetchedProduct && resolvedProduct) {
                     const defaultVariant = getDefaultVariant(fetchedProduct, resolvedVariants);
                     setSelectedVariantId(defaultVariant?.variantId ?? '');
+
+                    const canonicalCollectionSlug = toProductSlug(resolvedProduct.collectionName);
+                    const canonicalProductSlug = toProductSlug(fetchedProduct.name);
+                    if (collectionSlug !== canonicalCollectionSlug || productSlug !== canonicalProductSlug) {
+                        navigateTo(getProductPath(resolvedProduct.collectionName, fetchedProduct.name), { replace: true });
+                    }
                 }
             } catch (error) {
                 console.error('Error loading product details:', error);
@@ -202,7 +233,7 @@ export default function ProductDetails() {
         return () => {
             isMounted = false;
         };
-    }, [productId]);
+    }, [collectionSlug, productSlug]);
 
     const selectedVariant = variants.find((variant) => variant.variantId === selectedVariantId)
         || getDefaultVariant(product as IProductRecord, variants)
@@ -220,6 +251,11 @@ export default function ProductDetails() {
 
     const canDecreaseQuantity = !!selectedVariant && cartQuantity > 0;
     const canIncreaseQuantity = !!selectedVariant && stockCount > 0 && cartQuantity < maxPurchasable;
+    const isInCart = cartQuantity > 0;
+
+    const primaryCartButtonLabel = isInCart ? 'View cart' : 'Add to cart';
+    const primaryCartButtonIcon = isInCart ? <ShoppingCartRoundedIcon /> : <AddShoppingCartRoundedIcon />;
+    const primaryCartButtonDisabled = isInCart ? false : (stockCount <= 0 || !selectedVariant);
 
     function handleSetQuantity(newQuantity: number) {
         if (!product || !selectedVariant) return;
@@ -257,6 +293,14 @@ export default function ProductDetails() {
 
         handleSetQuantity(nextQuantity);
         showMessage(`Added to cart: ${product?.name}`, ESnackbarMsgVariant.success);
+    }
+
+    function handlePrimaryCartButtonClick() {
+        if (isInCart) {
+            navigateTo('/cart');
+            return;
+        }
+        handleAddToCart();
     }
 
     function handleBuyNow() {
@@ -322,26 +366,24 @@ export default function ProductDetails() {
                     )}
                 </Paper>
 
-                <Paper sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2, justifyContent: 'space-between' }}>
+                <Paper sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
                     
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2}}>
-                        <Stack spacing={1}>
-                            <Typography variant="h2" component="h1" sx={{ lineHeight: 1.1 }}>
-                                {product.name}
-                            </Typography>
+                    <Stack spacing={1}>
+                        <Typography variant="h2" component="h1" sx={{ lineHeight: 1.1 }}>
+                            {product.name}
+                        </Typography>
 
-                            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                                <Chip label={friendlyStockText} color={stockStatus.statusColor} />
-                                {product.favourite === 'true' && <Chip label="Popular choice" variant="outlined" color="warning" />}
-                            </Stack>
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            <Chip label={friendlyStockText} color={stockStatus.statusColor} />
+                            {product.favourite === 'true' && <Chip label="Popular choice" variant="outlined" color="warning" />}
                         </Stack>
+                    </Stack>
 
-                        {product.description && (
-                            <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-                                {product.description}
-                            </Typography>
-                        )}
-                    </Box>
+                    {product.description && (
+                        <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
+                            {product.description}
+                        </Typography>
+                    )}
 
                     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                         <Stack spacing={1.5}>
@@ -377,9 +419,6 @@ export default function ProductDetails() {
                                     <Typography variant="body2" color="text.secondary">{friendlyStockText}</Typography>
                                 </Stack>
                                 <Stack direction="row" spacing={0.5} alignItems="center">
-                                    
-                                </Stack>
-                                <Stack direction="row" spacing={0.5} alignItems="center">
                                     <LocalShippingOutlinedIcon fontSize="small" color="action" />
                                     <Typography variant="body2" color="text.secondary">Fast delivery available</Typography>
                                 </Stack>
@@ -407,12 +446,12 @@ export default function ProductDetails() {
                                 <Button
                                     variant="contained"
                                     size="large"
-                                    startIcon={<AddShoppingCartRoundedIcon />}
-                                    onClick={handleAddToCart}
-                                    disabled={stockCount <= 0 || !selectedVariant}
+                                    startIcon={primaryCartButtonIcon}
+                                    onClick={handlePrimaryCartButtonClick}
+                                    disabled={primaryCartButtonDisabled}
                                     sx={{ minHeight: 48, flex: 1 }}
                                 >
-                                    Add to cart
+                                    {primaryCartButtonLabel}
                                 </Button>
                                 <Button
                                     variant="contained"
@@ -496,12 +535,12 @@ export default function ProductDetails() {
                         <Button
                             variant="contained"
                             size="large"
-                            startIcon={<AddShoppingCartRoundedIcon />}
-                            onClick={handleAddToCart}
-                            disabled={stockCount <= 0 || !selectedVariant}
+                            startIcon={primaryCartButtonIcon}
+                            onClick={handlePrimaryCartButtonClick}
+                            disabled={primaryCartButtonDisabled}
                             sx={{ minHeight: 50, flex: 1 }}
                         >
-                            Add to cart
+                            {primaryCartButtonLabel}
                         </Button>
                         <Button
                             variant="contained"
@@ -520,3 +559,4 @@ export default function ProductDetails() {
         </Container>
     );
 }
+

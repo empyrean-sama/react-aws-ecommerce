@@ -15,6 +15,7 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RefreshIcon from "@mui/icons-material/Refresh";
+import { getProductPath } from "../../../helper/ProductUrlHelper";
 
 interface ICartPageContextAPI {
     isLoading: boolean;
@@ -228,8 +229,26 @@ function CartItemViewerPanel() {
         }
     }
 
-    function handleOpenProductDetails(productId: string): void {
-        navigateTo(`/product/${productId}`);
+    async function handleOpenProductDetails(productId: string, productName: string): Promise<void> {
+        try {
+            const productRecord = cartState.productIdToProductRecordMap[productId];
+            const collectionId = productRecord?.collectionId;
+            if (collectionId) {
+                const collection = await ProductService.getInstance().getCollection(collectionId);
+                if(collection) {
+                    navigateTo(getProductPath(collection.name, productName));
+                }
+                else {
+                    throw new Error("Collection not found");
+                }
+            }
+            else {
+                throw new Error("Collection ID not found for product");
+            }
+        } catch (error) {
+            console.error("Failed to navigate to product details", error);
+            navigateTo("/product-not-found");
+        }
     }
 
     return (
@@ -262,7 +281,7 @@ function CartItemViewerPanel() {
                                     <TableRow key={cartEntry.productId}>
                                         <TableCell>
                                             <ButtonBase
-                                                onClick={() => handleOpenProductDetails(cartEntry.productId)}
+                                                onClick={() => handleOpenProductDetails(cartEntry.productId, cartState.productIdToProductRecordMap[cartEntry.productId]?.name || 'item')}
                                                 sx={{ width: '100%', textAlign: 'left', justifyContent: 'flex-start' }}
                                             >
                                                 <Stack direction="row" spacing={2} alignItems="center">

@@ -7,12 +7,6 @@
     "ExportsOutputRefReactAwsEcommerceUserPoolReactAwsEcommerceUserPoolClient2598305C2BEB1BB0": "107v5vukoq728a5iij28b0c5ep",
     "ExportsOutputRefReactAwsEcommerceCartTableD53448BF38B0A106": "ReactAwsEcommerce-cart"
   },
-  "ReactAwsEcommerce-ProductStack": {
-    "ExportsOutputFnGetAttProductCollectionFunctionA7F7037CArn3C2BFDA2": "arn:aws:lambda:ap-south-1:410772458210:function:ProductCollectionFunction",
-    "ExportsOutputFnGetAttProductVariantFunction7E75517DArnEC8A579D": "arn:aws:lambda:ap-south-1:410772458210:function:ProductVariantFunction",
-    "ExportsOutputFnGetAttReactAwsEcommerceVariantsTable0C650542ArnCFBA4894": "arn:aws:dynamodb:ap-south-1:410772458210:table/ReactAwsEcommerce-variants",
-    "ExportsOutputFnGetAttProductFunction5AC8A50BArn7F520BC3": "arn:aws:lambda:ap-south-1:410772458210:function:ProductFunction"
-  },
   "ReactAwsEcommerce-ProfileStack": {
     "ExportsOutputFnGetAttProfileAddressFunction382822CDArn7F939DE2": "arn:aws:lambda:ap-south-1:410772458210:function:AddressFunction",
     "ExportsOutputFnGetAttAutofillAddressFunction0ED0815FArnB5C9F1C1": "arn:aws:lambda:ap-south-1:410772458210:function:AutofillAddressFunction"
@@ -22,6 +16,12 @@
     "ExportsOutputFnGetAttmanageListsFunction301289EAArn0A4DC882": "arn:aws:lambda:ap-south-1:410772458210:function:ManageLists",
     "ExportsOutputFnGetAttDeleteImageFunction98837557ArnF41960AC": "arn:aws:lambda:ap-south-1:410772458210:function:DeleteImage",
     "ReactAwsEcommerceMemoryBucketName": "reactawsecommerce-memorys-publicreadmemorybucket97-guwp73rhwzw3"
+  },
+  "ReactAwsEcommerce-ProductStack": {
+    "ExportsOutputFnGetAttProductCollectionFunctionA7F7037CArn3C2BFDA2": "arn:aws:lambda:ap-south-1:410772458210:function:ProductCollectionFunction",
+    "ExportsOutputFnGetAttProductVariantFunction7E75517DArnEC8A579D": "arn:aws:lambda:ap-south-1:410772458210:function:ProductVariantFunction",
+    "ExportsOutputFnGetAttReactAwsEcommerceVariantsTable0C650542ArnCFBA4894": "arn:aws:dynamodb:ap-south-1:410772458210:table/ReactAwsEcommerce-variants",
+    "ExportsOutputFnGetAttProductFunction5AC8A50BArn7F520BC3": "arn:aws:lambda:ap-south-1:410772458210:function:ProductFunction"
   },
   "ReactAwsEcommerce-AuthApiStack": {
     "ExportsOutputFnGetAttManageCartFunction31D5D0C9ArnCB9FC1B0": "arn:aws:lambda:ap-south-1:410772458210:function:ManageCartFunction",

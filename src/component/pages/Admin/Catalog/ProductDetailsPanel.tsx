@@ -1272,7 +1272,10 @@ function ProductActionPane() {
             await reloadProducts();
         } catch (error) {
             console.error("Failed to save one or more changes", error); //TODO: maybe we can undo all changes if one fails (might require backend support)
-            globalAPI.showMessage("Failed to save one or more changes", ESnackbarMsgVariant.error);
+            const errorMessage = error instanceof Error && error.message
+                ? error.message
+                : "Failed to save one or more changes";
+            globalAPI.showMessage(errorMessage, ESnackbarMsgVariant.error);
         } finally {
             setIsLoading(false);
         }

@@ -73,7 +73,7 @@ export default function AppLayout() {
         <Route path="/" element={<PageEnclosure />} hydrateFallbackElement={<Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100dvh', width: "100vw"}}><CircularProgress /></Box>}>
             <Route element={<NonAdminLayout />}>
                 <Route index element={<Home />} />
-                <Route path="product/:productId" element={<ProductDetails />} />
+                <Route path="product/:collectionSlug/:productSlug" element={<ProductDetails />} />
                 <Route path="cart" element={<Cart />} />
                 <Route path="account" element={<AccountOutlet />}>
                     <Route index element={<Account />} />

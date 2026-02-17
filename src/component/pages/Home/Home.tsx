@@ -205,14 +205,18 @@ export default function Home() {
                 <LoadingEnclosure isLoading={isLoading}>
                     <Box sx={{ display: "flex", flexDirection: "column", rowGap: 6, width: '100%' }}>
                         <ProductRack label="Featured Products">
-                            {featuredProducts.map(({ productRecord, variantRecords }) => (
-                                <ProductCard
-                                    key={productRecord.productId}
-                                    productRecord={productRecord}
-                                    productVariantRecord={variantRecords}
-                                    currency="INR"
-                                />
-                            ))}
+                            {featuredProducts.map(({ productRecord, variantRecords }) => {
+                                const collectionName = collections.find((item) => item.collectionId === productRecord.collectionId)?.name;
+                                return (
+                                    <ProductCard
+                                        key={productRecord.productId}
+                                        productRecord={productRecord}
+                                        productVariantRecord={variantRecords}
+                                        collectionName={collectionName}
+                                        currency="INR"
+                                    />
+                                );
+                            })}
                         </ProductRack>
                         {collections.map((collection) => (
                             <LazyCollectionRack
@@ -333,6 +337,7 @@ function LazyCollectionRack(props: ILazyCollectionRackProps) {
                             key={productRecord.productId}
                             productRecord={productRecord}
                             productVariantRecord={variantRecords}
+                            collectionName={collection.name}
                             currency="INR"
                         />
                     ))}

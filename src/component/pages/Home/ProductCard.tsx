@@ -16,6 +16,7 @@ import StarOutlined from '@mui/icons-material/StarOutlined';
 import { getStockStatus } from './Helper';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import { getProductPath } from '../../../helper/ProductUrlHelper';
 
 const CARD_WIDTH = { xs: 175, md: 250 };
 const ACTION_HALF_WIDTH = { p: 1, flexBasis: '50%' };
@@ -23,6 +24,7 @@ const ACTION_HALF_WIDTH = { p: 1, flexBasis: '50%' };
 interface IProductCardProps {
     productRecord: IProductRecord;
     productVariantRecord: IProductVariantRecord[];
+    collectionName?: string;
 
     currency?: string; //defaults to INR
     rating?: number; // defaults to number.NaN, which means no rating shown
@@ -108,7 +110,7 @@ export default function ProductCard(props: IProductCardProps) {
 
     // Private Methods
     function handleCardClick() {
-        navigateTo(`/product/${props.productRecord.productId}`);
+        navigateTo(getProductPath(props.collectionName || 'collection', props.productRecord.name));
     }
 
     /**
