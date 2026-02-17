@@ -5,8 +5,13 @@ import ICollection from "../interface/product/ICollection";
 import ICollectionRecord from "../interface/product/ICollectionRecord";
 import IProduct from "../interface/product/IProduct";
 import IProductRecord from "../interface/product/IProductRecord";
+import IReview from "../interface/product/IReview";
+import IReviewRecord from "../interface/product/IReviewRecord";
 import IProductVariant from "../interface/product/IProductVariant";
 import IProductVariantRecord from "../interface/product/IProductVariantRecord";
+
+type IReviewWriteInput = Omit<IReview, 'userId' | 'orderReference' | 'reviewerName' | 'reviewerUsername'>;
+type IReviewAverage = { productId: string; averageScore: number; reviewCount: number };
 
 export default class ProductService {
     private static _instance: ProductService | null = null;
@@ -454,6 +459,117 @@ export default class ProductService {
         if (!resp.ok) {
             const json = await resp.json().catch(() => undefined) as any;
             throw new Error(json?.message || 'Failed to delete image');
+        }
+    }
+
+    // Reviews
+    public async getReviewsByProductId(productId: string): Promise<IReviewRecord[] | null> {
+        const url = new URL(OutputParser.ReviewsEndPointURL);
+        url.searchParams.set('productId', productId);
+        const resp = await fetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined);
+        if (!resp.ok) {
+            return null;
+        }
+        return (json as IReviewRecord[]) ?? [];
+    }
+
+    public async getReviewSubmissionEligibility(productId: string): Promise<{ canSubmit: boolean; reason?: string }> {
+        const url = new URL(OutputParser.ReviewEligibilityEndPointURL);
+        url.searchParams.set('productId', productId);
+        const resp = await AuthService.getInstance().authorizedFetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok) {
+            throw new Error(json?.message || 'Failed to get review submission eligibility');
+        }
+        return {
+            canSubmit: Boolean(json?.canSubmit),
+            ...(typeof json?.reason === 'string' ? { reason: json.reason } : {}),
+        };
+    }
+
+    public async getAverageReviewScoreByProductId(productId: string): Promise<IReviewAverage | null> {
+        const url = new URL(OutputParser.ReviewAverageEndPointURL);
+        url.searchParams.set('productId', productId);
+        const resp = await fetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok) {
+            return null;
+        }
+        if (!json || typeof json.productId !== 'string' || typeof json.averageScore !== 'number') {
+            return null;
+        }
+        return {
+            productId: json.productId,
+            averageScore: json.averageScore,
+            reviewCount: typeof json.reviewCount === 'number' ? json.reviewCount : 0,
+        };
+    }
+
+    public async getAverageReviewScoresByProductIds(productIds: string[]): Promise<Record<string, IReviewAverage>> {
+        const uniqueProductIds = Array.from(new Set(productIds.filter(Boolean)));
+        if (uniqueProductIds.length === 0) {
+            return {};
+        }
+
+        const url = new URL(OutputParser.ReviewAverageEndPointURL);
+        url.searchParams.set('productIds', uniqueProductIds.join(','));
+        const resp = await fetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok || !Array.isArray(json)) {
+            return {};
+        }
+
+        const map: Record<string, IReviewAverage> = {};
+        for (const item of json) {
+            if (!item || typeof item.productId !== 'string' || typeof item.averageScore !== 'number') {
+                continue;
+            }
+            map[item.productId] = {
+                productId: item.productId,
+                averageScore: item.averageScore,
+                reviewCount: typeof item.reviewCount === 'number' ? item.reviewCount : 0,
+            };
+        }
+
+        return map;
+    }
+
+    public async createReview(review: IReviewWriteInput): Promise<IReviewRecord> {
+        const url = new URL(OutputParser.ReviewsEndPointURL);
+        const resp = await AuthService.getInstance().authorizedFetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ review })
+        });
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok) {
+            throw new Error(json?.message || 'Failed to create review');
+        }
+        return json.review as IReviewRecord;
+    }
+
+    public async updateReview(reviewId: string, review: IReviewWriteInput): Promise<IReviewRecord> {
+        const url = new URL(OutputParser.ReviewsEndPointURL);
+        const resp = await AuthService.getInstance().authorizedFetch(url, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewId, review })
+        });
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok) {
+            throw new Error(json?.message || 'Failed to update review');
+        }
+        return json.review as IReviewRecord;
+    }
+
+    public async deleteReview(reviewId: string): Promise<void> {
+        const url = new URL(OutputParser.ReviewsEndPointURL);
+        url.searchParams.set('reviewId', reviewId);
+        const resp = await AuthService.getInstance().authorizedFetch(url, { method: 'DELETE' });
+        if (!resp.ok) {
+            const json = await resp.json().catch(() => undefined) as any;
+            throw new Error(json?.message || 'Failed to delete review');
         }
     }
 }

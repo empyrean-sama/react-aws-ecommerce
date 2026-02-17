@@ -126,6 +126,7 @@ export default function Home() {
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [featuredProducts, setFeaturedProducts] = React.useState<IHomeRackProduct[]>([]);
     const [collections, setCollections] = React.useState<ICollectionRecord[]>([]);
+    const [averageReviewScoreByProductId, setAverageReviewScoreByProductId] = React.useState<Record<string, number>>({});
     const [carouselItems, setCarouselItems] = React.useState<ICarouselItem[]>([]);
     const [isCarouselLoading, setIsCarouselLoading] = React.useState<boolean>(true);
     
@@ -149,6 +150,14 @@ export default function Home() {
                 if (isMounted) {
                     setFeaturedProducts(data.featuredProducts);
                     setCollections(data.collections);
+
+                    const featuredProductIds = data.featuredProducts.map((item) => item.productRecord.productId);
+                    const featuredScores = await productService.getAverageReviewScoresByProductIds(featuredProductIds);
+                    const scoreMap: Record<string, number> = {};
+                    for (const [productId, score] of Object.entries(featuredScores)) {
+                        scoreMap[productId] = score.averageScore;
+                    }
+                    setAverageReviewScoreByProductId((prev) => ({ ...prev, ...scoreMap }));
                 }
             } catch (error) {
                 if (isMounted) {
@@ -213,6 +222,7 @@ export default function Home() {
                                         productRecord={productRecord}
                                         productVariantRecord={variantRecords}
                                         collectionName={collectionName}
+                                        rating={averageReviewScoreByProductId[productRecord.productId]}
                                         currency="INR"
                                     />
                                 );
@@ -223,6 +233,10 @@ export default function Home() {
                                 key={collection.collectionId}
                                 collection={collection}
                                 showMessage={showMessage}
+                                averageReviewScoreByProductId={averageReviewScoreByProductId}
+                                onAverageScoresLoaded={(scores) => {
+                                    setAverageReviewScoreByProductId((prev) => ({ ...prev, ...scores }));
+                                }}
                             />
                         ))}
                     </Box>
@@ -260,6 +274,8 @@ function CarouselLoadingSpinner(props: { sx?: SxProps<Theme> }) {
 interface ILazyCollectionRackProps {
     collection: ICollectionRecord;
     showMessage: IAppGlobalStateContextAPI['showMessage'];
+    onAverageScoresLoaded?: (scores: Record<string, number>) => void;
+    averageReviewScoreByProductId?: Record<string, number>;
 }
 
 function LazyCollectionRack(props: ILazyCollectionRackProps) {
@@ -304,12 +320,18 @@ function LazyCollectionRack(props: ILazyCollectionRackProps) {
 
                 const selectedProducts = selectRackProducts(favouriteProducts, allProducts, RACK_PRODUCT_LIMIT);
                 const rackProducts = await buildRackProducts(selectedProducts, productService);
+                const scoreRecords = await productService.getAverageReviewScoresByProductIds(selectedProducts.map((item) => item.productId));
+                const scoreMap: Record<string, number> = {};
+                for (const [productId, score] of Object.entries(scoreRecords)) {
+                    scoreMap[productId] = score.averageScore;
+                }
 
                 if (!isMounted) {
                     return;
                 }
 
                 setProducts(rackProducts);
+                props.onAverageScoresLoaded?.(scoreMap);
             } catch (error) {
                 if (isMounted) {
                     console.error(`Error loading collection rack ${collection.collectionId}:`, error);
@@ -338,6 +360,7 @@ function LazyCollectionRack(props: ILazyCollectionRackProps) {
                             productRecord={productRecord}
                             productVariantRecord={variantRecords}
                             collectionName={collection.name}
+                            rating={props.averageReviewScoreByProductId?.[productRecord.productId]}
                             currency="INR"
                         />
                     ))}

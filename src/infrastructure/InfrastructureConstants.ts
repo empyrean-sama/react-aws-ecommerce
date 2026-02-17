@@ -29,6 +29,10 @@ export default class InfrastructureConstants {
     // Product Stack constants
     static get productTableId(): string { return `${InfrastructureConstants.projectName}-ProductsTable`; }
     static get productTableName(): string { return `${InfrastructureConstants.projectName}-products`; }
+    static get reviewTableId(): string { return `${InfrastructureConstants.projectName}-ReviewsTable`; }
+    static get reviewTableName(): string { return `${InfrastructureConstants.projectName}-reviews`; }
+    static get ordersTableId(): string { return `${InfrastructureConstants.projectName}-OrdersTable`; }
+    static get ordersTableName(): string { return `${InfrastructureConstants.projectName}-orders`; }
     static get variantTableId(): string { return `${InfrastructureConstants.projectName}-VariantsTable`; }
     static get variantTableName(): string { return `${InfrastructureConstants.projectName}-variants`; }
     static get collectionTableId(): string { return `${InfrastructureConstants.projectName}-CollectionsTable`; }
@@ -38,6 +42,7 @@ export default class InfrastructureConstants {
     static get productGSINameOnFeatured(): string { return `FeaturedIndex`; }
     static get productGSINameOnCollectionFavourite(): string { return `CollectionFavouriteIndex`; }
     static get variantGSINameOnProductId(): string { return `ProductIdIndex`; }
+    static get reviewGSINameOnProductId(): string { return `ProductIdIndex`; }
     
     // Product Stack output key (for consistency)
     static get productStackOutputKey(): string { return `${InfrastructureConstants.projectName}-ProductStack`; }
@@ -62,6 +67,9 @@ export default class InfrastructureConstants {
     static get verifyPasswordResourceName(): string { return `verify-password`; }
     static get collectionResourceName(): string { return `collection`; }
     static get productResourceName(): string { return `product`; }
+    static get reviewResourceName(): string { return `review`; }
+    static get reviewEligibilityResourceName(): string { return `review-eligibility`; }
+    static get reviewAverageResourceName(): string { return `review-average`; }
     static get productTagsResourceName(): string { return `product-tags`; }
     static get productDefaultVariantResourceName(): string { return `product-default-variant`; }
     static get variantResourceName(): string { return `variant`; }

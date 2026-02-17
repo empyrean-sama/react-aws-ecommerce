@@ -100,6 +100,15 @@ export default class OutputParser {
     public static get ProductsEndPointURL(): string {
         return `${this.ApiEndpoint}${Constants.productResourceName}`;
     }
+    public static get ReviewsEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.reviewResourceName}`;
+    }
+    public static get ReviewEligibilityEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.reviewEligibilityResourceName}`;
+    }
+    public static get ReviewAverageEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.reviewAverageResourceName}`;
+    }
     public static get ProductTagsEndPointURL(): string {
         return `${this.ApiEndpoint}${Constants.productTagsResourceName}`;
     }

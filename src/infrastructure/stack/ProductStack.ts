@@ -18,6 +18,8 @@ export interface ProductStackProps extends StackProps {
 export default class ProductStack extends Stack {
 	private readonly _collectionTable: DynamoDB.Table;
 	private readonly _productTable: DynamoDB.Table;
+	private readonly _reviewTable: DynamoDB.Table;
+	private readonly _ordersTable: DynamoDB.Table;
 	private readonly _variantTable: DynamoDB.Table;
 
 	constructor(scope: Construct, id: string, props: ProductStackProps) {
@@ -64,6 +66,26 @@ export default class ProductStack extends Stack {
 		this._variantTable.addGlobalSecondaryIndex({
 			indexName: Constants.variantGSINameOnProductId,
 			partitionKey: { name: 'productId', type: DynamoDB.AttributeType.STRING },
+		});
+
+		this._reviewTable = new DynamoDB.Table(this, Constants.reviewTableId, {
+			tableName: Constants.reviewTableName,
+			partitionKey: { name: 'reviewId', type: DynamoDB.AttributeType.STRING },
+			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+			removalPolicy: RemovalPolicy.DESTROY, // TODO: change to RETAIN in production
+		});
+		this._reviewTable.addGlobalSecondaryIndex({
+			indexName: Constants.reviewGSINameOnProductId,
+			partitionKey: { name: 'productId', type: DynamoDB.AttributeType.STRING },
+			sortKey: { name: 'createdAt', type: DynamoDB.AttributeType.NUMBER },
+		});
+
+		this._ordersTable = new DynamoDB.Table(this, Constants.ordersTableId, {
+			tableName: Constants.ordersTableName,
+			partitionKey: { name: 'userId', type: DynamoDB.AttributeType.STRING },
+			sortKey: { name: 'createdAt', type: DynamoDB.AttributeType.NUMBER },
+			billingMode: DynamoDB.BillingMode.PAY_PER_REQUEST,
+			removalPolicy: RemovalPolicy.DESTROY, // TODO: change to RETAIN in production
 		});
 
 		this._variantTable.grantReadData(props.authAPIStack._manageCartLambda);
@@ -129,5 +151,28 @@ export default class ProductStack extends Stack {
 		props.apiStack.addMethodOnResource('variant', 'POST', variantIntegration);
 		props.apiStack.addMethodOnResource('variant', 'PUT', variantIntegration);
 		props.apiStack.addMethodOnResource('variant', 'DELETE', variantIntegration);
+
+		// Lambda: Reviews
+		const reviewLambda = new NodejsFunction(this, 'ProductReviewFunction', {
+			functionName: 'ProductReviewFunction',
+			entry: path.join(__dirname, '..', 'lambda', 'Product', 'Review.ts'),
+			handler: 'Handle',
+			runtime: Lambda.Runtime.NODEJS_22_X,
+			environment: {
+				REVIEW_TABLE: this._reviewTable.tableName,
+				ORDERS_TABLE: this._ordersTable.tableName,
+			},
+			bundling: { minify: true, sourceMap: true, target: 'node22' },
+		});
+		this._reviewTable.grantReadWriteData(reviewLambda);
+		this._ordersTable.grantReadData(reviewLambda);
+
+		const reviewIntegration = new LambdaIntegration(reviewLambda);
+		props.apiStack.addMethodOnResource(Constants.reviewResourceName, 'GET', reviewIntegration, false);
+		props.apiStack.addMethodOnResource(Constants.reviewEligibilityResourceName, 'GET', reviewIntegration, true);
+		props.apiStack.addMethodOnResource(Constants.reviewAverageResourceName, 'GET', reviewIntegration, false);
+		props.apiStack.addMethodOnResource(Constants.reviewResourceName, 'POST', reviewIntegration, true);
+		props.apiStack.addMethodOnResource(Constants.reviewResourceName, 'PUT', reviewIntegration, true);
+		props.apiStack.addMethodOnResource(Constants.reviewResourceName, 'DELETE', reviewIntegration, true);
 	}
 }
