@@ -22,6 +22,7 @@ export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen }: AppDrawerPr
     const navigateTo = useNavigate();
     const { favouriteCollections } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const [isAdmin, setIsAdmin] = useState(false);
+    const navRef = React.useRef<HTMLElement | null>(null);
 
     useEffect(() => {
         AuthService.getInstance().isCurrentUserAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
@@ -40,12 +41,30 @@ export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen }: AppDrawerPr
         };
     }, [isDrawerOpen]);
 
+    useEffect(() => {
+        const navElement = navRef.current;
+        if (!navElement) {
+            return;
+        }
+
+        if (isDrawerOpen) {
+            navElement.removeAttribute('inert');
+            return;
+        }
+
+        const activeElement = document.activeElement;
+        if (activeElement && navElement.contains(activeElement)) {
+            (activeElement as HTMLElement).blur();
+        }
+        navElement.setAttribute('inert', '');
+    }, [isDrawerOpen]);
+
     return (
         <>
             <Box 
                 component="nav"
+                ref={navRef}
                 aria-label="Mobile navigation"
-                aria-hidden={!isDrawerOpen}
                 sx={{
                     position: "fixed",
                     padding: 1, 
