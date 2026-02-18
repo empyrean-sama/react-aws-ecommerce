@@ -629,6 +629,41 @@ export default class ProductService {
         return Array.isArray(json) ? (json as IOrderRecord[]) : [];
     }
 
+    public async getAdminOrders(): Promise<IOrderRecord[]> {
+        const url = new URL(OutputParser.CheckoutAuthEndPointURL);
+        url.searchParams.set('all', 'true');
+        const resp = await AuthService.getInstance().authorizedFetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok) {
+            throw new Error(json?.message || 'Failed to fetch admin orders');
+        }
+        return Array.isArray(json) ? (json as IOrderRecord[]) : [];
+    }
+
+    public async updateOrderStatusAsAdmin(input: { userId: string; createdAt: number; status: string }): Promise<void> {
+        const url = new URL(OutputParser.CheckoutAuthEndPointURL);
+        const resp = await AuthService.getInstance().authorizedFetch(url, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(input),
+        });
+        if (!resp.ok) {
+            const json = await resp.json().catch(() => undefined) as any;
+            throw new Error(json?.message || 'Failed to update order status');
+        }
+    }
+
+    public async deleteOrderAsAdmin(input: { userId: string; createdAt: number }): Promise<void> {
+        const url = new URL(OutputParser.CheckoutAuthEndPointURL);
+        url.searchParams.set('userId', input.userId);
+        url.searchParams.set('createdAt', String(input.createdAt));
+        const resp = await AuthService.getInstance().authorizedFetch(url, { method: 'DELETE' });
+        if (!resp.ok) {
+            const json = await resp.json().catch(() => undefined) as any;
+            throw new Error(json?.message || 'Failed to delete order');
+        }
+    }
+
     public async createReview(review: IReviewWriteInput): Promise<IReviewRecord> {
         const url = new URL(OutputParser.ReviewsEndPointURL);
         const resp = await AuthService.getInstance().authorizedFetch(url, {

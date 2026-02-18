@@ -33,8 +33,7 @@ import HighlightOffIcon from "@mui/icons-material/HighlightOff"; // cancelled
 
 import { format } from "date-fns";
 import IAddress from "../../../interface/IAddress";
-
-type OrderStatus = "order placed" | "processing" | "shipped" | "delivered" | "cancelled";
+import { OrderStatus } from "../../../interface/order/OrderStatus";
 
 interface ItemData {
     imageUrl: string;
@@ -57,6 +56,8 @@ interface IOrderCardProps {
     status: OrderStatus;
     phoneNumber: string;
     email: string;
+    alwaysExpanded?: boolean;
+    showActions?: boolean;
 }
 
 function getColorAndIconByStatus(status: OrderStatus): { color: "primary" | "warning" | "info" | "success" | "error"; icon: React.ReactElement } {
@@ -92,9 +93,13 @@ function getProgressByStatus(status: OrderStatus): number {
 }
 
 export default function OrderCard(props: IOrderCardProps) {
-    const [expanded, setExpanded] = React.useState<boolean>(false);
+    const [expanded, setExpanded] = React.useState<boolean>(props.alwaysExpanded === true);
+    const showActions = props.showActions ?? true;
 
     const handleExpandClick = () => {
+        if (props.alwaysExpanded) {
+            return;
+        }
         setExpanded(!expanded);
     };
 
@@ -112,10 +117,12 @@ export default function OrderCard(props: IOrderCardProps) {
                     <Chip label={props.status} color={getColorAndIconByStatus(props.status).color} size="small" icon={getColorAndIconByStatus(props.status).icon} />
                     <Chip label={props.paymentDetails} color={props.paymentMode === "Pre Paid" ? "info" : "warning"} size="small" />
                 </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Button variant="outlined" size="small">Reorder</Button>
-                    <Button variant="outlined" size="small">Request Support</Button>
-                </Box>
+                {showActions && (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Button variant="outlined" size="small">Reorder</Button>
+                        <Button variant="outlined" size="small">Request Support</Button>
+                    </Box>
+                )}
                 
             </Box>
 
@@ -128,13 +135,13 @@ export default function OrderCard(props: IOrderCardProps) {
                     }
                     title={<CardTitle orderId={props.orderId} />}
                     subheader={`Placed on ${format(props.orderDate, "MMMM dd, yyyy")}`}
-                    action={expanded ? <ExpandLessIcon sx={{ marginY: "auto" }} /> : <ExpandMoreIcon sx={{ marginY: "auto" }} />}
+                    action={props.alwaysExpanded ? null : (expanded ? <ExpandLessIcon sx={{ marginY: "auto" }} /> : <ExpandMoreIcon sx={{ marginY: "auto" }} />)}
                     sx={{ cursor: "pointer", display: "flex", alignItems: "center" }}
                 />
             </CardActionArea>
 
             <CardContent>
-                <Collapse in={expanded} timeout="auto">
+                <Collapse in={props.alwaysExpanded ? true : expanded} timeout="auto">
                     <Divider sx={{ my: 2 }} />
                     <Typography variant="h4" component="h2" sx={{ mb: 2, mx: {xs: 2, sm: 0} }}>Order Summary</Typography>
                     <TableContainer component={Paper}>

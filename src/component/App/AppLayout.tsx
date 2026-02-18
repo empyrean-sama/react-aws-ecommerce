@@ -35,6 +35,8 @@ const AdminConsole = Loadable(React.lazy(() => import("../pages/Admin/AdminConso
 const CatalogPage = Loadable(React.lazy(() => import('../pages/Admin/Catalog/CatalogPage')));
 const PagePicker = Loadable(React.lazy(() => import('../pages/Admin/PagePicker')));
 const PromotionManagement = Loadable(React.lazy(() => import('../pages/Admin/PromotionManagement/PromotionManagement')));
+const OrderManagement = Loadable(React.lazy(() => import('../pages/Admin/OrderManagement/OrderManagement')));
+const OrderDetails = Loadable(React.lazy(() => import('../pages/Admin/OrderManagement/OrderDetails')));
 
 type AdminLoaderResult = { allowed: boolean };
 
@@ -97,6 +99,8 @@ export default function AppLayout() {
                 <Route index element={<PagePicker />} />
                 <Route path="catalog" element={<CatalogPage />} />
                 <Route path="promotions" element={<PromotionManagement />} />
+                <Route path="orders" element={<OrderManagement />} />
+                <Route path="orders/details" element={<OrderDetails />} />
             </Route>
         </Route>
     ))

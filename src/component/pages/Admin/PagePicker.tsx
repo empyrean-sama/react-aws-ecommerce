@@ -44,6 +44,11 @@ export default function PagePicker() {
                     handleAction={() => navigateTo("/admin/promotions")}
                 />
                 <PagePickerCard
+                    heading="Order Management"
+                    description="Track customer orders, payment statuses, and shipping details from a single admin view."
+                    handleAction={() => navigateTo("/admin/orders")}
+                />
+                <PagePickerCard
                     heading="Regenerate Search Indices"
                     description="Rebuild the product search JSON in S3 from all products so clients get the latest searchable names and images."
                     handleAction={() => setIsRegenerateDialogOpen(true)}

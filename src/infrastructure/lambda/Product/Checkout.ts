@@ -1,9 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { randomUUID, createHmac } from 'crypto';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, DeleteCommand, GetCommand, PutCommand, QueryCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
-import { constructResponse, getClaim } from '../Helper';
+import { constructResponse, getClaim, isAdmin } from '../Helper';
 import IAddress from '../../../interface/IAddress';
 import IProductRecord from '../../../interface/product/IProductRecord';
 import IProductVariantRecord from '../../../interface/product/IProductVariantRecord';
@@ -38,6 +38,12 @@ type CheckoutConfirmBody = {
     razorpayPaymentId: string;
     razorpaySignature: string;
     guestUserId?: string;
+};
+
+type AdminOrderStatusUpdateBody = {
+    userId: string;
+    createdAt: number;
+    status: string;
 };
 
 function isValidAddress(address: any): address is IAddress {
@@ -350,6 +356,22 @@ async function handleGetOrders(event: APIGatewayProxyEvent): Promise<APIGatewayP
         return constructResponse(401, { message: 'Unauthorized' });
     }
 
+    const queryParams = event.queryStringParameters || {};
+    const includeAllOrders = queryParams.all === 'true';
+
+    if (includeAllOrders) {
+        if (!isAdmin(event)) {
+            return constructResponse(403, { message: 'Forbidden: Admin access required' });
+        }
+
+        const scanResponse = await doc.send(new ScanCommand({
+            TableName: ORDERS_TABLE,
+        }));
+
+        const orders = (scanResponse.Items as IOrderRecord[] | undefined) ?? [];
+        return constructResponse(200, orders);
+    }
+
     const queryResponse = await doc.send(new QueryCommand({
         TableName: ORDERS_TABLE,
         KeyConditionExpression: 'userId = :userId',
@@ -361,6 +383,94 @@ async function handleGetOrders(event: APIGatewayProxyEvent): Promise<APIGatewayP
 
     const orders = (queryResponse.Items as IOrderRecord[] | undefined) ?? [];
     return constructResponse(200, orders);
+}
+
+async function handleAdminUpdateOrderStatus(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+    if (!isAdmin(event)) {
+        return constructResponse(403, { message: 'Forbidden: Admin access required' });
+    }
+
+    if (!event.body) {
+        return constructResponse(400, { message: 'Missing request body' });
+    }
+
+    let parsed: AdminOrderStatusUpdateBody;
+    try {
+        parsed = JSON.parse(event.body) as AdminOrderStatusUpdateBody;
+    } catch {
+        return constructResponse(400, { message: 'Invalid JSON body' });
+    }
+
+    const userId = typeof parsed.userId === 'string' ? parsed.userId.trim() : '';
+    const createdAt = Number(parsed.createdAt);
+    const status = typeof parsed.status === 'string' ? parsed.status.trim() : '';
+
+    if (!userId || !Number.isFinite(createdAt) || !status) {
+        return constructResponse(400, { message: 'Missing or invalid userId, createdAt, or status' });
+    }
+
+    const existingOrderResponse = await doc.send(new GetCommand({
+        TableName: ORDERS_TABLE,
+        Key: { userId, createdAt },
+    }));
+
+    const existingOrder = existingOrderResponse.Item as IOrderRecord | undefined;
+    if (!existingOrder) {
+        return constructResponse(404, { message: 'Order not found' });
+    }
+
+    await doc.send(new UpdateCommand({
+        TableName: ORDERS_TABLE,
+        Key: { userId, createdAt },
+        UpdateExpression: 'SET #status = :status',
+        ExpressionAttributeNames: {
+            '#status': 'status',
+        },
+        ExpressionAttributeValues: {
+            ':status': status,
+        },
+    }));
+
+    return constructResponse(200, {
+        message: 'Order status updated',
+        userId,
+        createdAt,
+        status,
+    });
+}
+
+async function handleAdminDeleteOrder(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+    if (!isAdmin(event)) {
+        return constructResponse(403, { message: 'Forbidden: Admin access required' });
+    }
+
+    const queryParams = event.queryStringParameters || {};
+    const userId = typeof queryParams.userId === 'string' ? queryParams.userId.trim() : '';
+    const createdAt = Number(queryParams.createdAt);
+
+    if (!userId || !Number.isFinite(createdAt)) {
+        return constructResponse(400, { message: 'Missing or invalid userId or createdAt' });
+    }
+
+    const existingOrderResponse = await doc.send(new GetCommand({
+        TableName: ORDERS_TABLE,
+        Key: { userId, createdAt },
+    }));
+
+    if (!existingOrderResponse.Item) {
+        return constructResponse(404, { message: 'Order not found' });
+    }
+
+    await doc.send(new DeleteCommand({
+        TableName: ORDERS_TABLE,
+        Key: { userId, createdAt },
+    }));
+
+    return constructResponse(200, {
+        message: 'Order deleted',
+        userId,
+        createdAt,
+    });
 }
 
 export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
@@ -378,7 +488,20 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
             return await handleCreateCheckout(event);
         }
         if (method === 'PUT') {
+            if (event.body) {
+                try {
+                    const parsed = JSON.parse(event.body) as Partial<AdminOrderStatusUpdateBody>;
+                    if (typeof parsed?.userId === 'string' && typeof parsed?.createdAt === 'number' && typeof parsed?.status === 'string') {
+                        return await handleAdminUpdateOrderStatus(event);
+                    }
+                } catch {
+                    // fall through to standard checkout confirmation handler
+                }
+            }
             return await handleConfirmCheckout(event);
+        }
+        if (method === 'DELETE') {
+            return await handleAdminDeleteOrder(event);
         }
 
         return constructResponse(405, { message: 'Method Not Allowed' });

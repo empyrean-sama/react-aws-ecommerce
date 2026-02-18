@@ -204,6 +204,7 @@ export default class ProductStack extends Stack {
 		props.apiStack.addMethodOnResource(Constants.checkoutAuthResourceName, 'GET', checkoutIntegration, true);
 		props.apiStack.addMethodOnResource(Constants.checkoutAuthResourceName, 'POST', checkoutIntegration, true);
 		props.apiStack.addMethodOnResource(Constants.checkoutAuthResourceName, 'PUT', checkoutIntegration, true);
+		props.apiStack.addMethodOnResource(Constants.checkoutAuthResourceName, 'DELETE', checkoutIntegration, true);
 
 		// Lambda: Product Search Index regeneration
 		const productSearchIndexLambda = new NodejsFunction(this, 'ProductSearchIndexFunction', {
