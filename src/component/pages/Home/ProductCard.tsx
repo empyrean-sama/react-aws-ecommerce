@@ -163,7 +163,7 @@ export default function ProductCard(props: IProductCardProps) {
     function handleBuyNow(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         e.preventDefault();
         e.stopPropagation();
-        showMessage(`Buy now not implemented yet!`, ESnackbarMsgVariant.error);
+        navigateTo(`/checkout?mode=single&productId=${encodeURIComponent(props.productRecord.productId)}&variantId=${encodeURIComponent(defaultVariantRecord!.variantId)}&quantity=1`);
     }
 
     return(

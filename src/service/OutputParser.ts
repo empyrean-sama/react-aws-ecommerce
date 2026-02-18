@@ -112,6 +112,12 @@ export default class OutputParser {
     public static get ProductSearchIndexEndPointURL(): string {
         return `${this.ApiEndpoint}${Constants.productSearchIndexResourceName}`;
     }
+    public static get CheckoutEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.checkoutResourceName}`;
+    }
+    public static get CheckoutAuthEndPointURL(): string {
+        return `${this.ApiEndpoint}${Constants.checkoutAuthResourceName}`;
+    }
     public static get ProductSearchIndexPublicURL(): string {
         const encodedKey = Constants.productSearchIndexObjectKey
             .split('/')

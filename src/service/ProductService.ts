@@ -10,6 +10,8 @@ import IReviewRecord from "../interface/product/IReviewRecord";
 import IProductSearchIndex from "../interface/product/IProductSearchIndex";
 import IProductVariant from "../interface/product/IProductVariant";
 import IProductVariantRecord from "../interface/product/IProductVariantRecord";
+import { ICheckoutConfirmInput, ICheckoutCreateInput, ICheckoutCreateResult } from "../interface/order/ICheckoutSession";
+import IOrderRecord from "../interface/order/IOrderRecord";
 
 type IReviewWriteInput = Omit<IReview, 'userId' | 'orderReference' | 'reviewerName' | 'reviewerUsername'>;
 type IReviewAverage = { productId: string; averageScore: number; reviewCount: number };
@@ -566,6 +568,65 @@ export default class ProductService {
             return null;
         }
         return json as IProductSearchIndex;
+    }
+
+    // Checkout
+    public async createCheckoutSession(input: ICheckoutCreateInput & { guestUserId?: string }, isAuthenticated: boolean): Promise<ICheckoutCreateResult & { guestUserId?: string }> {
+        const url = new URL(isAuthenticated ? OutputParser.CheckoutAuthEndPointURL : OutputParser.CheckoutEndPointURL);
+
+        const requestInit: RequestInit = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(input),
+        };
+
+        const resp = isAuthenticated
+            ? await AuthService.getInstance().authorizedFetch(url, requestInit)
+            : await fetch(url, requestInit);
+
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok) {
+            throw new Error(json?.message || 'Failed to create checkout session');
+        }
+
+        return {
+            orderId: String(json?.orderId || ''),
+            createdAt: Number(json?.createdAt || 0),
+            amount: Number(json?.amount || 0),
+            currency: 'INR',
+            razorpayOrderId: String(json?.razorpayOrderId || ''),
+            razorpayKeyId: String(json?.razorpayKeyId || ''),
+            ...(typeof json?.guestUserId === 'string' ? { guestUserId: json.guestUserId } : {}),
+        };
+    }
+
+    public async confirmCheckoutPayment(input: ICheckoutConfirmInput & { guestUserId?: string }, isAuthenticated: boolean): Promise<void> {
+        const url = new URL(isAuthenticated ? OutputParser.CheckoutAuthEndPointURL : OutputParser.CheckoutEndPointURL);
+
+        const requestInit: RequestInit = {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(input),
+        };
+
+        const resp = isAuthenticated
+            ? await AuthService.getInstance().authorizedFetch(url, requestInit)
+            : await fetch(url, requestInit);
+
+        if (!resp.ok) {
+            const json = await resp.json().catch(() => undefined) as any;
+            throw new Error(json?.message || 'Failed to confirm payment');
+        }
+    }
+
+    public async getMyOrders(): Promise<IOrderRecord[]> {
+        const url = new URL(OutputParser.CheckoutAuthEndPointURL);
+        const resp = await AuthService.getInstance().authorizedFetch(url, { method: 'GET' });
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok) {
+            throw new Error(json?.message || 'Failed to fetch orders');
+        }
+        return Array.isArray(json) ? (json as IOrderRecord[]) : [];
     }
 
     public async createReview(review: IReviewWriteInput): Promise<IReviewRecord> {

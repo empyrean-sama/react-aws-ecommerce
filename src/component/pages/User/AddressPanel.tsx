@@ -14,7 +14,7 @@ import { appGlobalStateContext } from "../../App/AppGlobalStateProvider";
 import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
 import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
 
-import {areCoordinatesValid, isAreaValid, isCityValid, isCountryValid, isLabelValid, isSpecificAddressValid, isStateValid, isStreetValid, isPostcodeValid} from '../../../Helper';
+import {areCoordinatesValid, isAreaValid, isCityValid, isCountryValid, isLabelValid, isPhoneValid, isSpecificAddressValid, isStateValid, isStreetValid, isPostcodeValid} from '../../../Helper';
 
 export default function AddressPanel(props: {sx?: SxProps}) {
 
@@ -73,6 +73,7 @@ export default function AddressPanel(props: {sx?: SxProps}) {
         const postcodeValidation = isPostcodeValid(addressToEdit.postcode);
         const streetValidation = isStreetValid(addressToEdit.street);
         const labelValidation = isLabelValid(addressToEdit.userLabel);
+        const phoneValidation = isPhoneValid(addressToEdit.phoneNumber);
         const coordinatesValidation = areCoordinatesValid(addressToEdit.latitude, addressToEdit.longitude);
 
         callbacks.setSpecificAddressError(specificAddressValidation.errorMessage);
@@ -83,6 +84,7 @@ export default function AddressPanel(props: {sx?: SxProps}) {
         callbacks.setPostCodeError(postcodeValidation.errorMessage);
         callbacks.setStreetError(streetValidation.errorMessage);
         callbacks.setLabelError(labelValidation.errorMessage);
+        callbacks.setPhoneError(phoneValidation.errorMessage);
 
         function isLocationValid() {
             if(callbacks.areLocationCoordinatesAvailable) {
@@ -93,7 +95,7 @@ export default function AddressPanel(props: {sx?: SxProps}) {
 
         if(specificAddressValidation.isValid && areaValidation.isValid && cityValidation.isValid &&
            stateValidation.isValid && countryValidation.isValid && postcodeValidation.isValid &&
-           streetValidation.isValid && labelValidation.isValid && isLocationValid()) {
+              streetValidation.isValid && labelValidation.isValid && phoneValidation.isValid && isLocationValid()) {
             
             setIsLoading(true);
             try {
@@ -135,7 +137,19 @@ export default function AddressPanel(props: {sx?: SxProps}) {
     function handleAddressCardEdit(addressId: string) {
         const address = addresses.find(addr => addr.addressId === addressId);
         if (address) {
-            setAddressToEdit(address);
+            setAddressToEdit({
+                ...createEmptyAddress(),
+                ...address,
+                userLabel: address.userLabel ?? '',
+                phoneNumber: address.phoneNumber ?? '',
+                specificAddress: address.specificAddress ?? '',
+                street: address.street ?? '',
+                area: address.area ?? '',
+                city: address.city ?? '',
+                state: address.state ?? '',
+                country: address.country ?? '',
+                postcode: address.postcode ?? '',
+            });
             setEditingAddressId(addressId);
             setShowCreateForm(true);
         }

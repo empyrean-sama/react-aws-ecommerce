@@ -345,7 +345,7 @@ export default function ProductDetails() {
     }
 
     function handleBuyNow() {
-        showMessage('Buy now not implemented yet!', ESnackbarMsgVariant.info);
+        navigateTo(`/checkout?mode=single&productId=${encodeURIComponent(product!.productId)}&variantId=${encodeURIComponent(selectedVariant!.variantId)}&quantity=1`);
     }
 
     async function handleSubmitReview() {

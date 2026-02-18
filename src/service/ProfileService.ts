@@ -4,6 +4,24 @@ import IAddressRecord from "../interface/IAddressRecord";
 import AuthService from "./AuthService";
 import OutputParser from "./OutputParser";
 
+function normalizeAddressRecord(input: any): IAddressRecord {
+    return {
+        userId: String(input?.userId ?? ''),
+        addressId: String(input?.addressId ?? ''),
+        userLabel: String(input?.userLabel ?? ''),
+        phoneNumber: String(input?.phoneNumber ?? ''),
+        specificAddress: String(input?.specificAddress ?? ''),
+        street: String(input?.street ?? ''),
+        area: String(input?.area ?? ''),
+        postcode: String(input?.postcode ?? ''),
+        city: String(input?.city ?? ''),
+        state: String(input?.state ?? ''),
+        country: String(input?.country ?? ''),
+        ...(typeof input?.latitude === 'number' ? { latitude: input.latitude } : {}),
+        ...(typeof input?.longitude === 'number' ? { longitude: input.longitude } : {}),
+    };
+}
+
 export default class ProfileService {
     private static _instance : ProfileService | null = null;
     private constructor() {}
@@ -28,7 +46,7 @@ export default class ProfileService {
         if (!resp.ok) {
             return null;
         }
-        return json as IAddressRecord;
+        return normalizeAddressRecord(json);
     }
 
     /**
@@ -44,7 +62,7 @@ export default class ProfileService {
         if (!resp.ok) {
             return null;
         }
-        return json.addresses as IAddressRecord[];
+        return Array.isArray(json?.addresses) ? json.addresses.map(normalizeAddressRecord) : [];
     }
 
     /**
@@ -74,7 +92,7 @@ export default class ProfileService {
         if (!resp.ok) {
             throw new Error(json?.message || 'Failed to add address');
         }
-        return (json.addressRecord) as IAddressRecord;
+        return normalizeAddressRecord(json.addressRecord);
     }
 
     /**
@@ -104,7 +122,7 @@ export default class ProfileService {
         if (!resp.ok) {
             throw new Error(json?.message || 'Failed to update address');
         }
-        return json.addressRecord as IAddressRecord;
+        return normalizeAddressRecord(json.addressRecord);
     }
 
     /**
@@ -129,7 +147,7 @@ export default class ProfileService {
     public async getAutofillAddressSuggestions(text: string): Promise<JsonLike | null> {
         const url = new URL(OutputParser.AutofillAddressEndPointURL);
         url.searchParams.set('text', text);
-        const resp = await AuthService.getInstance().authorizedFetch(url, { method: 'GET' });
+        const resp = await fetch(url, { method: 'GET' });
         const json = await resp.json();
         if (!resp.ok) {
             return null;

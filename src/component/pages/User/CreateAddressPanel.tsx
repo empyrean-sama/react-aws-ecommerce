@@ -18,6 +18,7 @@ function getChipColor(formMode: "New Address" | "Editing Address") {
 
 export interface ISaveAddressErrorStates {
     setLabelError: React.Dispatch<React.SetStateAction<string>>;
+    setPhoneError: React.Dispatch<React.SetStateAction<string>>;
     setPostCodeError: React.Dispatch<React.SetStateAction<string>>;
     setSpecificAddressError: React.Dispatch<React.SetStateAction<string>>;
     setStreetError: React.Dispatch<React.SetStateAction<string>>;
@@ -44,15 +45,27 @@ export interface CreateAddressPanelProps {
     // Event handlers that will be called when the user cancels or saves the form
     onCancelForm: () => void;
     onSaveAddress: (callbacks: ISaveAddressErrorStates) => void;
+
+    // Optional UI customizations for reuse in checkout and other contexts
+    primaryActionLabel?: string;
+    showActionButtons?: boolean;
+    isEmbedded?: boolean;
+    showFormModeChip?: boolean;
+    showLabelField?: boolean;
 }
 
 export default function CreateAddressPanel(props: CreateAddressPanelProps) {
+    const showActionButtons = props.showActionButtons ?? true;
+    const isEmbedded = props.isEmbedded ?? false;
+    const showFormModeChip = props.showFormModeChip ?? true;
+    const showLabelField = props.showLabelField ?? true;
 
     // State for this component
     const [suggestionText, setSuggestionText] = React.useState<string>("");
     const [areCoordinatesAvailable, setAreCoordinatesAvailable] = React.useState<boolean>((props.formMode === "Editing Address")? props.addressToEdit.latitude !== undefined && props.addressToEdit.longitude !== undefined : false);
 
     const [labelError, setLabelError] = React.useState<string>("");
+    const [phoneError, setPhoneError] = React.useState<string>("");
     const [postCodeError, setPostCodeError] = React.useState<string>("");
     const [specificAddressError, setSpecificAddressError] = React.useState<string>("");
     const [streetError, setStreetError] = React.useState<string>("");
@@ -79,8 +92,9 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
         setAreCoordinatesAvailable(true);
         props.setAddressToEdit((prevValue) => {
             return {
-                userLabel: prevValue.userLabel,
-                specificAddress: prevValue.specificAddress,
+                userLabel: prevValue.userLabel ?? '',
+                phoneNumber: prevValue.phoneNumber ?? '',
+                specificAddress: prevValue.specificAddress ?? '',
 
                 street: suggestion.value["street"] || "",
                 area: suggestion.value["district"] || "",
@@ -96,14 +110,27 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
     }
 
     return (
-        <Paper elevation={0} variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+        <Paper
+            elevation={0}
+            variant={isEmbedded ? undefined : "outlined"}
+            sx={{
+                p: isEmbedded ? 0 : 2.5,
+                borderRadius: isEmbedded ? 0 : 2,
+                boxShadow: 'none',
+                border: isEmbedded ? 'none' : undefined,
+                width: '100%',
+                bgcolor: 'transparent',
+            }}
+        >
             <Stack spacing={2}>
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Chip label={props.formMode} size="small" color={getChipColor(props.formMode)} />
-                        <Typography variant="subtitle2" color="text.secondary">{props.addressToEdit.userLabel}</Typography>
+                        {showFormModeChip && <Chip label={props.formMode} size="small" color={getChipColor(props.formMode)} />}
+                        {showLabelField && <Typography variant="subtitle2" color="text.secondary">{props.addressToEdit.userLabel ?? ''}</Typography>}
                     </Box>
-                    <IconButton size="small" onClick={props.onCancelForm} disabled={props.isLoading}><CloseIcon fontSize="small" /></IconButton>
+                    {showActionButtons && (
+                        <IconButton size="small" onClick={props.onCancelForm} disabled={props.isLoading}><CloseIcon fontSize="small" /></IconButton>
+                    )}
                 </Box>
 
                 <AutofillTextField 
@@ -126,21 +153,33 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                 }
                 
                 <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" } }}>
+                    {showLabelField && (
+                        <TextField
+                            label="Label"
+                            size="small"
+                            placeholder="Home, Work, Parents, etc."
+                            fullWidth
+                            value={props.addressToEdit.userLabel ?? ''}
+                            onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, userLabel: e.target.value })}
+                            error={!!labelError}
+                            helperText={labelError}
+                        />
+                    )}
                     <TextField
-                        label="Label"
+                        label="Phone"
                         size="small"
-                        placeholder="Home, Work, Parents, etc."
                         fullWidth
-                        value={props.addressToEdit.userLabel}
-                        onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, userLabel: e.target.value })}
-                        error={!!labelError}
-                        helperText={labelError}
+                        value={props.addressToEdit.phoneNumber ?? ''}
+                        onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, phoneNumber: e.target.value })}
+                        error={!!phoneError}
+                        helperText={phoneError}
+                        placeholder="+91XXXXXXXXXX"
                     />
                     <TextField
                         label="Postcode"
                         size="small"
                         fullWidth
-                        value={props.addressToEdit.postcode}
+                        value={props.addressToEdit.postcode ?? ''}
                         onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, postcode: e.target.value })}
                         error={!!postCodeError}
                         helperText={postCodeError}
@@ -151,7 +190,7 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                     label="Flat / door / building"
                     size="small"
                     fullWidth
-                    value={props.addressToEdit.specificAddress}
+                    value={props.addressToEdit.specificAddress ?? ''}
                     onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, specificAddress: e.target.value })}
                     error={!!specificAddressError}
                     helperText={specificAddressError}
@@ -161,7 +200,7 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                     label="Street / locality"
                     size="small"
                     fullWidth
-                    value={props.addressToEdit.street}
+                    value={props.addressToEdit.street ?? ''}
                     onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, street: e.target.value })}
                     error={!!streetError}
                     helperText={streetError}
@@ -172,7 +211,7 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                         label="Area"
                         size="small"
                         fullWidth
-                        value={props.addressToEdit.area}
+                        value={props.addressToEdit.area ?? ''}
                         onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, area: e.target.value })}
                         error={!!areaError}
                         helperText={areaError}
@@ -181,7 +220,7 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                         label="City"
                         size="small"
                         fullWidth
-                        value={props.addressToEdit.city}
+                        value={props.addressToEdit.city ?? ''}
                         onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, city: e.target.value })}
                         error={!!cityError}
                         helperText={cityError}
@@ -193,7 +232,7 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                         label="State"
                         size="small"
                         fullWidth
-                        value={props.addressToEdit.state}
+                        value={props.addressToEdit.state ?? ''}
                         onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, state: e.target.value })}
                         error={!!stateError}
                         helperText={stateError}
@@ -202,37 +241,42 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                         label="Country"
                         size="small"
                         fullWidth
-                        value={props.addressToEdit.country}
+                        value={props.addressToEdit.country ?? ''}
                         onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, country: e.target.value })}
                         error={!!countryError}
                         helperText={countryError}
                     />
                 </Box>
 
-                <Divider />
+                {showActionButtons && (
+                    <>
+                        <Divider />
 
-                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                    <Button onClick={props.onCancelForm} size="small" disabled={props.isLoading}>Cancel</Button>
-                    <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<SaveIcon />}
-                        onClick={() => props.onSaveAddress({
-                            setLabelError,
-                            setPostCodeError,
-                            setSpecificAddressError,
-                            setStreetError,
-                            setAreaError,
-                            setCityError,
-                            setStateError,
-                            setCountryError,
-                            areLocationCoordinatesAvailable: areCoordinatesAvailable,
-                        })}
-                        disabled={props.isLoading}
-                    >
-                        Save address
-                    </Button>
-                </Box>
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                            <Button onClick={props.onCancelForm} size="small" disabled={props.isLoading}>Cancel</Button>
+                            <Button
+                                variant="contained"
+                                size="small"
+                                startIcon={<SaveIcon />}
+                                onClick={() => props.onSaveAddress({
+                                    setLabelError,
+                                    setPhoneError,
+                                    setPostCodeError,
+                                    setSpecificAddressError,
+                                    setStreetError,
+                                    setAreaError,
+                                    setCityError,
+                                    setStateError,
+                                    setCountryError,
+                                    areLocationCoordinatesAvailable: areCoordinatesAvailable,
+                                })}
+                                disabled={props.isLoading}
+                            >
+                                {props.primaryActionLabel || 'Save address'}
+                            </Button>
+                        </Box>
+                    </>
+                )}
             </Stack>
         </Paper>
     );

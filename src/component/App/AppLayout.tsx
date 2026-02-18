@@ -17,6 +17,8 @@ const Loadable = (Component: React.LazyExoticComponent<any>) => (props: any) => 
 const Home = Loadable(React.lazy(() => import("../pages/Home/Home")));
 const ProductDetails = Loadable(React.lazy(() => import('../pages/Product/ProductDetails')));
 const Results = Loadable(React.lazy(() => import('../pages/Results/Results')));
+const Checkout = Loadable(React.lazy(() => import('../pages/Checkout/Checkout')));
+const OrderPlaced = Loadable(React.lazy(() => import('../pages/Checkout/OrderPlaced')));
 const NotFound = Loadable(React.lazy(() => import("../pages/Error/NotFound")));
 const Cart = Loadable(React.lazy(() => import("../pages/Cart/Cart")));
 
@@ -77,6 +79,8 @@ export default function AppLayout() {
                 <Route path="results" element={<Results />} />
                 <Route path="product/:collectionSlug/:productSlug" element={<ProductDetails />} />
                 <Route path="cart" element={<Cart />} />
+                <Route path="checkout" element={<Checkout />} />
+                <Route path="order-placed" element={<OrderPlaced />} />
                 <Route path="account" element={<AccountOutlet />}>
                     <Route index element={<Account />} />
                     <Route path="login" element={<Login />} />

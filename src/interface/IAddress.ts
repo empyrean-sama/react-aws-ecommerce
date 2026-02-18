@@ -1,5 +1,6 @@
 export default interface IAddress {
     userLabel: string;
+    phoneNumber: string;
 
     specificAddress: string;
     street: string;
@@ -17,6 +18,7 @@ export default interface IAddress {
 export function createEmptyAddress(): IAddress {
     return {
         userLabel: "",
+        phoneNumber: "",
 
         specificAddress: "",
         street: "",

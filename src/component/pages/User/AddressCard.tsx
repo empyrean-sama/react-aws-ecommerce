@@ -42,6 +42,9 @@ export default function AddressCard({ address, onEdit, onDelete, isBusy }: Addre
                     {address.country && <>{address.country}</>}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+                    {address.phoneNumber}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
                     {address.latitude && address.longitude ? "Linked to map location" : "Not linked to map location"}
                 </Typography>
             </Box>

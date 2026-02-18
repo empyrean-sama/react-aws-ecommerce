@@ -71,6 +71,8 @@ export default class InfrastructureConstants {
     static get reviewEligibilityResourceName(): string { return `review-eligibility`; }
     static get reviewAverageResourceName(): string { return `review-average`; }
     static get productSearchIndexResourceName(): string { return `product-search-index`; }
+    static get checkoutResourceName(): string { return `checkout`; }
+    static get checkoutAuthResourceName(): string { return `checkout-auth`; }
     static get productTagsResourceName(): string { return `product-tags`; }
     static get productDefaultVariantResourceName(): string { return `product-default-variant`; }
     static get variantResourceName(): string { return `variant`; }

@@ -7,6 +7,10 @@
     "ExportsOutputRefReactAwsEcommerceUserPoolReactAwsEcommerceUserPoolClient2598305C2BEB1BB0": "107v5vukoq728a5iij28b0c5ep",
     "ExportsOutputRefReactAwsEcommerceCartTableD53448BF38B0A106": "ReactAwsEcommerce-cart"
   },
+  "ReactAwsEcommerce-ProfileStack": {
+    "ExportsOutputFnGetAttProfileAddressFunction382822CDArn7F939DE2": "arn:aws:lambda:ap-south-1:410772458210:function:AddressFunction",
+    "ExportsOutputFnGetAttAutofillAddressFunction0ED0815FArnB5C9F1C1": "arn:aws:lambda:ap-south-1:410772458210:function:AutofillAddressFunction"
+  },
   "ReactAwsEcommerce-MemoryStack": {
     "ExportsOutputFnGetAttGeneratePresignedUploadUrlFunction32129FC0Arn758B4BC0": "arn:aws:lambda:ap-south-1:410772458210:function:GeneratePresignedUploadUrl",
     "ExportsOutputFnGetAttmanageListsFunction301289EAArn0A4DC882": "arn:aws:lambda:ap-south-1:410772458210:function:ManageLists",
@@ -15,12 +19,9 @@
     "ExportsOutputFnGetAttDeleteImageFunction98837557ArnF41960AC": "arn:aws:lambda:ap-south-1:410772458210:function:DeleteImage",
     "ReactAwsEcommerceMemoryBucketName": "reactawsecommerce-memorys-publicreadmemorybucket97-guwp73rhwzw3"
   },
-  "ReactAwsEcommerce-ProfileStack": {
-    "ExportsOutputFnGetAttProfileAddressFunction382822CDArn7F939DE2": "arn:aws:lambda:ap-south-1:410772458210:function:AddressFunction",
-    "ExportsOutputFnGetAttAutofillAddressFunction0ED0815FArnB5C9F1C1": "arn:aws:lambda:ap-south-1:410772458210:function:AutofillAddressFunction"
-  },
   "ReactAwsEcommerce-ProductStack": {
     "ExportsOutputFnGetAttProductCollectionFunctionA7F7037CArn3C2BFDA2": "arn:aws:lambda:ap-south-1:410772458210:function:ProductCollectionFunction",
+    "ExportsOutputFnGetAttCheckoutFunctionB07D413FArn333715D5": "arn:aws:lambda:ap-south-1:410772458210:function:CheckoutFunction",
     "ExportsOutputFnGetAttProductVariantFunction7E75517DArnEC8A579D": "arn:aws:lambda:ap-south-1:410772458210:function:ProductVariantFunction",
     "ExportsOutputFnGetAttProductSearchIndexFunction5DD250BFArn99B3C903": "arn:aws:lambda:ap-south-1:410772458210:function:ProductSearchIndexFunction",
     "ExportsOutputFnGetAttReactAwsEcommerceVariantsTable0C650542ArnCFBA4894": "arn:aws:dynamodb:ap-south-1:410772458210:table/ReactAwsEcommerce-variants",

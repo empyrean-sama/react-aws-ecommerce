@@ -126,7 +126,7 @@ export default function OrderCard(props: IOrderCardProps) {
                             {getColorAndIconByStatus(props.status).icon}
                         </Avatar>
                     }
-                    title={<CardTitle />}
+                    title={<CardTitle orderId={props.orderId} />}
                     subheader={`Placed on ${format(props.orderDate, "MMMM dd, yyyy")}`}
                     action={expanded ? <ExpandLessIcon sx={{ marginY: "auto" }} /> : <ExpandMoreIcon sx={{ marginY: "auto" }} />}
                     sx={{ cursor: "pointer", display: "flex", alignItems: "center" }}
@@ -219,11 +219,11 @@ export default function OrderCard(props: IOrderCardProps) {
     );
 }
 
-function CardTitle() {
+function CardTitle({ orderId }: { orderId: string }) {
     return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Typography variant="h6" component="div">
-                Order #123456789
+                Order #{orderId}
             </Typography>
         </Box>
     );

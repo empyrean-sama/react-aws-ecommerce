@@ -392,7 +392,7 @@ function CartSummaryPanel() {
                     </Box>
                 </Stack>
                 <Stack>
-                    <Button variant="contained" color="info" fullWidth size="large" disabled={cartItemCount === 0}>Proceed to checkout</Button>
+                    <Button variant="contained" color="info" fullWidth size="large" disabled={cartItemCount === 0} onClick={() => navigateTo('/checkout?mode=cart')}>Proceed to checkout</Button>
                     <Button variant="outlined" fullWidth size="small" onClick={() => navigateTo("/")}>Continue shopping</Button>
                 </Stack>
             </Stack>

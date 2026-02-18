@@ -64,10 +64,15 @@ async function getRecentOrderReferencesForProduct(userId: string, productId: str
         ScanIndexForward: false,
     }));
 
-    const orders = (response.Items || []).map((item) => unmarshall(item) as { orderId?: string; createdAt?: number; products?: Array<{ productId?: string }> });
+    const orders = (response.Items || []).map((item) => unmarshall(item) as { orderId?: string; createdAt?: number; paymentStatus?: string; products?: Array<{ productId?: string }> });
     const refs: string[] = [];
 
     for (const order of orders) {
+        const isPaidOrder = typeof order.paymentStatus === 'undefined' || order.paymentStatus === 'paid';
+        if (!isPaidOrder) {
+            continue;
+        }
+
         const hasProduct = Array.isArray(order.products) && order.products.some((item) => item?.productId === productId);
         if (!hasProduct) {
             continue;

@@ -5,6 +5,7 @@ export default class Constants {
     static readonly IMAGE_UPLOAD_MAX_BYTES: number = 5_000_000;
     static readonly IMAGE_UPLOAD_ALLOWED_TYPES: string[] = ['image/jpeg','image/png','image/webp','image/avif'];
     static readonly LOCAL_STORAGE_CART_KEY: string = "ecommerce-app-cart";
+    static readonly LOCAL_STORAGE_GUEST_CHECKOUT_USER_KEY: string = "ecommerce-app-guest-checkout-user";
 
     static readonly PROMOTION_BANNER_LIST_KEY: string = "promotion-banners-list";
 }

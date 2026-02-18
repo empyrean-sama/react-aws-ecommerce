@@ -10,6 +10,7 @@ import { Construct } from 'constructs';
 import Constants from '../InfrastructureConstants';
 import APIStack from './APIStack';
 import AuthApiStack from './AuthApiStack';
+import {RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET} from "../../../.env.json";
 
 export interface ProductStackProps extends StackProps {
 	apiStack: APIStack;
@@ -176,6 +177,32 @@ export default class ProductStack extends Stack {
 		props.apiStack.addMethodOnResource(Constants.reviewResourceName, 'POST', reviewIntegration, true);
 		props.apiStack.addMethodOnResource(Constants.reviewResourceName, 'PUT', reviewIntegration, true);
 		props.apiStack.addMethodOnResource(Constants.reviewResourceName, 'DELETE', reviewIntegration, true);
+
+		// Lambda: Checkout (guest + authenticated)
+		const checkoutLambda = new NodejsFunction(this, 'CheckoutFunction', {
+			functionName: 'CheckoutFunction',
+			entry: path.join(__dirname, '..', 'lambda', 'Product', 'Checkout.ts'),
+			handler: 'Handle',
+			runtime: Lambda.Runtime.NODEJS_22_X,
+			environment: {
+				PRODUCT_TABLE: this._productTable.tableName,
+				VARIANT_TABLE: this._variantTable.tableName,
+				ORDERS_TABLE: this._ordersTable.tableName,
+				RAZORPAY_KEY_ID: RAZORPAY_KEY_ID,
+				RAZORPAY_KEY_SECRET: RAZORPAY_KEY_SECRET,
+			},
+			bundling: { minify: true, sourceMap: true, target: 'node22' },
+		});
+		this._productTable.grantReadData(checkoutLambda);
+		this._variantTable.grantReadData(checkoutLambda);
+		this._ordersTable.grantReadWriteData(checkoutLambda);
+
+		const checkoutIntegration = new LambdaIntegration(checkoutLambda);
+		props.apiStack.addMethodOnResource(Constants.checkoutResourceName, 'POST', checkoutIntegration, false);
+		props.apiStack.addMethodOnResource(Constants.checkoutResourceName, 'PUT', checkoutIntegration, false);
+		props.apiStack.addMethodOnResource(Constants.checkoutAuthResourceName, 'GET', checkoutIntegration, true);
+		props.apiStack.addMethodOnResource(Constants.checkoutAuthResourceName, 'POST', checkoutIntegration, true);
+		props.apiStack.addMethodOnResource(Constants.checkoutAuthResourceName, 'PUT', checkoutIntegration, true);
 
 		// Lambda: Product Search Index regeneration
 		const productSearchIndexLambda = new NodejsFunction(this, 'ProductSearchIndexFunction', {

@@ -11,6 +11,7 @@ export function getAddressFromJSONLike(obj: JsonLike | undefined): IAddress | nu
 
 	const requiredKeys: (keyof IAddress)[] = [
 		'userLabel',
+		'phoneNumber',
 		'specificAddress',
 		'street',
 		'area',
@@ -28,6 +29,7 @@ export function getAddressFromJSONLike(obj: JsonLike | undefined): IAddress | nu
 
 	const address: IAddress = {
 		userLabel: String(obj.userLabel).trim(),
+		phoneNumber: String(obj.phoneNumber).trim(),
 		specificAddress: String(obj.specificAddress).trim(),
 		street: String(obj.street).trim(),
 		area: String(obj.area).trim(),
