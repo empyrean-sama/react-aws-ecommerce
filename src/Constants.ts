@@ -8,4 +8,7 @@ export default class Constants {
     static readonly LOCAL_STORAGE_GUEST_CHECKOUT_USER_KEY: string = "ecommerce-app-guest-checkout-user";
 
     static readonly PROMOTION_BANNER_LIST_KEY: string = "promotion-banners-list";
+
+    static readonly SUPPORT_CONTACT_EMAIL: string = "support@srividhyafoods.com";
+    static readonly SUPPORT_CONTACT_PHONE: string = "+91-00000-00000";
 }

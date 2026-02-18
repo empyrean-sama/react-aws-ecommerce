@@ -20,6 +20,11 @@ import {
     TableContainer,
     Paper,
     TableHead,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
 } from "@mui/material";
 
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -34,6 +39,7 @@ import HighlightOffIcon from "@mui/icons-material/HighlightOff"; // cancelled
 import { format } from "date-fns";
 import IAddress from "../../../interface/IAddress";
 import { OrderStatus } from "../../../interface/order/OrderStatus";
+import Constants from "../../../Constants";
 
 interface ItemData {
     imageUrl: string;
@@ -58,6 +64,7 @@ interface IOrderCardProps {
     email: string;
     alwaysExpanded?: boolean;
     showActions?: boolean;
+    onReorder?: () => void;
 }
 
 function getColorAndIconByStatus(status: OrderStatus): { color: "primary" | "warning" | "info" | "success" | "error"; icon: React.ReactElement } {
@@ -94,6 +101,7 @@ function getProgressByStatus(status: OrderStatus): number {
 
 export default function OrderCard(props: IOrderCardProps) {
     const [expanded, setExpanded] = React.useState<boolean>(props.alwaysExpanded === true);
+    const [isSupportDialogOpen, setIsSupportDialogOpen] = React.useState<boolean>(false);
     const showActions = props.showActions ?? true;
 
     const handleExpandClick = () => {
@@ -119,8 +127,8 @@ export default function OrderCard(props: IOrderCardProps) {
                 </Box>
                 {showActions && (
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Button variant="outlined" size="small">Reorder</Button>
-                        <Button variant="outlined" size="small">Request Support</Button>
+                        <Button variant="outlined" size="small" onClick={props.onReorder}>Reorder</Button>
+                        <Button variant="outlined" size="small" onClick={() => setIsSupportDialogOpen(true)}>Request Support</Button>
                     </Box>
                 )}
                 
@@ -222,6 +230,22 @@ export default function OrderCard(props: IOrderCardProps) {
                     </Box>
                 </Collapse>
             </CardContent>
+
+            <Dialog open={isSupportDialogOpen} onClose={() => setIsSupportDialogOpen(false)} aria-labelledby="request-support-title">
+                <DialogTitle id="request-support-title">Contact Support</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Reach out to the site owner using the details below:
+                    </DialogContentText>
+                    <Box sx={{ mt: 1 }}>
+                        <Typography variant="body1">Email: {Constants.SUPPORT_CONTACT_EMAIL}</Typography>
+                        <Typography variant="body1">Phone: {Constants.SUPPORT_CONTACT_PHONE}</Typography>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsSupportDialogOpen(false)}>Close</Button>
+                </DialogActions>
+            </Dialog>
         </Card>
     );
 }

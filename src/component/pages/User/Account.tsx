@@ -9,14 +9,14 @@ import OrderCard from "./OrderCard";
 import AddressPanel from "./AddressPanel";
 import ProductService from "../../../service/ProductService";
 import IOrderRecord from "../../../interface/order/IOrderRecord";
-
-type OrderCardStatus = "order placed" | "processing" | "shipped" | "delivered" | "cancelled";
+import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
+import { OrderStatus } from "../../../interface/order/OrderStatus";
 
 function formatMoney(value: number): string {
     return `₹${(Number(value || 0) / 100).toFixed(2)}`;
 }
 
-function normalizeOrderStatus(status: string): OrderCardStatus {
+function normalizeOrderStatus(status: string): OrderStatus {
     const normalized = status?.toLowerCase?.() ?? '';
     if (normalized === 'order placed' || normalized === 'processing' || normalized === 'shipped' || normalized === 'delivered' || normalized === 'cancelled') {
         return normalized;
@@ -27,7 +27,7 @@ function normalizeOrderStatus(status: string): OrderCardStatus {
 export default function Account() {
 
     // Global API
-    const { getLoggedInDetails } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { getLoggedInDetails, setCart, showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const authService = AuthService.getInstance();
     const productService = ProductService.getInstance();
     const navigateTo = useNavigate();
@@ -61,6 +61,48 @@ export default function Account() {
             }
         })();
     }, []);
+
+    async function handleReorder(order: IOrderRecord): Promise<void> {
+        const reorderedProducts = (order.products || [])
+            .map((item) => ({
+                productId: item.productId,
+                variantId: item.variantId,
+                quantity: Number(item.quantity || 0),
+            }))
+            .filter((item) => item.productId && item.variantId && Number.isFinite(item.quantity) && item.quantity > 0);
+
+        if (reorderedProducts.length === 0) {
+            showMessage("Unable to reorder: no valid items found in this order.", ESnackbarMsgVariant.warning);
+            return;
+        }
+
+        try {
+            await setCart({ products: reorderedProducts });
+
+            const cartAfterReorder = await authService.getCart();
+            const actualQuantityByItemKey = new Map<string, number>(
+                (cartAfterReorder.products || []).map((item) => [`${item.productId}::${item.variantId}`, item.quantity])
+            );
+
+            const requestedItemsNotFullyAdded = reorderedProducts.filter((item) => {
+                const actualQuantity = actualQuantityByItemKey.get(`${item.productId}::${item.variantId}`) || 0;
+                return actualQuantity < item.quantity;
+            });
+
+            if (requestedItemsNotFullyAdded.length > 0) {
+                showMessage(
+                    `${requestedItemsNotFullyAdded.length} item(s) could not be fully added to cart due to stock limits, order limits, or because the item is no longer available in the catalog.`,
+                    ESnackbarMsgVariant.warning
+                );
+            } else {
+                showMessage("Items added to cart from this order.", ESnackbarMsgVariant.success);
+            }
+
+            navigateTo("/cart");
+        } catch (error: any) {
+            showMessage(error?.message || "Failed to reorder items.", ESnackbarMsgVariant.error);
+        }
+    }
 
     return (
         <Container maxWidth="xl" sx={{ paddingX: { xs: 0, sm: 3 }, marginY: 4, display: "flex", flexDirection: "column" }}>
@@ -131,6 +173,7 @@ export default function Account() {
                                     paymentMode={order.paymentMode}
                                     phoneNumber={order.customerPhone || order.shippingAddress?.phoneNumber || ''}
                                     email={order.customerEmail || ''}
+                                    onReorder={() => handleReorder(order)}
                                 />
                             ))
                         )}
