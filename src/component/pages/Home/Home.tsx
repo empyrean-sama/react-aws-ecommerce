@@ -18,6 +18,12 @@ import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
 
 const RACK_PRODUCT_LIMIT = 9;
 const CAROUSEL_ASPECT_RATIO = '23/8';
+const RACK_CARD_WIDTH = {
+    xs: 'calc((100% - 16px) / 2)',
+    sm: 'calc((100% - 32px) / 3)',
+    md: 'calc((100% - 48px) / 4)',
+    lg: 'calc((100% - 64px) / 5)',
+};
 const LAZY_RACK_OBSERVER_OPTIONS: IntersectionObserverInit = {
     root: null,
     rootMargin: '300px 0px',
@@ -382,10 +388,13 @@ function LazyCollectionRack(props: ILazyCollectionRackProps) {
 
 function RackLoadingPlaceholder() {
     return (
-        <Box sx={{ display: "flex", justifyContent: "center", columnGap: 2, rowGap: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: "flex", justifyContent: "flex-start", columnGap: 2, rowGap: 2, flexWrap: 'wrap', width: '100%' }}>
             <Box
                 sx={{
-                    width: { xs: 175, md: 250 },
+                    minWidth: RACK_CARD_WIDTH,
+                    maxWidth: RACK_CARD_WIDTH,
+                    flexBasis: RACK_CARD_WIDTH,
+                    flexGrow: 1,
                     height: { xs: 260, md: 320 },
                     display: 'flex',
                     flexDirection: 'column',
@@ -398,7 +407,10 @@ function RackLoadingPlaceholder() {
                 <Box
                     key={`rack-placeholder-card-${index}`}
                     sx={{
-                        width: { xs: 175, md: 250 },
+                        minWidth: RACK_CARD_WIDTH,
+                        maxWidth: RACK_CARD_WIDTH,
+                        flexBasis: RACK_CARD_WIDTH,
+                        flexGrow: 1,
                         height: { xs: 260, md: 320 },
                         display: 'flex',
                         flexDirection: 'column',
