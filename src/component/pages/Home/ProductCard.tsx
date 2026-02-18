@@ -18,7 +18,12 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { getProductPath } from '../../../helper/ProductUrlHelper';
 
-const CARD_WIDTH = { xs: 175, md: 250 };
+const CARD_WIDTH = {
+    xs: 'calc((100% - 16px) / 2)',
+    sm: 'calc((100% - 32px) / 3)',
+    md: 'calc((100% - 48px) / 4)',
+    lg: 'calc((100% - 64px) / 5)',
+};
 const ACTION_HALF_WIDTH = { p: 1, flexBasis: '50%' };
 
 interface IProductCardProps {
@@ -191,7 +196,10 @@ export default function ProductCard(props: IProductCardProps) {
                     boxShadow: 6,
                     transform: 'scale(1.01)',
                 },
-                width: CARD_WIDTH
+                minWidth: CARD_WIDTH,
+                maxWidth: CARD_WIDTH,
+                flexBasis: CARD_WIDTH,
+                flexGrow: 1,
             }}
         >
             <Box>

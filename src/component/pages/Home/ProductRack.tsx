@@ -8,7 +8,12 @@ import placeHolderImageString from 'url:./placeholderImage.png';
 import IAppGlobalStateContextAPI from '../../../interface/IAppGlobalStateContextAPI';
 import ESnackbarMsgVariant from '../../../enum/ESnackbarMsgVariant';
 
-const RACK_CARD_WIDTH = { xs: 175, md: 250 };
+const RACK_CARD_WIDTH = {
+    xs: 'calc((100% - 16px) / 2)',
+    sm: 'calc((100% - 32px) / 3)',
+    md: 'calc((100% - 48px) / 4)',
+    lg: 'calc((100% - 64px) / 5)',
+};
 const LABEL_CHIP_SX = { backgroundColor: '#000', color: '#fff', py: 1, px: 2, my: 0.2, width: 'fit-content' };
 
 export interface IProductRackProps {
@@ -52,7 +57,7 @@ export default function ProductRack(props: IProductRackProps) {
     }
 
     return (
-        <Stack direction="row" flexWrap={'wrap'} rowGap={2} columnGap={2} justifyContent={'center'}>
+        <Stack direction="row" flexWrap={'wrap'} rowGap={2} columnGap={2} justifyContent={'flex-start'} sx={{ width: '100%' }}>
             <Paper
                 sx={{
                     display: 'flex',
@@ -60,7 +65,10 @@ export default function ProductRack(props: IProductRackProps) {
                     gap: 1,
                     position: 'relative',
                     cursor: 'pointer',
-                    width: RACK_CARD_WIDTH,
+                    minWidth: RACK_CARD_WIDTH,
+                    maxWidth: RACK_CARD_WIDTH,
+                    flexBasis: RACK_CARD_WIDTH,
+                    flexGrow: 1,
                 }}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
