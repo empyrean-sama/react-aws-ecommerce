@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 import { AppBar, Box, IconButton, Typography, Toolbar, Tabs, Tab, useTheme, Container } from "@mui/material";
 import SearchBar from "../ui/SearchBar";
@@ -21,17 +21,33 @@ export interface NavProps {
 export default function Nav({ setIsDrawerOpen, isDrawerOpen }: NavProps) {
     const theme = useTheme();
     const navigateTo = useNavigate();
+    const location = useLocation();
     const { favouriteCollections, cartItemCount } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
-    const [value, setValue] = React.useState(0); //todo: remove
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
         AuthService.getInstance().isCurrentUserAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
     }, []);
 
-    const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-        setValue(newValue);
-    };
+    const selectedTabValue = React.useMemo(() => {
+        const path = location.pathname || "/";
+
+        if (path === "/") {
+            return "home";
+        }
+
+        if (path.startsWith("/collection/")) {
+            const collectionId = decodeURIComponent(path.replace("/collection/", "").split("/")[0] || "");
+            const isKnownCollection = favouriteCollections.some((collection) => collection.collectionId === collectionId);
+            return isKnownCollection ? `collection:${collectionId}` : false;
+        }
+
+        if (path.startsWith("/admin")) {
+            return "admin";
+        }
+
+        return false;
+    }, [location.pathname, favouriteCollections]);
 
     return (
         <AppBar position="sticky">
@@ -49,12 +65,12 @@ export default function Nav({ setIsDrawerOpen, isDrawerOpen }: NavProps) {
             <Box sx={{ borderTop: `1px solid ${theme.palette.grey[300]}` }}></Box>
             <Toolbar variant="dense" sx={{ display: { xs: 'none', lg: 'flex' } }}>
                 <Container maxWidth="xl">
-                    <Tabs value={value} onChange={handleChange} aria-label="main-navigation">
-                        <Tab label="HOME" onClick={() => navigateTo("/")} />
+                    <Tabs value={selectedTabValue} aria-label="main-navigation">
+                        <Tab value="home" label="HOME" onClick={() => navigateTo("/")} />
                         {favouriteCollections.map((collection) => (
-                            <Tab key={collection.collectionId} label={collection.name} onClick={() => navigateTo(`/collection/${collection.collectionId}`)} />
+                            <Tab key={collection.collectionId} value={`collection:${collection.collectionId}`} label={collection.name} onClick={() => navigateTo(`/collection/${collection.collectionId}`)} />
                         ))}
-                        {isAdmin && <Tab label="ADMIN" onClick={() => navigateTo("/admin")} sx={{ color: '#9c27b0', fontWeight: 'bold' }} />}
+                        {isAdmin && <Tab value="admin" label="ADMIN" onClick={() => navigateTo("/admin")} sx={{ color: '#9c27b0', fontWeight: 'bold' }} />}
                     </Tabs>
                 </Container>
             </Toolbar>
