@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import SearchBar from "../ui/SearchBar";
-import { Box, List, ListItem, ListItemButton, ListItemText, useTheme } from "@mui/material";
+import { Box, Divider, List, ListItem, ListItemButton, ListItemText, useTheme } from "@mui/material";
 import Constants from "../../Constants";
 import { useNavigate } from "react-router";
 import { appGlobalStateContext } from "../App/AppGlobalStateProvider";
@@ -20,9 +20,16 @@ export interface AppDrawerProps {
 export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen }: AppDrawerProps) {
     const theme = useTheme();
     const navigateTo = useNavigate();
-    const { favouriteCollections } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { favouriteCollections, getLoggedInDetails, logout } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const [isAdmin, setIsAdmin] = useState(false);
     const navRef = React.useRef<HTMLElement | null>(null);
+    const isLoggedIn = getLoggedInDetails() !== null;
+
+    const handleLogout = async () => {
+        await logout();
+        setIsDrawerOpen(false);
+        navigateTo("/");
+    };
 
     useEffect(() => {
         AuthService.getInstance().isCurrentUserAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
@@ -106,6 +113,35 @@ export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen }: AppDrawerPr
                             <ListItem disablePadding>
                                 <ListItemButton onClick={() => { navigateTo("/admin"); setIsDrawerOpen(false); }}>
                                     <ListItemText primary="ADMIN" primaryTypographyProps={{ color: '#9c27b0', fontWeight: 'bold' }} />
+                                </ListItemButton>
+                            </ListItem>
+                        )}
+                        <Divider />
+                        {!isLoggedIn && (
+                            <ListItem disablePadding>
+                                <ListItemButton onClick={() => { navigateTo("/account/login", { state: { from: window.location.pathname } }); setIsDrawerOpen(false); }}>
+                                    <ListItemText primary="Login" />
+                                </ListItemButton>
+                            </ListItem>
+                        )}
+                        {!isLoggedIn && (
+                            <ListItem disablePadding>
+                                <ListItemButton onClick={() => { navigateTo("/account/signup"); setIsDrawerOpen(false); }}>
+                                    <ListItemText primary="Register" />
+                                </ListItemButton>
+                            </ListItem>
+                        )}
+                        {isLoggedIn && (
+                            <ListItem disablePadding>
+                                <ListItemButton onClick={() => { navigateTo("/account"); setIsDrawerOpen(false); }}>
+                                    <ListItemText primary="Account" />
+                                </ListItemButton>
+                            </ListItem>
+                        )}
+                        {isLoggedIn && (
+                            <ListItem disablePadding>
+                                <ListItemButton onClick={() => { void handleLogout(); }}>
+                                    <ListItemText primary="Logout" />
                                 </ListItemButton>
                             </ListItem>
                         )}
