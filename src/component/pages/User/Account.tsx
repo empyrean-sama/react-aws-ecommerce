@@ -106,7 +106,7 @@ export default function Account() {
 
     return (
         <Container maxWidth="xl" sx={{ paddingX: { xs: 0, sm: 3 }, marginY: 4, display: "flex", flexDirection: "column" }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, justifyContent: { xs: "center", sm: "space-between" } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: { xs: 1, sm: 1.5, xl: 3 }, justifyContent: { xs: "center", sm: "space-between" } }}>
                 <Typography variant="h1" component="h1">Hi {getLoggedInDetails()?.givenName} {getLoggedInDetails()?.familyName},</Typography>
                 <IconButton onClick={() => navigateTo("/account/profile")}>
                     <EditIcon />
@@ -126,8 +126,8 @@ export default function Account() {
             </Tabs>
 
             <Grid container spacing={2}>
-                <Grid size={{xs: 12, xl: 7}}>
-                    <Box sx={{display: { xs: tabLocation === "orders" ? "flex" : "none", xl: "flex" }, flexDirection: 'column', gap: 2}}>
+                <Grid size={{xs: 12, xl: 7}} sx={{ display: { xs: tabLocation === "orders" ? "block" : "none", xl: "block" } }}>
+                    <Box sx={{ display: "flex", flexDirection: 'column', gap: 2, mt: { xs: 1.5, sm: 2, xl: 0 } }}>
                         {isOrdersLoading ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                                 <CircularProgress size={24} />
@@ -179,8 +179,8 @@ export default function Account() {
                         )}
                     </Box>
                 </Grid>
-                <Grid size={{xs: 12, xl: 5}} sx={{display: 'flex', justifyContent: "center"}}>
-                    <AddressPanel sx={{display: { xs: tabLocation === "addresses" ? "flex" : "none", xl: "flex" }}} />
+                <Grid size={{xs: 12, xl: 5}} sx={{ display: { xs: tabLocation === "addresses" ? "flex" : "none", xl: "flex" }, justifyContent: "center" }}>
+                    <AddressPanel sx={{ display: "flex", mt: { xs: 1.5, sm: 2, xl: 0 } }} />
                 </Grid>
             </Grid>
         </Container>
