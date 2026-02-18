@@ -45,6 +45,7 @@ export default class AuthApiStack extends Stack {
 			environment: {
 				CART_TABLE_NAME: props.cartTable.tableName,
 				VARIANT_TABLE_NAME: Constants.variantTableName,
+				PRODUCT_TABLE_NAME: Constants.productTableName,
 			},
 			bundling: { minify: true, sourceMap: true, target: 'node22' },
 		});

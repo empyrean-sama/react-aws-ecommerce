@@ -101,11 +101,14 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
                 if (productRecord) {
                     tempProductIdToProductRecordMap[product.productId] = productRecord;
                 }
-                if(variants) {
+                if (variants) {
                     tempProductIdToVariantsRecordMap[product.productId] = variants;
                 }
             }
             setCartState({cartEntryRecord: cartRecord, productIdToProductRecordMap: tempProductIdToProductRecordMap, productIdToVariantsRecordMap: tempProductIdToVariantsRecordMap});
+            if (cartRecord.cartAdjusted) {
+                showMessage("Some cart quantities were adjusted to match current stock or per-order limits.", ESnackbarMsgVariant.warning);
+            }
         } catch (error) {
             console.error("Failed to fetch cart", error);
         }

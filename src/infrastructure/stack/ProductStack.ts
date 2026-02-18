@@ -92,6 +92,7 @@ export default class ProductStack extends Stack {
 		});
 
 		this._variantTable.grantReadData(props.authAPIStack._manageCartLambda);
+		this._productTable.grantReadData(props.authAPIStack._manageCartLambda);
 
 		// Lambda: Collections
 		const collectionLambda = new NodejsFunction(this, 'ProductCollectionFunction', {

@@ -302,6 +302,11 @@ export default function ProductDetails() {
         if (!product || !selectedVariant) return;
         if (newQuantity < 0) return;
 
+        if (Number.isFinite(stockCount) && newQuantity > stockCount) {
+            showMessage(`Only ${stockCount} left in stock.`, ESnackbarMsgVariant.warning);
+            return;
+        }
+
         if (newQuantity > maxPurchasable) {
             showMessage(`Maximum quantity per order is ${maxPurchasable}.`, ESnackbarMsgVariant.warning);
             return;
@@ -327,6 +332,12 @@ export default function ProductDetails() {
         }
 
         const nextQuantity = cartQuantity + 1;
+
+        if (Number.isFinite(stockCount) && nextQuantity > stockCount) {
+            showMessage(`Only ${stockCount} left in stock.`, ESnackbarMsgVariant.warning);
+            return;
+        }
+
         if (nextQuantity > maxPurchasable) {
             showMessage(`Maximum quantity per order is ${maxPurchasable}.`, ESnackbarMsgVariant.warning);
             return;

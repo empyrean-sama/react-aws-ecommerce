@@ -122,12 +122,17 @@ export default function ProductCard(props: IProductCardProps) {
         if (typeof maximumInOrder === 'number' && Number.isFinite(maximumInOrder)) {
             return quantity > maximumInOrder;
         }
-        return true;
+        return false;
     }
 
     function handleSetQuantity(newQuantity: number) {
         if (!defaultVariantRecord) return;
         if (newQuantity < 0) return;
+
+        if (Number.isFinite(stockCount) && newQuantity > stockCount) {
+            showMessage(`Only ${stockCount} left in stock.`, ESnackbarMsgVariant.warning);
+            return;
+        }
 
         if (isExceedingMaxQuantityPerOrder(newQuantity)) {
             showMessage(`Maximum quantity per order is ${maximumInOrder}.`, ESnackbarMsgVariant.warning);
@@ -152,6 +157,12 @@ export default function ProductCard(props: IProductCardProps) {
             return;
         }
         const nextQuantity = cartQuantity + 1;
+
+        if (Number.isFinite(stockCount) && nextQuantity > stockCount) {
+            showMessage(`Only ${stockCount} left in stock.`, ESnackbarMsgVariant.warning);
+            return;
+        }
+
         if (isExceedingMaxQuantityPerOrder(nextQuantity)) {
             showMessage(`Maximum quantity per order is ${maximumInOrder}.`, ESnackbarMsgVariant.warning);
             return;

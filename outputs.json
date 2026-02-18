@@ -21,6 +21,7 @@
   },
   "ReactAwsEcommerce-ProductStack": {
     "ExportsOutputFnGetAttProductCollectionFunctionA7F7037CArn3C2BFDA2": "arn:aws:lambda:ap-south-1:410772458210:function:ProductCollectionFunction",
+    "ExportsOutputFnGetAttReactAwsEcommerceProductsTable5EF6AEF8Arn1673EAF3": "arn:aws:dynamodb:ap-south-1:410772458210:table/ReactAwsEcommerce-products",
     "ExportsOutputFnGetAttCheckoutFunctionB07D413FArn333715D5": "arn:aws:lambda:ap-south-1:410772458210:function:CheckoutFunction",
     "ExportsOutputFnGetAttProductVariantFunction7E75517DArnEC8A579D": "arn:aws:lambda:ap-south-1:410772458210:function:ProductVariantFunction",
     "ExportsOutputFnGetAttProductSearchIndexFunction5DD250BFArn99B3C903": "arn:aws:lambda:ap-south-1:410772458210:function:ProductSearchIndexFunction",
