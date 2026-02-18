@@ -1,6 +1,5 @@
 import React from "react";
 import { Container, Card, CardContent, Typography, Box, IconButton } from "@mui/material";
-import { motion } from 'framer-motion';
 import { useNavigate } from "react-router";
 import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
 
@@ -22,12 +21,7 @@ export default function PageShell({ pageLabel, showBackButton = false, backTo, c
     }
 
     return (
-        <motion.div
-          initial={{ opacity: 0, x: -100 }}
-          animate={{ opacity: 1, x: 0 }}
-          key={location.pathname}
-          style={{flexGrow: 1, display: "flex"}}
-        >
+                <Box sx={{flexGrow: 1, display: "flex"}}>
             <Box sx={{display: "flex", flexGrow: 1 }}>
                 <Container maxWidth="sm" sx={{ py: 4, px: {xs: 0, sm: 3}, flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                     <Card sx={{ overflowY: "auto"}}>
@@ -49,6 +43,6 @@ export default function PageShell({ pageLabel, showBackButton = false, backTo, c
                     </Card>
                 </Container>
             </Box>
-        </motion.div>
+        </Box>
     );
 }
