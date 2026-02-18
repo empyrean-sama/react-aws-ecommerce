@@ -3,6 +3,8 @@
     "ExportsOutputFnGetAttReactAwsEcommerceUserPool179A9025ArnF027E14B": "arn:aws:cognito-idp:ap-south-1:410772458210:userpool/ap-south-1_OjuUcu9at",
     "UserPoolClientId": "107v5vukoq728a5iij28b0c5ep",
     "UserPoolId": "ap-south-1_OjuUcu9at",
+    "UserPoolHostedUiDomain": "https://reactecommerce-auth-410772458210-ap-south-2-c8902df3.auth.ap-south-1.amazoncognito.com",
+    "GoogleFederationEnabled": "true",
     "ExportsOutputFnGetAttReactAwsEcommerceCartTableD53448BFArnCD6CF99C": "arn:aws:dynamodb:ap-south-1:410772458210:table/ReactAwsEcommerce-cart",
     "ExportsOutputRefReactAwsEcommerceUserPoolReactAwsEcommerceUserPoolClient2598305C2BEB1BB0": "107v5vukoq728a5iij28b0c5ep",
     "ExportsOutputRefReactAwsEcommerceCartTableD53448BF38B0A106": "ReactAwsEcommerce-cart"

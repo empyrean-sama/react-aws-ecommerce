@@ -4,7 +4,7 @@ import { isEmailValid, isPhoneValid } from "../Helper";
 import ProjectConstants from "../Constants";
 
 import { Amplify } from "aws-amplify";
-import { signUp, SignUpOutput, confirmSignUp, resendSignUpCode, signIn, signOut, getCurrentUser, resetPassword, confirmResetPassword, fetchAuthSession, updatePassword, updateUserAttributes } from "@aws-amplify/auth";
+import { signUp, SignUpOutput, confirmSignUp, resendSignUpCode, signIn, signOut, getCurrentUser, resetPassword, confirmResetPassword, fetchAuthSession, updatePassword, updateUserAttributes, signInWithRedirect } from "@aws-amplify/auth";
 
 import ISignUpInput from "../interface/ISignUpInput";
 import ISignUpOptions from "../interface/ISignUpOptions";
@@ -22,18 +22,57 @@ export default class AuthService {
     private constructor() {
         const userPoolId = OutputParser.UserPoolId;
         const userPoolClientId = OutputParser.UserPoolClientId;
+        const hostedUiDomain = OutputParser.UserPoolHostedUiDomain;
+
+        const loginWith: any = {
+            email: true,
+            phone: false //todo: must make phone true before shipping version- 1
+        };
+
+        if (hostedUiDomain) {
+            const baseOrigin = window.location.origin;
+            loginWith.oauth = {
+                domain: hostedUiDomain.replace(/^https?:\/\//, ''),
+                scopes: ['openid', 'email', 'profile'],
+                redirectSignIn: [
+                    `${baseOrigin}/account`,
+                    `${baseOrigin}/account/login`,
+                    `${baseOrigin}/account/signup`,
+                ],
+                redirectSignOut: [`${baseOrigin}/`],
+                responseType: 'code',
+            };
+        }
 
         Amplify.configure({
             Auth: {
                 Cognito: {
                     userPoolId: userPoolId,
                     userPoolClientId: userPoolClientId,
-                    loginWith: {
-                        email: true,
-                        phone: false //todo: must make phone true before shipping version- 1
-                    }
+                    loginWith,
                 }
             }
+        });
+    }
+
+    /**
+     * Whether Google OAuth has been configured in deployed infrastructure.
+     */
+    public isGoogleFederationEnabled(): boolean {
+        return OutputParser.IsGoogleFederationEnabled && !!OutputParser.UserPoolHostedUiDomain;
+    }
+
+    /**
+     * Redirect user to Cognito Hosted UI Google login/signup.
+     */
+    public async signInWithGoogle(redirectPath: string = '/account'): Promise<void> {
+        if (!this.isGoogleFederationEnabled()) {
+            throw new Error('Google sign-in is not configured yet.');
+        }
+
+        await signInWithRedirect({
+            provider: 'Google',
+            options: {},
         });
     }
 

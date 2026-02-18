@@ -39,6 +39,24 @@ export default function Login() {
     }, [getLoggedInDetails()]);
 
     // Private routines
+    async function handleGoogleLogin() {
+        if (!authService.isGoogleFederationEnabled()) {
+            showMessage("Google sign-in is not configured yet.", ESnackbarMsgVariant.warning);
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const redirectPath = location.state?.from && !String(location.state.from).startsWith('/account')
+                ? String(location.state.from)
+                : '/account';
+            await authService.signInWithGoogle(redirectPath);
+        } catch (error: any) {
+            setLoading(false);
+            showMessage(error?.message || 'Unable to start Google sign-in.', ESnackbarMsgVariant.error);
+        }
+    }
+
     async function handleLogin() {
         setLoading(true);
         const emailValidity = isEmailValid(email);
@@ -129,7 +147,8 @@ export default function Login() {
                         variant="outlined"
                         color="inherit"
                         sx={{ flex: { xs: '1 1 100%', sm: '0 1 auto' }, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: .5 }}
-                        disabled={true || loading}
+                        onClick={handleGoogleLogin}
+                        disabled={loading || !authService.isGoogleFederationEnabled()}
                     >
                         <GoogleSharpIcon />
                         Google

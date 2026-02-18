@@ -17,6 +17,8 @@ export default class InfrastructureConstants {
     // User Pool constants
     static get userPoolName(): string { return `${InfrastructureConstants.projectName}-UserPool`; }
     static get userPoolClientName(): string { return `${InfrastructureConstants.projectName}-UserPoolClient`; }
+    static get userPoolHostedUiDomainOutputKey(): string { return `UserPoolHostedUiDomain`; }
+    static get googleFederationEnabledOutputKey(): string { return `GoogleFederationEnabled`; }
     static get userPoolIdOutputKey(): string { return `UserPoolId`; }
     static get userPoolClientIdOutputKey(): string { return `UserPoolClientId`; }
     static get userPoolAdminGroupName(): string { return `admin`; }

@@ -28,6 +28,26 @@ export default class OutputParser {
     }
 
     /**
+     * Get Cognito Hosted UI domain URL if configured.
+     * @returns domain URL or null when not configured/deployed yet
+     */
+    public static get UserPoolHostedUiDomain(): string | null {
+        const hostedUiDomain = (Outputs as any)[Constants.authStackOutputKey]?.[Constants.userPoolHostedUiDomainOutputKey];
+        if (!hostedUiDomain || typeof hostedUiDomain !== 'string') {
+            return null;
+        }
+        return hostedUiDomain;
+    }
+
+    /**
+     * Whether Google federation was enabled in the deployed auth stack.
+     */
+    public static get IsGoogleFederationEnabled(): boolean {
+        const enabled = (Outputs as any)[Constants.authStackOutputKey]?.[Constants.googleFederationEnabledOutputKey];
+        return String(enabled).toLowerCase() === 'true';
+    }
+
+    /**
      * Get the API Endpoint URL from the CloudFormation outputs
      * @returns the API Endpoint URL
      */

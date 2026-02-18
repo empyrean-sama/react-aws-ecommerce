@@ -8,6 +8,33 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import InfrastructureConstants from "../InfrastructureConstants";
 
+import { GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET } from '../../../.env.json';
+
+function getValidDomainPrefix(rawPrefix: string, fallbackSuffix: string): string {
+    const normalized = rawPrefix
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+
+    const reservedTerms = ['amazon', 'cognito', 'aws'];
+    const withoutReservedTerms = reservedTerms.reduce((value, term) => value.replace(new RegExp(term, 'g'), '-'), normalized)
+        .replace(/-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+
+    const ensuredStart = /^[a-z]/.test(withoutReservedTerms) ? withoutReservedTerms : `app-${withoutReservedTerms}`;
+    const ensuredNonEmpty = ensuredStart.replace(/^-+/, '').replace(/-+$/, '') || 'app';
+
+    const suffix = fallbackSuffix.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8) || 'auth';
+    const maxBaseLength = 63 - suffix.length - 1;
+    const base = ensuredNonEmpty.slice(0, Math.max(1, maxBaseLength)).replace(/-+$/, '') || 'app';
+
+    const candidate = `${base}-${suffix}`;
+    return candidate.slice(0, 63).replace(/-+$/, '');
+}
+
 export default class AuthStack extends Stack {
 
     public readonly profilesTable: DynamoDB.Table;
@@ -18,6 +45,22 @@ export default class AuthStack extends Stack {
 
     constructor(scope: Construct, id: string, props: StackProps = {}) {
         super(scope, id, props);
+
+        const callbackUrls: string[] = [];
+        const logoutUrls: string[] = [];
+        const defaultCallbackUrls = [
+            'http://localhost:1234/account',
+            'http://localhost:1234/account/login',
+            'http://localhost:1234/account/signup',
+        ];
+
+        const googleClientId = GOOGLE_OAUTH_CLIENT_ID.trim();
+        const googleClientSecret = GOOGLE_OAUTH_CLIENT_SECRET.trim();
+        const isGoogleFederationEnabled = Boolean(googleClientId && googleClientSecret);
+
+        const defaultDomainPrefix = `reactecommerce-auth-${process.env.CDK_DEFAULT_ACCOUNT ?? 'dev'}-${process.env.CDK_DEFAULT_REGION ?? 'ap-south-1'}`;
+        const configuredDomainPrefix = process.env.COGNITO_DOMAIN_PREFIX || defaultDomainPrefix;
+        const userPoolDomainPrefix = getValidDomainPrefix(configuredDomainPrefix, this.node.addr);
 
         // Create Cognito User Pool
         this.userPool = new Cognito.UserPool(this, InfrastructureConstants.userPoolName, {
@@ -50,6 +93,21 @@ export default class AuthStack extends Stack {
             exportName: InfrastructureConstants.userPoolIdOutputKey
         })
 
+        let googleProvider: Cognito.UserPoolIdentityProviderGoogle | undefined;
+        if (isGoogleFederationEnabled && googleClientId && googleClientSecret) {
+            googleProvider = new Cognito.UserPoolIdentityProviderGoogle(this, 'GoogleIdentityProvider', {
+                userPool: this.userPool,
+                clientId: googleClientId,
+                clientSecret: googleClientSecret,
+                scopes: ['openid', 'email', 'profile'],
+                attributeMapping: {
+                    email: Cognito.ProviderAttribute.GOOGLE_EMAIL,
+                    givenName: Cognito.ProviderAttribute.GOOGLE_GIVEN_NAME,
+                    familyName: Cognito.ProviderAttribute.GOOGLE_FAMILY_NAME,
+                },
+            });
+        }
+
         // Create Cognito User Pool Client
         this._userPoolClient = this.userPool.addClient(InfrastructureConstants.userPoolClientName, {
             authFlows: {
@@ -60,8 +118,23 @@ export default class AuthStack extends Stack {
             },
             generateSecret: false, // Do not generate client secret for web apps
             preventUserExistenceErrors: true, // Do not reveal if user exists
-            enableTokenRevocation: true // Enable token revocation after logout
+            enableTokenRevocation: true, // Enable token revocation after logout
+            supportedIdentityProviders: isGoogleFederationEnabled
+                ? [Cognito.UserPoolClientIdentityProvider.COGNITO, Cognito.UserPoolClientIdentityProvider.GOOGLE]
+                : [Cognito.UserPoolClientIdentityProvider.COGNITO],
+            oAuth: {
+                callbackUrls: callbackUrls.length > 0 ? callbackUrls : defaultCallbackUrls,
+                logoutUrls: logoutUrls.length > 0 ? logoutUrls : ['http://localhost:1234/'],
+                scopes: [Cognito.OAuthScope.OPENID, Cognito.OAuthScope.EMAIL, Cognito.OAuthScope.PROFILE],
+                flows: {
+                    authorizationCodeGrant: true,
+                },
+            },
         });
+
+        if (googleProvider) {
+            this._userPoolClient.node.addDependency(googleProvider);
+        }
 
         this.userPoolClientId = this._userPoolClient.userPoolClientId;
 
@@ -70,6 +143,16 @@ export default class AuthStack extends Stack {
             value: this._userPoolClient.userPoolClientId,
             exportName: InfrastructureConstants.userPoolClientIdOutputKey
         })
+
+        new CfnOutput(this, InfrastructureConstants.userPoolHostedUiDomainOutputKey, {
+            value: `https://${userPoolDomainPrefix}.auth.${this.region}.amazoncognito.com`,
+            exportName: InfrastructureConstants.userPoolHostedUiDomainOutputKey,
+        });
+
+        new CfnOutput(this, InfrastructureConstants.googleFederationEnabledOutputKey, {
+            value: isGoogleFederationEnabled ? 'true' : 'false',
+            exportName: InfrastructureConstants.googleFederationEnabledOutputKey,
+        });
 
         // Create admin group
         new Cognito.CfnUserPoolGroup(this, InfrastructureConstants.userPoolAdminGroupNameId, {
