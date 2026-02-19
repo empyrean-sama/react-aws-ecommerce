@@ -52,13 +52,18 @@ export default class AuthStack extends Stack {
             'http://localhost:1234/account',
             'http://localhost:1234/account/login',
             'http://localhost:1234/account/signup',
+            'https://react-aws-ecommerce-bugfixing.netlify.app/account/login',
+            'https://react-aws-ecommerce-bugfixing.netlify.app/account/signup',
+            'https://react-aws-ecommerce-bugfixing.netlify.app/account',
         ];
 
         const googleClientId = GOOGLE_OAUTH_CLIENT_ID.trim();
         const googleClientSecret = GOOGLE_OAUTH_CLIENT_SECRET.trim();
         const isGoogleFederationEnabled = Boolean(googleClientId && googleClientSecret);
 
-        const defaultDomainPrefix = `reactecommerce-auth-${process.env.CDK_DEFAULT_ACCOUNT ?? 'dev'}-${process.env.CDK_DEFAULT_REGION ?? 'ap-south-1'}`;
+        const stackAccount = props.env?.account ?? process.env.CDK_DEFAULT_ACCOUNT ?? 'dev';
+        const stackRegion = props.env?.region ?? process.env.CDK_DEFAULT_REGION ?? 'ap-south-1';
+        const defaultDomainPrefix = `reactecommerce-auth-${stackAccount}-${stackRegion}`;
         const configuredDomainPrefix = process.env.COGNITO_DOMAIN_PREFIX || defaultDomainPrefix;
         const userPoolDomainPrefix = getValidDomainPrefix(configuredDomainPrefix, this.node.addr);
 
@@ -85,6 +90,12 @@ export default class AuthStack extends Stack {
                     mutable: true
                 }
             }
+        });
+
+        const userPoolDomain = this.userPool.addDomain('UserPoolHostedUiDomain', {
+            cognitoDomain: {
+                domainPrefix: userPoolDomainPrefix,
+            },
         });
 
         // Output the User Pool ID
@@ -136,6 +147,8 @@ export default class AuthStack extends Stack {
             this._userPoolClient.node.addDependency(googleProvider);
         }
 
+        this._userPoolClient.node.addDependency(userPoolDomain);
+
         this.userPoolClientId = this._userPoolClient.userPoolClientId;
 
         // Output the User Pool Client ID
@@ -145,7 +158,7 @@ export default class AuthStack extends Stack {
         })
 
         new CfnOutput(this, InfrastructureConstants.userPoolHostedUiDomainOutputKey, {
-            value: `https://${userPoolDomainPrefix}.auth.${this.region}.amazoncognito.com`,
+            value: userPoolDomain.baseUrl(),
             exportName: InfrastructureConstants.userPoolHostedUiDomainOutputKey,
         });
 
