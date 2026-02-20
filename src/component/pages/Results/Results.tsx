@@ -2,9 +2,10 @@ import React from 'react';
 import { useSearchParams } from 'react-router';
 import {
     Box,
+    Checkbox,
     CircularProgress,
     Container,
-    Grid,
+    ListItemText,
     MenuItem,
     Paper,
     Slider,
@@ -219,8 +220,8 @@ export default function Results() {
             </Stack>
 
             <Box sx={{ p: { xs: 1, md: 2 }, backgroundColor: 'background.paper', borderRadius: 1 }}>
-                <Grid container spacing={1.25} alignItems="center" columnGap={2} rowGap={2}>
-                    <Grid item xs={12} md={3} sx={{ minWidth: { xs: 120, md: 220 }, maxWidth: { md: 320 } }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 2, rowGap: 2 }}>
+                    <Box sx={{ width: { xs: '100%', md: 'auto' }, minWidth: { xs: 120, md: 220 }, maxWidth: { md: 320 } }}>
                         <TextField
                             select
                             label="Sort"
@@ -236,8 +237,8 @@ export default function Results() {
                             <MenuItem value="price-asc">Price (Low to High)</MenuItem>
                             <MenuItem value="price-desc">Price (High to Low)</MenuItem>
                         </TextField>
-                    </Grid>
-                    <Grid item xs={12} md={3} sx={{ minWidth: { xs: 120, md: 220 }, maxWidth: { md: 320 } }}>
+                    </Box>
+                    <Box sx={{ width: { xs: '100%', md: 'auto' }, minWidth: { xs: 120, md: 220 }, maxWidth: { md: 320 } }}>
                         <TextField
                             select
                             label="Tag"
@@ -267,11 +268,14 @@ export default function Results() {
                                 Clear tags
                             </MenuItem>
                             {availableTags.map((tag) => (
-                                <MenuItem key={tag} value={tag}>{tag}</MenuItem>
+                                <MenuItem key={tag} value={tag}>
+                                    <ListItemText primary={tag} />
+                                    <Checkbox size="small" checked={selectedTags.includes(tag)} />
+                                </MenuItem>
                             ))}
                         </TextField>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
+                    </Box>
+                    <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 280px' }, minWidth: 0 }}>
                         <Stack spacing={0.25} sx={{ px: { xs: 0.5, md: 1 } }}>
                             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                                 Price range: ₹{priceRange[0]} - ₹{priceRange[1]}
@@ -286,8 +290,8 @@ export default function Results() {
                                 disableSwap
                             />
                         </Stack>
-                    </Grid>
-                </Grid>
+                    </Box>
+                </Box>
             </Box>
 
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: { xs: 'center', md: 'flex-start' }, alignItems: 'stretch' }}>
@@ -297,7 +301,7 @@ export default function Results() {
                         productRecord={item.product}
                         productVariantRecord={item.variants}
                         rating={averageReviewScoreByProductId[item.product.productId]}
-                        collectionName={collectionNameById[item.product.collectionId]}
+                        collectionName={item.product.collectionId ? collectionNameById[item.product.collectionId] : undefined}
                     />
                 ))}
             </Box>
