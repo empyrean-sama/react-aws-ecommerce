@@ -37,6 +37,12 @@ type CheckoutConfirmBody = {
     razorpayOrderId: string;
     razorpayPaymentId: string;
     razorpaySignature: string;
+    source: 'cart' | 'single';
+    items: CheckoutItemInput[];
+    shippingAddress: IAddress;
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string;
     guestUserId?: string;
 };
 
@@ -215,6 +221,32 @@ async function createRazorpayOrder(totalAmount: number, receipt: string): Promis
     };
 }
 
+async function getRazorpayOrder(razorpayOrderId: string): Promise<{ id: string; amount: number; currency: string }> {
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+        throw new Error('Razorpay is not configured');
+    }
+
+    const authHeader = `Basic ${Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64')}`;
+    const response = await fetch(`https://api.razorpay.com/v1/orders/${encodeURIComponent(razorpayOrderId)}`, {
+        method: 'GET',
+        headers: {
+            Authorization: authHeader,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || typeof payload?.id !== 'string' || typeof payload?.amount !== 'number') {
+        throw new Error(payload?.error?.description || 'Unable to fetch Razorpay order');
+    }
+
+    return {
+        id: payload.id,
+        amount: payload.amount,
+        currency: typeof payload.currency === 'string' ? payload.currency : 'INR',
+    };
+}
+
 function verifyRazorpaySignature(razorpayOrderId: string, razorpayPaymentId: string, razorpaySignature: string): boolean {
     if (!RAZORPAY_KEY_SECRET) {
         return false;
@@ -259,29 +291,6 @@ async function handleCreateCheckout(event: APIGatewayProxyEvent): Promise<APIGat
 
     const razorpayOrder = await createRazorpayOrder(total, orderId);
 
-    const orderRecord: IOrderRecord = {
-        userId,
-        createdAt,
-        orderId,
-        status: 'processing',
-        paymentStatus: 'pending',
-        paymentMode: 'Pre Paid',
-        paymentDetails: 'Razorpay',
-        subtotal,
-        shippingFee,
-        tax,
-        total,
-        currency: 'INR',
-        products,
-        shippingAddress: parsed.shippingAddress,
-        customerName: parsed.customerName,
-        customerEmail: parsed.customerEmail,
-        customerPhone: parsed.customerPhone,
-        razorpayOrderId: razorpayOrder.id,
-    };
-
-    await doc.send(new PutCommand({ TableName: ORDERS_TABLE, Item: orderRecord }));
-
     return constructResponse(200, {
         orderId,
         createdAt,
@@ -309,6 +318,12 @@ async function handleConfirmCheckout(event: APIGatewayProxyEvent): Promise<APIGa
     if (!parsed?.orderId || !parsed?.createdAt || !parsed?.razorpayOrderId || !parsed?.razorpayPaymentId || !parsed?.razorpaySignature) {
         return constructResponse(400, { message: 'Missing payment confirmation details' });
     }
+    if (!Array.isArray(parsed.items) || parsed.items.length === 0) {
+        return constructResponse(400, { message: 'Missing checkout items' });
+    }
+    if (!isValidAddress(parsed.shippingAddress)) {
+        return constructResponse(400, { message: 'Invalid shipping address' });
+    }
 
     if (!verifyRazorpaySignature(parsed.razorpayOrderId, parsed.razorpayPaymentId, parsed.razorpaySignature)) {
         return constructResponse(400, { message: 'Invalid Razorpay signature' });
@@ -316,34 +331,66 @@ async function handleConfirmCheckout(event: APIGatewayProxyEvent): Promise<APIGa
 
     const { userId } = resolveUserId(event, parsed.guestUserId);
 
-    const orderResponse = await doc.send(new GetCommand({
-        TableName: ORDERS_TABLE,
-        Key: { userId, createdAt: parsed.createdAt },
-    }));
-
-    const existingOrder = orderResponse.Item as IOrderRecord | undefined;
-    if (!existingOrder || existingOrder.orderId !== parsed.orderId) {
-        return constructResponse(404, { message: 'Order not found' });
+    const normalizedItems = normalizeItems(parsed.items);
+    if (normalizedItems.length === 0) {
+        return constructResponse(400, { message: 'No valid checkout items' });
     }
 
-    if (existingOrder.razorpayOrderId !== parsed.razorpayOrderId) {
+    const { products, subtotal, shippingFee, tax } = await buildOrderProducts(normalizedItems);
+    const total = subtotal + shippingFee + tax;
+
+    const razorpayOrder = await getRazorpayOrder(parsed.razorpayOrderId);
+    if (razorpayOrder.id !== parsed.razorpayOrderId) {
         return constructResponse(400, { message: 'Razorpay order mismatch' });
     }
+    if (razorpayOrder.currency !== 'INR') {
+        return constructResponse(400, { message: 'Unsupported Razorpay currency' });
+    }
+    if (razorpayOrder.amount !== total) {
+        return constructResponse(400, { message: 'Payment amount mismatch' });
+    }
 
-    await doc.send(new UpdateCommand({
+    const existingOrderResponse = await doc.send(new GetCommand({
         TableName: ORDERS_TABLE,
         Key: { userId, createdAt: parsed.createdAt },
-        UpdateExpression: 'SET paymentStatus = :paymentStatus, #status = :status, razorpayPaymentId = :razorpayPaymentId, razorpaySignature = :razorpaySignature',
-        ExpressionAttributeNames: {
-            '#status': 'status',
-        },
-        ExpressionAttributeValues: {
-            ':paymentStatus': 'paid',
-            ':status': 'order placed',
-            ':razorpayPaymentId': parsed.razorpayPaymentId,
-            ':razorpaySignature': parsed.razorpaySignature,
-        },
     }));
+
+    const existingOrder = existingOrderResponse.Item as IOrderRecord | undefined;
+    if (existingOrder) {
+        if (existingOrder.orderId !== parsed.orderId || existingOrder.razorpayOrderId !== parsed.razorpayOrderId) {
+            return constructResponse(409, { message: 'Order key conflict detected' });
+        }
+        return constructResponse(200, {
+            message: 'Payment already confirmed',
+            orderId: parsed.orderId,
+            createdAt: parsed.createdAt,
+        });
+    }
+
+    const orderRecord: IOrderRecord = {
+        userId,
+        createdAt: parsed.createdAt,
+        orderId: parsed.orderId,
+        status: 'order placed',
+        paymentStatus: 'paid',
+        paymentMode: 'Pre Paid',
+        paymentDetails: 'Razorpay',
+        subtotal,
+        shippingFee,
+        tax,
+        total,
+        currency: 'INR',
+        products,
+        shippingAddress: parsed.shippingAddress,
+        customerName: parsed.customerName,
+        customerEmail: parsed.customerEmail,
+        customerPhone: parsed.customerPhone,
+        razorpayOrderId: parsed.razorpayOrderId,
+        razorpayPaymentId: parsed.razorpayPaymentId,
+        razorpaySignature: parsed.razorpaySignature,
+    };
+
+    await doc.send(new PutCommand({ TableName: ORDERS_TABLE, Item: orderRecord }));
 
     return constructResponse(200, {
         message: 'Payment confirmed',

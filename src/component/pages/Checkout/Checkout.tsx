@@ -343,6 +343,12 @@ export default function Checkout() {
                             razorpayOrderId: response.razorpay_order_id,
                             razorpayPaymentId: response.razorpay_payment_id,
                             razorpaySignature: response.razorpay_signature,
+                            source: checkoutMode,
+                            items: checkoutItems,
+                            shippingAddress: normalizedShippingAddress,
+                            customerName: loggedInUser?.givenName ? `${loggedInUser.givenName} ${loggedInUser.familyName || ''}`.trim() : undefined,
+                            customerEmail: loggedInUser?.email,
+                            customerPhone: normalizedShippingAddress.phoneNumber,
                             guestUserId: session.guestUserId,
                         }, isAuthenticated);
 

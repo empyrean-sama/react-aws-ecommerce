@@ -27,4 +27,10 @@ export interface ICheckoutConfirmInput {
     razorpayOrderId: string;
     razorpayPaymentId: string;
     razorpaySignature: string;
+    source: ECheckoutSource;
+    items: ICheckoutItemInput[];
+    shippingAddress: IAddress;
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string;
 }
