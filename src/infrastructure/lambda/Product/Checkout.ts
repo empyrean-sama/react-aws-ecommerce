@@ -124,9 +124,11 @@ async function getVariant(variantId: string): Promise<IProductVariantRecord | nu
     return (response.Item as IProductVariantRecord | undefined) ?? null;
 }
 
-async function buildOrderProducts(items: CheckoutItemInput[]): Promise<{ products: IOrderProductRecord[]; subtotal: number }> {
+async function buildOrderProducts(items: CheckoutItemInput[]): Promise<{ products: IOrderProductRecord[]; subtotal: number; shippingFee: number; tax: number }> {
     const lines: IOrderProductRecord[] = [];
     let subtotal = 0;
+    let shippingFee = 0;
+    let tax = 0;
 
     for (const item of items) {
         const [product, variant] = await Promise.all([
@@ -162,6 +164,8 @@ async function buildOrderProducts(items: CheckoutItemInput[]): Promise<{ product
 
         const lineTotal = unitPrice * quantity;
         subtotal += lineTotal;
+        shippingFee += Number(variant.shipping ?? 0) * quantity;
+        tax += Number(variant.tax ?? 0) * quantity;
 
         lines.push({
             productId: product.productId,
@@ -175,7 +179,7 @@ async function buildOrderProducts(items: CheckoutItemInput[]): Promise<{ product
         });
     }
 
-    return { products: lines, subtotal };
+    return { products: lines, subtotal, shippingFee, tax };
 }
 
 async function createRazorpayOrder(totalAmount: number, receipt: string): Promise<{ id: string; amount: number; currency: 'INR' }> {
@@ -250,9 +254,7 @@ async function handleCreateCheckout(event: APIGatewayProxyEvent): Promise<APIGat
     const createdAt = Date.now();
     const orderId = randomUUID();
 
-    const { products, subtotal } = await buildOrderProducts(normalizedItems);
-    const shippingFee = 0;
-    const tax = 0;
+    const { products, subtotal, shippingFee, tax } = await buildOrderProducts(normalizedItems);
     const total = subtotal + shippingFee + tax;
 
     const razorpayOrder = await createRazorpayOrder(total, orderId);

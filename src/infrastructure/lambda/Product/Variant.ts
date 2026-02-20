@@ -36,6 +36,8 @@ function generateVariantFromInput(input: any): IProductVariant | undefined {
         if (!input || typeof input !== 'object') return false;
         if (typeof input.name !== 'string') return false;
         if (typeof input.price !== 'number' || !Number.isFinite(input.price)) return false;
+        if (!(input.tax === undefined || (typeof input.tax === 'number' && Number.isFinite(input.tax) && input.tax >= 0))) return false;
+        if (!(input.shipping === undefined || (typeof input.shipping === 'number' && Number.isFinite(input.shipping) && input.shipping >= 0))) return false;
         if (typeof input.stock !== 'number' || !Number.isFinite(input.stock)) return false;
         if (!(input.maximumInOrder === undefined || typeof input.maximumInOrder === 'number')) return false;
         if (!isStringArray(input.relatedProductIds)) return false;
@@ -50,6 +52,8 @@ function generateVariantFromInput(input: any): IProductVariant | undefined {
     return {
         name: input.name,
         price: input.price,
+        tax: input.tax ?? 0,
+        shipping: input.shipping ?? 0,
         stock: input.stock,
         maximumInOrder: input.maximumInOrder,
         relatedProductIds: input.relatedProductIds,

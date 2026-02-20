@@ -52,6 +52,8 @@ interface ICheckoutDisplayItem {
     variantName: string;
     quantity: number;
     unitPrice: number;
+    tax: number;
+    shipping: number;
     imageUrl: string;
 }
 
@@ -142,6 +144,8 @@ export default function Checkout() {
                             variantName: variant.name,
                             quantity: cartItem.quantity,
                             unitPrice: variant.price,
+                            tax: variant.tax ?? 0,
+                            shipping: variant.shipping ?? 0,
                             imageUrl: product.imageUrls?.[0] ?? '',
                         });
                     }
@@ -172,6 +176,8 @@ export default function Checkout() {
                         variantName: variant.name,
                         quantity,
                         unitPrice: variant.price,
+                        tax: variant.tax ?? 0,
+                        shipping: variant.shipping ?? 0,
                         imageUrl: product.imageUrls?.[0] ?? '',
                     });
                 }
@@ -225,8 +231,8 @@ export default function Checkout() {
     const totalItems = React.useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
     const subtotal = React.useMemo(() => items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0), [items]);
-    const shippingFee = 0;
-    const tax = 0;
+    const shippingFee = React.useMemo(() => items.reduce((sum, item) => sum + ((item.shipping ?? 0) * item.quantity), 0), [items]);
+    const tax = React.useMemo(() => items.reduce((sum, item) => sum + ((item.tax ?? 0) * item.quantity), 0), [items]);
     const total = subtotal + shippingFee + tax;
 
     const selectedSavedAddress = React.useMemo(() => savedAddresses.find((address) => address.addressId === selectedAddressId) ?? null, [savedAddresses, selectedAddressId]);

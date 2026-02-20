@@ -1,4 +1,14 @@
 {
+  "ReactAwsEcommerce-AuthStack": {
+    "ExportsOutputFnGetAttReactAwsEcommerceUserPool179A9025ArnF027E14B": "arn:aws:cognito-idp:ap-south-1:410772458210:userpool/ap-south-1_OjuUcu9at",
+    "UserPoolClientId": "107v5vukoq728a5iij28b0c5ep",
+    "UserPoolId": "ap-south-1_OjuUcu9at",
+    "UserPoolHostedUiDomain": "https://reactecommerce-auth-410772458210-ap-south-1-c8902df3.auth.ap-south-1.amazoncognito.com",
+    "GoogleFederationEnabled": "true",
+    "ExportsOutputFnGetAttReactAwsEcommerceCartTableD53448BFArnCD6CF99C": "arn:aws:dynamodb:ap-south-1:410772458210:table/ReactAwsEcommerce-cart",
+    "ExportsOutputRefReactAwsEcommerceUserPoolReactAwsEcommerceUserPoolClient2598305C2BEB1BB0": "107v5vukoq728a5iij28b0c5ep",
+    "ExportsOutputRefReactAwsEcommerceCartTableD53448BF38B0A106": "ReactAwsEcommerce-cart"
+  },
   "ReactAwsEcommerce-ProfileStack": {
     "ExportsOutputFnGetAttProfileAddressFunction382822CDArn7F939DE2": "arn:aws:lambda:ap-south-1:410772458210:function:AddressFunction",
     "ExportsOutputFnGetAttAutofillAddressFunction0ED0815FArnB5C9F1C1": "arn:aws:lambda:ap-south-1:410772458210:function:AutofillAddressFunction"
@@ -10,16 +20,6 @@
     "ExportsOutputRefPublicReadMemoryBucket9749DB2C9FD503BD": "reactawsecommerce-memorys-publicreadmemorybucket97-guwp73rhwzw3",
     "ExportsOutputFnGetAttDeleteImageFunction98837557ArnF41960AC": "arn:aws:lambda:ap-south-1:410772458210:function:DeleteImage",
     "ReactAwsEcommerceMemoryBucketName": "reactawsecommerce-memorys-publicreadmemorybucket97-guwp73rhwzw3"
-  },
-  "ReactAwsEcommerce-AuthStack": {
-    "ExportsOutputFnGetAttReactAwsEcommerceUserPool179A9025ArnF027E14B": "arn:aws:cognito-idp:ap-south-1:410772458210:userpool/ap-south-1_OjuUcu9at",
-    "UserPoolClientId": "107v5vukoq728a5iij28b0c5ep",
-    "UserPoolId": "ap-south-1_OjuUcu9at",
-    "UserPoolHostedUiDomain": "https://reactecommerce-auth-410772458210-ap-south-1-c8902df3.auth.ap-south-1.amazoncognito.com",
-    "GoogleFederationEnabled": "true",
-    "ExportsOutputFnGetAttReactAwsEcommerceCartTableD53448BFArnCD6CF99C": "arn:aws:dynamodb:ap-south-1:410772458210:table/ReactAwsEcommerce-cart",
-    "ExportsOutputRefReactAwsEcommerceUserPoolReactAwsEcommerceUserPoolClient2598305C2BEB1BB0": "107v5vukoq728a5iij28b0c5ep",
-    "ExportsOutputRefReactAwsEcommerceCartTableD53448BF38B0A106": "ReactAwsEcommerce-cart"
   },
   "ReactAwsEcommerce-ProductStack": {
     "ExportsOutputFnGetAttProductCollectionFunctionA7F7037CArn3C2BFDA2": "arn:aws:lambda:ap-south-1:410772458210:function:ProductCollectionFunction",

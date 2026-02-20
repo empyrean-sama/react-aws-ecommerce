@@ -1158,6 +1158,20 @@ function ProductActionPane() {
             const tempVariantIdToRealIdMap = new Map<string, string>();
             const productsToUpdateDefaultVariant: { productId: string, defaultVariantId: string }[] = [];
 
+            for (const variants of Object.values(variantsByProductId)) {
+                for (const variant of variants) {
+                    if (variant.isDeleted) {
+                        continue;
+                    }
+                    if (typeof variant.tax === 'number' && variant.tax < 0) {
+                        throw new Error(`Tax cannot be negative for variant "${variant.name}"`);
+                    }
+                    if (typeof variant.shipping === 'number' && variant.shipping < 0) {
+                        throw new Error(`Shipping cannot be negative for variant "${variant.name}"`);
+                    }
+                }
+            }
+
             // 1. Delete variants
             for (const variants of Object.values(variantsByProductId)) {
                 for (const variant of variants) {
@@ -1340,7 +1354,17 @@ function ProductInspectorVariantTable() {
     function handleVariantChange<K extends keyof EditableVariant>(variantId: string, field: K, value: EditableVariant[K]) {
         setVariantsByProductId(prev => {
             const currentVariants = prev[selectedProductId!] || [];
-            const updatedVariants = currentVariants.map(v => v.variantId === variantId ? { ...v, [field]: value, isEdited: true } : v);
+
+            const isChargeField = field === 'tax' || field === 'shipping';
+            const normalizedValue = (isChargeField && typeof value === 'number')
+                ? (Number.isFinite(value) && value >= 0 ? value : null)
+                : value;
+
+            if (normalizedValue === null) {
+                return prev;
+            }
+
+            const updatedVariants = currentVariants.map(v => v.variantId === variantId ? { ...v, [field]: normalizedValue, isEdited: true } : v);
             return { ...prev, [selectedProductId!]: updatedVariants };
         });
     }
@@ -1353,6 +1377,8 @@ function ProductInspectorVariantTable() {
             collectionId: selectedProduct?.collectionId || "",
             name: "New Variant",
             price: 0,
+            tax: 0,
+            shipping: 0,
             stock: 0,
             maximumInOrder: 0,
             relatedProductIds: [],
@@ -1409,9 +1435,11 @@ function ProductInspectorVariantTable() {
                     <TableHead>
                         <TableRow>
                             <TableCell>Name</TableCell>
-                            <TableCell align="right">Price</TableCell>
-                            <TableCell align="right">Stock</TableCell>
-                            <TableCell align="right">Max Order</TableCell>
+                            <TableCell align="center">Price</TableCell>
+                            <TableCell align="center">Tax</TableCell>
+                            <TableCell align="center">Shipping</TableCell>
+                            <TableCell align="center">Stock</TableCell>
+                            <TableCell align="center">Cart Max</TableCell>
                             <TableCell align="center">Actions</TableCell>
                         </TableRow>
                     </TableHead>
@@ -1438,6 +1466,28 @@ function ProductInspectorVariantTable() {
                                             type="number"
                                             disabled={isVariantDeleted || isDeleted}
                                             inputProps={{ style: { textAlign: 'right' } }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <TextField
+                                            value={variant.tax ?? 0}
+                                            onChange={(e) => handleVariantChange(variant.variantId, "tax", Number(e.target.value))}
+                                            variant="standard"
+                                            size="small"
+                                            type="number"
+                                            disabled={isVariantDeleted || isDeleted}
+                                            inputProps={{ min: 0, style: { textAlign: 'right' } }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <TextField
+                                            value={variant.shipping ?? 0}
+                                            onChange={(e) => handleVariantChange(variant.variantId, "shipping", Number(e.target.value))}
+                                            variant="standard"
+                                            size="small"
+                                            type="number"
+                                            disabled={isVariantDeleted || isDeleted}
+                                            inputProps={{ min: 0, style: { textAlign: 'right' } }}
                                         />
                                     </TableCell>
                                     <TableCell align="right">
@@ -1496,7 +1546,7 @@ function ProductInspectorVariantTable() {
                         })}
                         {visibleVariants.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={5} align="center">No variants</TableCell>
+                                <TableCell colSpan={7} align="center">No variants</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
