@@ -36,10 +36,12 @@ export default function Nav({ setIsDrawerOpen, isDrawerOpen }: NavProps) {
             return "home";
         }
 
-        if (path.startsWith("/collection/")) {
-            const collectionId = decodeURIComponent(path.replace("/collection/", "").split("/")[0] || "");
+        if (path === "/results") {
+            const searchParams = new URLSearchParams(location.search);
+            const source = searchParams.get("source");
+            const collectionId = searchParams.get("collectionId") || "";
             const isKnownCollection = favouriteCollections.some((collection) => collection.collectionId === collectionId);
-            return isKnownCollection ? `collection:${collectionId}` : false;
+            return source === "collection" && isKnownCollection ? `collection:${collectionId}` : false;
         }
 
         if (path.startsWith("/admin")) {
@@ -47,7 +49,7 @@ export default function Nav({ setIsDrawerOpen, isDrawerOpen }: NavProps) {
         }
 
         return false;
-    }, [location.pathname, favouriteCollections]);
+    }, [location.pathname, location.search, favouriteCollections]);
 
     return (
         <AppBar position="sticky">
@@ -68,7 +70,7 @@ export default function Nav({ setIsDrawerOpen, isDrawerOpen }: NavProps) {
                     <Tabs value={selectedTabValue} aria-label="main-navigation">
                         <Tab value="home" label="HOME" onClick={() => navigateTo("/")} />
                         {favouriteCollections.map((collection) => (
-                            <Tab key={collection.collectionId} value={`collection:${collection.collectionId}`} label={collection.name} onClick={() => navigateTo(`/collection/${collection.collectionId}`)} />
+                            <Tab key={collection.collectionId} value={`collection:${collection.collectionId}`} label={collection.name} onClick={() => navigateTo(`/results?source=collection&collectionId=${encodeURIComponent(collection.collectionId)}`)} />
                         ))}
                         {isAdmin && <Tab value="admin" label="ADMIN" onClick={() => navigateTo("/admin")} sx={{ color: '#9c27b0', fontWeight: 'bold' }} />}
                     </Tabs>

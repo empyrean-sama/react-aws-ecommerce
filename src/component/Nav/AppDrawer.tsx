@@ -104,7 +104,7 @@ export default function AppDrawer({ isDrawerOpen, setIsDrawerOpen }: AppDrawerPr
                         </ListItem>
                         {[...favouriteCollections].sort((a,b) => b.favouriteStrength - a.favouriteStrength).map((collection) => (
                             <ListItem key={collection.collectionId} disablePadding>
-                                <ListItemButton onClick={() => { navigateTo(`/collection/${collection.collectionId}`); setIsDrawerOpen(false); }}>
+                                <ListItemButton onClick={() => { navigateTo(`/results?source=collection&collectionId=${encodeURIComponent(collection.collectionId)}`); setIsDrawerOpen(false); }}>
                                     <ListItemText primary={collection.name} />
                                 </ListItemButton>
                             </ListItem>
