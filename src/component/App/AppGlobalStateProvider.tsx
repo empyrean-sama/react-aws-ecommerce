@@ -20,8 +20,8 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
     const authService = AuthService.getInstance()
     const productService = ProductService.getInstance();
     const [loginDetails, setLoginDetails] = React.useState<IUserDetails | null>(null);
-    const [favouriteCollections, setFavouriteCollections] = React.useState<ICollectionRecord[]>([]);
-    
+    const [favouriteCollections, setFavouriteCollections] = React.useState<ICollectionRecord[]>([]);     
+    const lastAdjustedCartSignature = React.useRef<string>('');
     const [cartState, setCartState] = React.useState<IAppGlobalCartState>({cartEntryRecord: null, productIdToProductRecordMap: {}, productIdToVariantsRecordMap: {}});
     
     // Effects
@@ -42,8 +42,8 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
     }, []);
 
     useEffect(() => {
-        // Refresh cart when login details change
-        refreshCart();
+        // Whenever login details change, refresh cart to ensure it is in sync with the current user
+       refreshCart();
     }, [loginDetails?.userId]);
 
     // Global API implementations
@@ -95,19 +95,40 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
             const cartRecord = await authService.getCart();
             const tempProductIdToProductRecordMap = {} as Record<string, IProductRecord>;
             const tempProductIdToVariantsRecordMap = {} as Record<string, IProductVariantRecord[]>;
-            for (const product of cartRecord?.products || []) {
-                const productRecord = await productService.getProductById(product.productId);
-                const variants = await productService.getVariantsByProductId(product.productId);
+
+            const productIds = Array.from(new Set((cartRecord?.products || []).map((item) => item.productId)));
+            const hydrationResults = await Promise.all(productIds.map(async (productId) => {
+                const [productRecord, variants] = await Promise.all([
+                    productService.getProductById(productId),
+                    productService.getVariantsByProductId(productId),
+                ]);
+                return { productId, productRecord, variants };
+            }));
+
+            for (const result of hydrationResults) {
+                const { productId, productRecord, variants } = result;
                 if (productRecord) {
-                    tempProductIdToProductRecordMap[product.productId] = productRecord;
+                    tempProductIdToProductRecordMap[productId] = productRecord;
                 }
                 if (variants) {
-                    tempProductIdToVariantsRecordMap[product.productId] = variants;
+                    tempProductIdToVariantsRecordMap[productId] = variants;
                 }
             }
+
             setCartState({cartEntryRecord: cartRecord, productIdToProductRecordMap: tempProductIdToProductRecordMap, productIdToVariantsRecordMap: tempProductIdToVariantsRecordMap});
             if (cartRecord.cartAdjusted) {
-                showMessage("Some cart quantities were adjusted to match current stock or per-order limits.", ESnackbarMsgVariant.warning);
+                const adjustedSignature = JSON.stringify((cartRecord.products || [])
+                    .map((item) => ({ productId: item.productId, variantId: item.variantId, quantity: item.quantity }))
+                    .sort((a, b) => {
+                        const keyA = `${a.productId}:${a.variantId}`;
+                        const keyB = `${b.productId}:${b.variantId}`;
+                        return keyA.localeCompare(keyB);
+                    }));
+
+                if (lastAdjustedCartSignature.current !== adjustedSignature) {
+                    lastAdjustedCartSignature.current = adjustedSignature;
+                    showMessage("Some cart quantities were adjusted to match current stock or per-order limits.", ESnackbarMsgVariant.warning);
+                }
             }
         } catch (error) {
             console.error("Failed to fetch cart", error);

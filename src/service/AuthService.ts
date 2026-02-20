@@ -15,7 +15,9 @@ import UserAlreadyExistsException from "../error/UserAlreadyExistsException";
 import Constants from "../Constants";
 import ProductService from "./ProductService";
 import ICartEntryRecord from "../interface/product/ICartEntryRecord";
-import ICartEntry from "../interface/product/ICartEntry";
+import ICartEntry, { ICartEntryItem } from "../interface/product/ICartEntry";
+import IProductRecord from "../interface/product/IProductRecord";
+import IProductVariantRecord from "../interface/product/IProductVariantRecord";
 export default class AuthService {
 
     private static _instance: AuthService;
@@ -451,6 +453,103 @@ export default class AuthService {
         return presignData.key;
     }
 
+    private normalizeLocalCartProducts(rawCart: unknown): ICartEntryItem[] {
+        const candidateItems = Array.isArray(rawCart)
+            ? rawCart
+            : (typeof rawCart === 'object' && rawCart !== null && Array.isArray((rawCart as { products?: unknown }).products)
+                ? (rawCart as { products: unknown[] }).products
+                : []);
+
+        return candidateItems
+            .map((item: any) => ({
+                productId: String(item?.productId ?? ''),
+                quantity: Math.floor(Number(item?.quantity ?? 0)),
+                variantId: String(item?.variantId ?? ''),
+            }))
+            .filter((item) => item.productId.length > 0 && item.variantId.length > 0 && Number.isFinite(item.quantity) && item.quantity > 0);
+    }
+
+    private async sanitizeGuestCartProducts(localProducts: ICartEntryItem[]): Promise<{ products: ICartEntryItem[]; cartAdjusted: boolean }> {
+        if (localProducts.length === 0) {
+            return { products: [], cartAdjusted: false };
+        }
+
+        const mergedByItemKey = new Map<string, ICartEntryItem>();
+        for (const item of localProducts) {
+            const key = `${item.productId}::${item.variantId}`;
+            const existing = mergedByItemKey.get(key);
+            if (existing) {
+                existing.quantity += item.quantity;
+            } else {
+                mergedByItemKey.set(key, { ...item });
+            }
+        }
+
+        const mergedItems = Array.from(mergedByItemKey.values());
+        const uniqueProductIds = Array.from(new Set(mergedItems.map((item) => item.productId)));
+        const productService = ProductService.getInstance();
+
+        const catalogByProductId = new Map<string, { product: IProductRecord | null | undefined; variants: IProductVariantRecord[] | null | undefined }>();
+        await Promise.all(uniqueProductIds.map(async (productId) => {
+            try {
+                const [product, variants] = await Promise.all([
+                    productService.getProductById(productId),
+                    productService.getVariantsByProductId(productId),
+                ]);
+                catalogByProductId.set(productId, { product, variants });
+            } catch {
+                catalogByProductId.set(productId, { product: undefined, variants: undefined });
+            }
+        }));
+
+        let cartAdjusted = mergedItems.length !== localProducts.length;
+        const sanitizedProducts: ICartEntryItem[] = [];
+
+        for (const item of mergedItems) {
+            const catalog = catalogByProductId.get(item.productId);
+            if (!catalog) {
+                cartAdjusted = true;
+                continue;
+            }
+
+            if (catalog.product === null || catalog.variants === null) {
+                cartAdjusted = true;
+                continue;
+            }
+
+            if (!catalog.product || !catalog.variants) {
+                sanitizedProducts.push(item);
+                continue;
+            }
+
+            const matchingVariant = catalog.variants.find((variant) => variant.variantId === item.variantId);
+            if (!matchingVariant) {
+                cartAdjusted = true;
+                continue;
+            }
+
+            const stockLimit = Number.isFinite(matchingVariant.stock) ? Math.max(0, Math.floor(matchingVariant.stock)) : 0;
+            const perOrderLimit = (typeof matchingVariant.maximumInOrder === 'number' && Number.isFinite(matchingVariant.maximumInOrder) && matchingVariant.maximumInOrder >= 0)
+                ? Math.floor(matchingVariant.maximumInOrder)
+                : Number.MAX_SAFE_INTEGER;
+            const allowedQuantity = Math.min(stockLimit, perOrderLimit);
+
+            if (allowedQuantity <= 0) {
+                cartAdjusted = true;
+                continue;
+            }
+
+            const nextQuantity = Math.min(item.quantity, allowedQuantity);
+            if (nextQuantity !== item.quantity) {
+                cartAdjusted = true;
+            }
+
+            sanitizedProducts.push({ ...item, quantity: nextQuantity });
+        }
+
+        return { products: sanitizedProducts, cartAdjusted };
+    }
+
     /**
      * Try to Get the user's cart 
      * ! Will make a request to the backend only if the user is authenticated
@@ -480,17 +579,12 @@ export default class AuthService {
 
             try {
                 const data = JSON.parse(localCart);
-                if(!Array.isArray(data)) {
-                    return { userId: "localStorage", products: []};
+                const normalizedProducts = this.normalizeLocalCartProducts(data);
+                const sanitizedCart = await this.sanitizeGuestCartProducts(normalizedProducts);
+                if (sanitizedCart.cartAdjusted) {
+                    localStorage.setItem(Constants.LOCAL_STORAGE_CART_KEY, JSON.stringify(sanitizedCart.products));
                 }
-
-                return {userId: "localStorage", products: data
-                    .map((item: any) => ({
-                        productId: String(item?.productId ?? ''),
-                        quantity: Number(item?.quantity ?? 0),
-                        variantId: String(item?.variantId ?? ''),
-                    }))
-                    .filter((item: { productId: string, quantity: number, variantId: string }) => item.productId.length > 0 && item.variantId.length > 0 && Number.isFinite(item.quantity) && item.quantity > 0)};
+                return { userId: "localStorage", products: sanitizedCart.products, cartAdjusted: sanitizedCart.cartAdjusted };
             }
             catch {
                 return { userId: "localStorage", products: []};
@@ -524,7 +618,7 @@ export default class AuthService {
         }
         else {
             // The user is not authenticated, store cart in local storage
-            localStorage.setItem(Constants.LOCAL_STORAGE_CART_KEY, JSON.stringify(items || []));
+            localStorage.setItem(Constants.LOCAL_STORAGE_CART_KEY, JSON.stringify(items?.products || []));
         }
     }
 
@@ -561,29 +655,22 @@ export default class AuthService {
         else {
             // The user is not authenticated, update cart in local storage
             const localCart = localStorage.getItem(Constants.LOCAL_STORAGE_CART_KEY);
-            let currentItems: { productId: string, quantity: number }[] = [];
+            let currentItems: ICartEntryItem[] = [];
             if(localCart) {
                 try {
                     const data = JSON.parse(localCart);
-                    if(Array.isArray(data)) {
-                        currentItems = data
-                            .map((item: any) => ({
-                                productId: String(item?.productId ?? ''),
-                                quantity: Number(item?.quantity ?? 0)
-                            }))
-                            .filter((item: { productId: string, quantity: number }) => item.productId.length > 0 && Number.isFinite(item.quantity) && item.quantity > 0);
-                    }
+                    currentItems = this.normalizeLocalCartProducts(data);
                 } catch {}
             }
             // Update current items with new items
             for(const newItem of cartEntry.products) {
-                const existingIndex = currentItems.findIndex(item => item.productId === newItem.productId);
+                const existingIndex = currentItems.findIndex(item => item.productId === newItem.productId && item.variantId === newItem.variantId);
                 if(existingIndex >= 0) {
                     // update existing
                     currentItems[existingIndex].quantity = newItem.quantity;
                 } else {
                     // add new
-                    currentItems.push({ productId: newItem.productId, quantity: newItem.quantity });
+                    currentItems.push({ productId: newItem.productId, variantId: newItem.variantId, quantity: newItem.quantity });
                 }
             }
             localStorage.setItem(Constants.LOCAL_STORAGE_CART_KEY, JSON.stringify(currentItems));
