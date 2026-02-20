@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router';
 import { appGlobalStateContext } from '../../App/AppGlobalStateProvider';
 
-import { Typography, Box, Paper, Button, Chip, IconButton } from '@mui/material';
+import { Typography, Box, Paper, Button, Chip, IconButton, Tooltip } from '@mui/material';
 import red from '@mui/material/colors/red';
 
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
@@ -24,7 +24,7 @@ const CARD_WIDTH = {
     md: 'calc((100% - 48px) / 4)',
     lg: 'calc((100% - 64px) / 5)',
 };
-const ACTION_HALF_WIDTH = { p: 1, flexBasis: '50%' };
+const ACTION_HALF_WIDTH = { p: 1 };
 
 interface IProductCardProps {
     productRecord: IProductRecord;
@@ -113,6 +113,18 @@ export default function ProductCard(props: IProductCardProps) {
         defaultVariantRecord?.variantId
     );
 
+    const addDisabledReason = !defaultVariantRecord
+        ? 'No purchasable option is available for this product.'
+        : stockCount <= 0
+            ? 'This item is currently out of stock.'
+            : '';
+
+    const buyNowDisabledReason = !defaultVariantRecord
+        ? 'No purchasable option is available for this product.'
+        : stockCount <= 0
+            ? 'This item is currently out of stock.'
+            : '';
+
     // Private Methods
     function handleCardClick() {
         navigateTo(getProductPath(props.collectionName || 'collection', props.productRecord.name));
@@ -179,7 +191,16 @@ export default function ProductCard(props: IProductCardProps) {
     function handleBuyNow(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         e.preventDefault();
         e.stopPropagation();
-        navigateTo(`/checkout?mode=single&productId=${encodeURIComponent(props.productRecord.productId)}&variantId=${encodeURIComponent(defaultVariantRecord!.variantId)}&quantity=1`);
+
+        const preferredQuantity = cartQuantity > 0 ? cartQuantity : 1;
+        const params = new URLSearchParams({
+            mode: 'single',
+            productId: props.productRecord.productId,
+            variantId: defaultVariantRecord!.variantId,
+            quantity: String(preferredQuantity),
+        });
+
+        navigateTo(`/checkout?${params.toString()}`);
     }
 
     return(
@@ -215,9 +236,9 @@ export default function ProductCard(props: IProductCardProps) {
                     </Typography>
                 </Box>
             </Box>
-            <Box sx={{ display: 'flex' }}>
+            <Box sx={{ display: 'flex', width: '100%' }}>
                 {cartQuantity > 0 ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexBasis: '50%', px: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: '1 1 0', minWidth: 0, px: 1 }}>
                         <IconButton
                             size="small"
                             onClick={(event) => {
@@ -243,18 +264,36 @@ export default function ProductCard(props: IProductCardProps) {
                         </IconButton>
                     </Box>
                 ) : (
-                    <Button
-                        color='primary'
-                        variant="contained"
-                        sx={ACTION_HALF_WIDTH}
-                        startIcon={<ShoppingCartOutlinedIcon />}
-                        onClick={handleAddToCart}
-                        disabled={stockCount <= 0}
-                    >
-                        Add
-                    </Button>
+                    <Tooltip title={addDisabledReason} disableHoverListener={!addDisabledReason}>
+                        <span style={{ display: 'flex', flex: '1 1 0', width: '100%' }}>
+                            <Button
+                                color='primary'
+                                variant="contained"
+                                fullWidth
+                                sx={ACTION_HALF_WIDTH}
+                                startIcon={<ShoppingCartOutlinedIcon />}
+                                onClick={handleAddToCart}
+                                disabled={!defaultVariantRecord || stockCount <= 0}
+                            >
+                                Add
+                            </Button>
+                        </span>
+                    </Tooltip>
                 )}
-                <Button color='info' variant="contained" sx={ACTION_HALF_WIDTH} onClick={handleBuyNow} disabled={stockCount <= 0}>Buy Now</Button>
+                <Tooltip title={buyNowDisabledReason} disableHoverListener={!buyNowDisabledReason}>
+                    <span style={{ display: 'flex', flex: '1 1 0', width: '100%' }}>
+                        <Button
+                            color='info'
+                            variant="contained"
+                            fullWidth
+                            sx={ACTION_HALF_WIDTH}
+                            onClick={handleBuyNow}
+                            disabled={!defaultVariantRecord || stockCount <= 0}
+                        >
+                            Buy Now
+                        </Button>
+                    </span>
+                </Tooltip>
             </Box>
         </Paper>
     );

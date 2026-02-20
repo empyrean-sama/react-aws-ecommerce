@@ -189,8 +189,12 @@ function CartItemViewerPanel() {
             return;
         }
 
-        const remainingItems = currentItems.filter(item => !(item.productId === productId && item.variantId === variantId));
-        const nextItems = [...remainingItems, { productId, variantId, quantity: nextQuantity }];
+        const nextItems = currentItems.map(item => {
+            if (item.productId === productId && item.variantId === variantId) {
+                return { ...item, quantity: nextQuantity };
+            }
+            return item;
+        });
 
         try {
             setIsLoading(true);
@@ -216,10 +220,14 @@ function CartItemViewerPanel() {
 
         const nextQuantity = currentItem.quantity - 1;
 
-        const remainingItems = currentItems.filter(item => !(item.productId === productId && item.variantId === variantId));
         const nextItems = nextQuantity > 0
-            ? [...remainingItems, { productId, variantId, quantity: nextQuantity }]
-            : remainingItems;
+            ? currentItems.map(item => {
+                if (item.productId === productId && item.variantId === variantId) {
+                    return { ...item, quantity: nextQuantity };
+                }
+                return item;
+            })
+            : currentItems.filter(item => !(item.productId === productId && item.variantId === variantId));
 
         try {
             setIsLoading(true);
@@ -338,6 +346,15 @@ function CartItemViewerPanel() {
                                     </TableRow>
                                 );
                             }
+                        )}
+                        {(cartState.cartEntryRecord?.products.length ?? 0) === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={6} align="center">
+                                    <Typography variant="body1" color="text.secondary" sx={{ py: 2 }}>
+                                        No items on the cart
+                                    </Typography>
+                                </TableCell>
+                            </TableRow>
                         )}
                     </TableBody>
                 </Table>
