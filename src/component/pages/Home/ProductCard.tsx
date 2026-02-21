@@ -224,18 +224,16 @@ export default function ProductCard(props: IProductCardProps) {
                 flexGrow: 1,
             }}
         >
-            <Box>
+            <Box sx={{ height: "100%", display: "flex", flexDirection: "column", rowGap: 1 }}>
                 <RatingBadge rating={props.rating} />
                 <StockBadge stockCount={stockCount} />
                 <Box component='img' src={cardImage} alt={cardImageAlt} sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover' }} />
-                <Box sx={{display: "flex", flexDirection: "column", gap: 1 }}>
-                    <Typography variant='subtitle1' fontWeight='bold' sx={{ mx: 2, textAlign: "left", lineHeight: 1.2, height: "40px", overflow: "hidden", textOverflow: "ellipsis", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", display: "-webkit-box" }}>
-                        {props.productRecord.name}
-                    </Typography>
-                    <Typography variant='body2' sx={{ mx: 2, textAlign: "left", color: red[700], fontWeight: 'bold' }} noWrap>
-                        ₹{formatPrice(defaultVariantRecord?.price)}
-                    </Typography>
-                </Box>
+                <Typography variant='subtitle1' fontWeight='bold' sx={{ mx: 2, textAlign: "left", lineHeight: 1.2, maxHeight: "40px", flexGrow: 1, overflow: "hidden", textOverflow: "ellipsis", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", display: "-webkit-box" }}>
+                    {props.productRecord.name}
+                </Typography>
+                <Typography variant='body2' sx={{ mx: 2, textAlign: "left", color: red[700], fontWeight: 'bold' }} noWrap>
+                    ₹{formatPrice(defaultVariantRecord?.price)}
+                </Typography>
             </Box>
             <Box sx={{ display: 'flex', width: '100%' }}>
                 {cartQuantity > 0 ? (
