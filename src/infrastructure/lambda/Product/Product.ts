@@ -270,6 +270,7 @@ export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayPro
                     if (featured !== 'true') {
                         return constructResponse(400, { message: 'featured must be true' });
                     }
+                    //todo: can we optimize by querying back only needed entries
                     const queryResp = await ddb.send(new QueryCommand({
                         TableName: PRODUCT_TABLE,
                         IndexName: Constants.productGSINameOnFeatured,
