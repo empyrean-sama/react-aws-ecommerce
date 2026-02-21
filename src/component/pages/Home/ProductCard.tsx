@@ -210,6 +210,7 @@ export default function ProductCard(props: IProductCardProps) {
                 transition: 'all 0.3s ease-in-out',
                 display: 'flex',
                 flexDirection: 'column',
+                justifyContent: 'space-between',
                 gap: 1,
                 position: 'relative',
                 cursor: 'pointer',
@@ -228,7 +229,7 @@ export default function ProductCard(props: IProductCardProps) {
                 <StockBadge stockCount={stockCount} />
                 <Box component='img' src={cardImage} alt={cardImageAlt} sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover' }} />
                 <Box sx={{display: "flex", flexDirection: "column", gap: 1 }}>
-                    <Typography variant='subtitle1' fontWeight='bold' sx={{ mx: 2, textAlign: "left", lineHeight: 1.2 }}>
+                    <Typography variant='subtitle1' fontWeight='bold' sx={{ mx: 2, textAlign: "left", lineHeight: 1.2, height: "40px", overflow: "hidden", textOverflow: "ellipsis", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", display: "-webkit-box" }}>
                         {props.productRecord.name}
                     </Typography>
                     <Typography variant='body2' sx={{ mx: 2, textAlign: "left", color: red[700], fontWeight: 'bold' }} noWrap>
