@@ -3,3 +3,9 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+[context.production.environment]
+  REACT_STRICT_MODE = "false"
+
+[context.deploy-preview.environment]
+  REACT_STRICT_MODE = "false"
