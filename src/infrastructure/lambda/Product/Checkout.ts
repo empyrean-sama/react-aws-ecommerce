@@ -1,3 +1,15 @@
+/**
+ * Checkout Lambda function
+ *
+ * Handles checkout creation/confirmation and order retrieval/management.
+ * - GET /checkout?limit={1-100}&nextToken={token}: authenticated user's paged orders
+ * - GET /checkout?all=true&limit={1-100}&nextToken={token}: all paged orders (admin only)
+ * - POST /checkout: create checkout order payload (cart or single-item flow)
+ * - PUT /checkout: confirm payment and persist order
+ * - PUT /checkout (admin body: { userId, createdAt, status }): update order status
+ * - DELETE /checkout?userId={userId}&createdAt={createdAt}: delete order (admin only)
+ */
+
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { randomUUID, createHmac } from 'crypto';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -51,6 +63,46 @@ type AdminOrderStatusUpdateBody = {
     createdAt: number;
     status: string;
 };
+
+const DEFAULT_PAGE_LIMIT = 25;
+const MAX_PAGE_LIMIT = 100;
+
+function parsePageLimit(rawValue: string | undefined): number {
+    if (typeof rawValue === 'undefined') {
+        return DEFAULT_PAGE_LIMIT;
+    }
+
+    const parsed = Number(rawValue);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > MAX_PAGE_LIMIT) {
+        throw new Error(`Invalid limit. Provide an integer between 1 and ${MAX_PAGE_LIMIT}`);
+    }
+
+    return parsed;
+}
+
+function decodeNextToken(rawValue: string | undefined): Record<string, any> | undefined {
+    if (typeof rawValue === 'undefined' || rawValue.trim().length === 0) {
+        return undefined;
+    }
+
+    try {
+        const decoded = Buffer.from(rawValue, 'base64').toString('utf8');
+        const parsed = JSON.parse(decoded);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            throw new Error('Invalid shape');
+        }
+        return parsed as Record<string, any>;
+    } catch {
+        throw new Error('Invalid nextToken');
+    }
+}
+
+function encodeNextToken(lastEvaluatedKey: Record<string, any> | undefined): string | null {
+    if (!lastEvaluatedKey) {
+        return null;
+    }
+    return Buffer.from(JSON.stringify(lastEvaluatedKey), 'utf8').toString('base64');
+}
 
 function isValidAddress(address: any): address is IAddress {
     if (!address || typeof address !== 'object') return false;
@@ -407,6 +459,15 @@ async function handleGetOrders(event: APIGatewayProxyEvent): Promise<APIGatewayP
 
     const queryParams = event.queryStringParameters || {};
     const includeAllOrders = queryParams.all === 'true';
+    let limit: number;
+    let nextTokenKey: Record<string, any> | undefined;
+
+    try {
+        limit = parsePageLimit(queryParams.limit);
+        nextTokenKey = decodeNextToken(queryParams.nextToken);
+    } catch (error: any) {
+        return constructResponse(400, { message: error?.message || 'Invalid pagination parameters' });
+    }
 
     if (includeAllOrders) {
         if (!isAdmin(event)) {
@@ -415,10 +476,18 @@ async function handleGetOrders(event: APIGatewayProxyEvent): Promise<APIGatewayP
 
         const scanResponse = await doc.send(new ScanCommand({
             TableName: ORDERS_TABLE,
+            Limit: limit,
+            ExclusiveStartKey: nextTokenKey,
         }));
 
         const orders = (scanResponse.Items as IOrderRecord[] | undefined) ?? [];
-        return constructResponse(200, orders);
+        const nextToken = encodeNextToken(scanResponse.LastEvaluatedKey as Record<string, any> | undefined);
+        return constructResponse(200, {
+            items: orders,
+            nextToken,
+            hasMore: !!scanResponse.LastEvaluatedKey,
+            count: orders.length,
+        });
     }
 
     const queryResponse = await doc.send(new QueryCommand({
@@ -427,11 +496,19 @@ async function handleGetOrders(event: APIGatewayProxyEvent): Promise<APIGatewayP
         ExpressionAttributeValues: {
             ':userId': authenticatedUserId.trim(),
         },
+        Limit: limit,
+        ExclusiveStartKey: nextTokenKey,
         ScanIndexForward: false,
     }));
 
     const orders = (queryResponse.Items as IOrderRecord[] | undefined) ?? [];
-    return constructResponse(200, orders);
+    const nextToken = encodeNextToken(queryResponse.LastEvaluatedKey as Record<string, any> | undefined);
+    return constructResponse(200, {
+        items: orders,
+        nextToken,
+        hasMore: !!queryResponse.LastEvaluatedKey,
+        count: orders.length,
+    });
 }
 
 async function handleAdminUpdateOrderStatus(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {

@@ -51,6 +51,8 @@ export default function OrderDetails() {
     const [order, setOrder] = React.useState<IOrderRecord | null>(null);
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
+    const ADMIN_ORDER_PAGE_SIZE = 100;
+
     React.useEffect(() => {
         (async () => {
             if (!userId || !createdAt || !Number.isFinite(Number(createdAt))) {
@@ -61,8 +63,26 @@ export default function OrderDetails() {
 
             try {
                 setIsLoading(true);
-                const orders = await productService.getAdminOrders();
-                const matchedOrder = (orders || []).find((entry) => entry.userId === userId && String(entry.createdAt) === String(createdAt)) || null;
+                let matchedOrder: IOrderRecord | null = null;
+                let nextToken: string | null = null;
+
+                do {
+                    const page = await productService.getAdminOrdersPage({
+                        limit: ADMIN_ORDER_PAGE_SIZE,
+                        nextToken,
+                    });
+
+                    matchedOrder = (page.items || []).find(
+                        (entry) => entry.userId === userId && String(entry.createdAt) === String(createdAt)
+                    ) || null;
+
+                    if (matchedOrder) {
+                        break;
+                    }
+
+                    nextToken = page.nextToken;
+                } while (nextToken);
+
                 setOrder(matchedOrder);
             } catch (error: any) {
                 showMessage(error?.message || "Failed to load order details", ESnackbarMsgVariant.error);

@@ -1,5 +1,12 @@
+/**
+ * SearchIndex Lambda function
+ *
+ * Regenerates and publishes a product-name search index to S3.
+ * - POST /search-index: scan all products, group by product name, and upload JSON index (admin only)
+ */
+
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient, ScanCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, ScanCommand, ScanCommandOutput } from '@aws-sdk/client-dynamodb';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 
@@ -44,7 +51,7 @@ async function scanAllProducts(tableName: string): Promise<IProductRecord[]> {
     let exclusiveStartKey: Record<string, any> | undefined = undefined;
 
     do {
-        const response = await ddb.send(new ScanCommand({
+        const response: ScanCommandOutput = await ddb.send(new ScanCommand({
             TableName: tableName,
             ExclusiveStartKey: exclusiveStartKey,
         }));

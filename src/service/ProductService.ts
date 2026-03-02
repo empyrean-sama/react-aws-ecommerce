@@ -16,6 +16,13 @@ import IOrderRecord from "../interface/order/IOrderRecord";
 type IReviewWriteInput = Omit<IReview, 'userId' | 'orderReference' | 'reviewerName' | 'reviewerUsername'>;
 type IReviewAverage = { productId: string; averageScore: number; reviewCount: number };
 
+export interface IOrderRecordPage {
+    items: IOrderRecord[];
+    nextToken: string | null;
+    hasMore: boolean;
+    count: number;
+}
+
 export default class ProductService {
     private static _instance: ProductService | null = null;
     private constructor() {}
@@ -629,15 +636,41 @@ export default class ProductService {
         return Array.isArray(json) ? (json as IOrderRecord[]) : [];
     }
 
-    public async getAdminOrders(): Promise<IOrderRecord[]> {
+    public async getAdminOrdersPage(input?: { limit?: number; nextToken?: string | null }): Promise<IOrderRecordPage> {
         const url = new URL(OutputParser.CheckoutAuthEndPointURL);
         url.searchParams.set('all', 'true');
+
+        if (typeof input?.limit === 'number' && Number.isFinite(input.limit)) {
+            url.searchParams.set('limit', String(input.limit));
+        }
+        if (typeof input?.nextToken === 'string' && input.nextToken.length > 0) {
+            url.searchParams.set('nextToken', input.nextToken);
+        }
+
         const resp = await AuthService.getInstance().authorizedFetch(url, { method: 'GET' });
         const json = await resp.json().catch(() => undefined) as any;
         if (!resp.ok) {
             throw new Error(json?.message || 'Failed to fetch admin orders');
         }
-        return Array.isArray(json) ? (json as IOrderRecord[]) : [];
+
+        if (Array.isArray(json)) {
+            return {
+                items: json as IOrderRecord[],
+                nextToken: null,
+                hasMore: false,
+                count: (json as IOrderRecord[]).length,
+            };
+        }
+
+        const items = Array.isArray(json?.items) ? (json.items as IOrderRecord[]) : [];
+        const nextToken = typeof json?.nextToken === 'string' && json.nextToken.length > 0 ? json.nextToken : null;
+
+        return {
+            items,
+            nextToken,
+            hasMore: typeof json?.hasMore === 'boolean' ? json.hasMore : nextToken !== null,
+            count: typeof json?.count === 'number' ? json.count : items.length,
+        };
     }
 
     public async updateOrderStatusAsAdmin(input: { userId: string; createdAt: number; status: string }): Promise<void> {

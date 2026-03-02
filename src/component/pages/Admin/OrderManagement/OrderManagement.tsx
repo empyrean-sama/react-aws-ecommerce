@@ -1,5 +1,4 @@
 import React from "react";
-import Fuse from "fuse.js";
 import ProductService from "../../../../service/ProductService";
 import IOrderRecord from "../../../../interface/order/IOrderRecord";
 import { ORDER_STATUS_OPTIONS } from "../../../../interface/order/OrderStatus";
@@ -11,9 +10,9 @@ import { useNavigate } from "react-router";
 import {
     Box,
     Button,
-    Chip,
     CircularProgress,
     FormControl,
+    IconButton,
     MenuItem,
     Paper,
     Select,
@@ -24,14 +23,13 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    TextField,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import SearchIcon from "@mui/icons-material/Search";
-import InputAdornment from "@mui/material/InputAdornment";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
-type PaymentFilter = "all" | "paid" | "pending" | "failed";
+const ORDERS_PAGE_SIZE = 25;
 
 function formatCurrency(valueInMinorUnit: number, currency: string): string {
     if (!Number.isFinite(valueInMinorUnit)) {
@@ -52,14 +50,6 @@ function formatDate(timestamp: number): string {
     return new Date(timestamp).toLocaleString();
 }
 
-function getPaymentStatusColor(status: string): "success" | "warning" | "error" | "default" {
-    const normalized = (status || "").toLowerCase();
-    if (normalized === "paid") return "success";
-    if (normalized === "pending") return "warning";
-    if (normalized === "failed") return "error";
-    return "default";
-}
-
 export default function OrderManagement() {
     const navigateTo = useNavigate();
     const productService = ProductService.getInstance();
@@ -67,9 +57,9 @@ export default function OrderManagement() {
 
     const [orders, setOrders] = React.useState<IOrderRecord[]>([]);
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
-    const [paymentFilter, setPaymentFilter] = React.useState<PaymentFilter>("all");
-    const [searchText, setSearchText] = React.useState<string>("");
-    const [orderStatusEdits, setOrderStatusEdits] = React.useState<Record<string, string>>({});
+    const [currentPage, setCurrentPage] = React.useState<number>(1);
+    const [nextToken, setNextToken] = React.useState<string | null>(null);
+    const [pageStartTokens, setPageStartTokens] = React.useState<Record<number, string | null>>({ 1: null });
     const [savingOrderKeyMap, setSavingOrderKeyMap] = React.useState<Record<string, boolean>>({});
     const [deletingOrderKeyMap, setDeletingOrderKeyMap] = React.useState<Record<string, boolean>>({});
 
@@ -77,63 +67,51 @@ export default function OrderManagement() {
         return [...orders].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     }, [orders]);
 
-    const fuse = React.useMemo(() => {
-        return new Fuse(sortedOrders, {
-            threshold: 0.35,
-            ignoreLocation: true,
-            keys: [
-                "orderId",
-                "customerName",
-                "customerEmail",
-                "customerPhone",
-                "shippingAddress.userLabel",
-                "shippingAddress.phoneNumber",
-                "shippingAddress.specificAddress",
-                "shippingAddress.street",
-                "shippingAddress.area",
-                "shippingAddress.city",
-                "shippingAddress.state",
-                "shippingAddress.country",
-                "shippingAddress.postcode",
-            ],
-        });
-    }, [sortedOrders]);
-
-    const searchedOrders = React.useMemo(() => {
-        const query = searchText.trim();
-        if (!query) {
-            return sortedOrders;
-        }
-        return fuse.search(query).map((result) => result.item);
-    }, [searchText, sortedOrders, fuse]);
-
-    const filteredOrders = React.useMemo(() => {
-        if (paymentFilter === "all") {
-            return searchedOrders;
-        }
-        return searchedOrders.filter((order) => (order.paymentStatus || "").toLowerCase() === paymentFilter);
-    }, [searchedOrders, paymentFilter]);
-
-    const statusCounts = React.useMemo(() => {
-        return {
-            all: searchedOrders.length,
-            paid: searchedOrders.filter((order) => (order.paymentStatus || "").toLowerCase() === "paid").length,
-            pending: searchedOrders.filter((order) => (order.paymentStatus || "").toLowerCase() === "pending").length,
-            failed: searchedOrders.filter((order) => (order.paymentStatus || "").toLowerCase() === "failed").length,
-        };
-    }, [searchedOrders]);
-
-    async function refreshOrders() {
+    async function loadOrdersPage(page: number, startToken: string | null): Promise<void> {
         try {
             setIsLoading(true);
-            const fetchedOrders = await productService.getAdminOrders();
-            setOrders(fetchedOrders || []);
-            setOrderStatusEdits({});
+            const pagedOrders = await productService.getAdminOrdersPage({
+                limit: ORDERS_PAGE_SIZE,
+                nextToken: startToken,
+            });
+            setOrders(pagedOrders.items || []);
+            setNextToken(pagedOrders.nextToken);
+            setCurrentPage(page);
+            setPageStartTokens((prev) => ({
+                ...prev,
+                [page]: startToken,
+            }));
         } catch (error: any) {
             showMessage(error?.message || "Failed to load orders", ESnackbarMsgVariant.error);
         } finally {
             setIsLoading(false);
         }
+    }
+
+    async function refreshOrders() {
+        setPageStartTokens({ 1: null });
+        await loadOrdersPage(1, null);
+    }
+
+    async function reloadCurrentPage(): Promise<void> {
+        const currentPageStartToken = pageStartTokens[currentPage] ?? null;
+        await loadOrdersPage(currentPage, currentPageStartToken);
+    }
+
+    async function handleNextPage(): Promise<void> {
+        if (!nextToken || isLoading) {
+            return;
+        }
+        await loadOrdersPage(currentPage + 1, nextToken);
+    }
+
+    async function handlePreviousPage(): Promise<void> {
+        if (currentPage <= 1 || isLoading) {
+            return;
+        }
+        const previousPage = currentPage - 1;
+        const previousStartToken = pageStartTokens[previousPage] ?? null;
+        await loadOrdersPage(previousPage, previousStartToken);
     }
 
     function getOrderKey(order: IOrderRecord): string {
@@ -144,10 +122,10 @@ export default function OrderManagement() {
         navigateTo(`/admin/orders/details?userId=${encodeURIComponent(order.userId)}&createdAt=${encodeURIComponent(String(order.createdAt))}`);
     }
 
-    async function handleSaveOrderStatus(order: IOrderRecord): Promise<void> {
+    async function handleOrderStatusChange(order: IOrderRecord, nextStatus: string): Promise<void> {
         const orderKey = getOrderKey(order);
-        const nextStatus = (orderStatusEdits[orderKey] || order.status || "").trim();
-        if (!nextStatus || nextStatus === order.status) {
+        const normalizedStatus = (nextStatus || "").trim();
+        if (!normalizedStatus || normalizedStatus === order.status) {
             return;
         }
 
@@ -156,10 +134,10 @@ export default function OrderManagement() {
             await productService.updateOrderStatusAsAdmin({
                 userId: order.userId,
                 createdAt: order.createdAt,
-                status: nextStatus,
+                status: normalizedStatus,
             });
             showMessage("Order status updated", ESnackbarMsgVariant.success);
-            await refreshOrders();
+            await reloadCurrentPage();
         } catch (error: any) {
             showMessage(error?.message || "Failed to update order status", ESnackbarMsgVariant.error);
         } finally {
@@ -181,7 +159,7 @@ export default function OrderManagement() {
                 createdAt: order.createdAt,
             });
             showMessage("Order deleted", ESnackbarMsgVariant.success);
-            await refreshOrders();
+            await reloadCurrentPage();
         } catch (error: any) {
             showMessage(error?.message || "Failed to delete order", ESnackbarMsgVariant.error);
         } finally {
@@ -207,7 +185,7 @@ export default function OrderManagement() {
                 <Box>
                     <Typography variant="h4" component="h2">Order Management</Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Review placed orders, payment status, and shipping details.
+                        Review placed orders, order status, and shipping details.
                     </Typography>
                 </Box>
                 <Button variant="outlined" startIcon={<RefreshIcon />} onClick={refreshOrders}>
@@ -216,51 +194,17 @@ export default function OrderManagement() {
             </Stack>
 
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: "100%" }}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                    <Chip
-                        label={`All (${statusCounts.all})`}
-                        clickable
-                        color={paymentFilter === "all" ? "primary" : "default"}
-                        variant={paymentFilter === "all" ? "filled" : "outlined"}
-                        onClick={() => setPaymentFilter("all")}
-                    />
-                    <Chip
-                        label={`Paid (${statusCounts.paid})`}
-                        clickable
-                        color={paymentFilter === "paid" ? "primary" : "default"}
-                        variant={paymentFilter === "paid" ? "filled" : "outlined"}
-                        onClick={() => setPaymentFilter("paid")}
-                    />
-                    <Chip
-                        label={`Pending (${statusCounts.pending})`}
-                        clickable
-                        color={paymentFilter === "pending" ? "primary" : "default"}
-                        variant={paymentFilter === "pending" ? "filled" : "outlined"}
-                        onClick={() => setPaymentFilter("pending")}
-                    />
-                    <Chip
-                        label={`Failed (${statusCounts.failed})`}
-                        clickable
-                        color={paymentFilter === "failed" ? "primary" : "default"}
-                        variant={paymentFilter === "failed" ? "filled" : "outlined"}
-                        onClick={() => setPaymentFilter("failed")}
-                    />
+                <Typography variant="body2" color="text.secondary">
+                    Page {currentPage}
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                    <Button variant="outlined" onClick={handlePreviousPage} disabled={isLoading || currentPage <= 1}>
+                        Previous
+                    </Button>
+                    <Button variant="outlined" onClick={handleNextPage} disabled={isLoading || !nextToken}>
+                        Next
+                    </Button>
                 </Stack>
-
-                <TextField
-                    size="small"
-                    placeholder="Filter by order ID, customer, or shipping address"
-                    value={searchText}
-                    onChange={(event) => setSearchText(event.target.value)}
-                    sx={{ width: 560 }}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon fontSize="small" />
-                            </InputAdornment>
-                        ),
-                    }}
-                />
             </Stack>
 
             <Paper>
@@ -271,29 +215,24 @@ export default function OrderManagement() {
                                 <TableCell>Order ID</TableCell>
                                 <TableCell>Created</TableCell>
                                 <TableCell>Status</TableCell>
-                                <TableCell>Payment</TableCell>
-                                <TableCell align="right">Items</TableCell>
-                                <TableCell align="right">Total</TableCell>
+                                <TableCell>Items</TableCell>
+                                <TableCell>Total</TableCell>
                                 <TableCell>Customer</TableCell>
                                 <TableCell>Shipping</TableCell>
                                 <TableCell>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {filteredOrders.length === 0 ? (
+                            {sortedOrders.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={9}>
+                                    <TableCell colSpan={8}>
                                         <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
-                                            {orders.length === 0
-                                                ? "No orders found."
-                                                : searchText.trim().length > 0
-                                                    ? "No orders match this search."
-                                                    : "No orders match this payment status."}
+                                            No orders found.
                                         </Typography>
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredOrders.map((order) => (
+                                sortedOrders.map((order) => (
                                     <TableRow
                                         key={`${order.userId}-${order.createdAt}`}
                                         hover
@@ -307,13 +246,10 @@ export default function OrderManagement() {
                                         <TableCell onClick={(event) => event.stopPropagation()}>
                                             <FormControl size="small" sx={{ minWidth: 180 }}>
                                                 <Select
-                                                    value={orderStatusEdits[getOrderKey(order)] ?? order.status ?? ""}
+                                                    value={order.status ?? ""}
+                                                    disabled={savingOrderKeyMap[getOrderKey(order)] === true || deletingOrderKeyMap[getOrderKey(order)] === true}
                                                     onChange={(event) => {
-                                                        const orderKey = getOrderKey(order);
-                                                        setOrderStatusEdits((prev) => ({
-                                                            ...prev,
-                                                            [orderKey]: String(event.target.value),
-                                                        }));
+                                                        void handleOrderStatusChange(order, String(event.target.value));
                                                     }}
                                                 >
                                                     {Array.from(new Set([...(order.status ? [order.status] : []), ...ORDER_STATUS_OPTIONS])).map((statusOption) => (
@@ -322,15 +258,8 @@ export default function OrderManagement() {
                                                 </Select>
                                             </FormControl>
                                         </TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                label={order.paymentStatus || "N/A"}
-                                                size="small"
-                                                color={getPaymentStatusColor(order.paymentStatus)}
-                                            />
-                                        </TableCell>
-                                        <TableCell align="right">{order.products?.length || 0}</TableCell>
-                                        <TableCell align="right">{formatCurrency(order.total, order.currency || "INR")}</TableCell>
+                                        <TableCell>{order.products?.length || 0}</TableCell>
+                                        <TableCell>{formatCurrency(order.total, order.currency || "INR")}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2">{order.customerName || "N/A"}</Typography>
                                             <Typography variant="caption" color="text.secondary">{order.customerEmail || order.customerPhone || "N/A"}</Typography>
@@ -345,25 +274,19 @@ export default function OrderManagement() {
                                             </Typography>
                                         </TableCell>
                                         <TableCell onClick={(event) => event.stopPropagation()}>
-                                            <Stack direction="row" spacing={1}>
-                                                <Button
-                                                    size="small"
-                                                    variant="outlined"
-                                                    onClick={() => handleSaveOrderStatus(order)}
-                                                    disabled={savingOrderKeyMap[getOrderKey(order)] === true || deletingOrderKeyMap[getOrderKey(order)] === true || ((orderStatusEdits[getOrderKey(order)] ?? order.status ?? "") === (order.status ?? ""))}
-                                                >
-                                                    {savingOrderKeyMap[getOrderKey(order)] === true ? "Saving..." : "Save"}
-                                                </Button>
-                                                <Button
-                                                    size="small"
-                                                    variant="outlined"
-                                                    color="error"
-                                                    onClick={() => handleDeleteOrder(order)}
-                                                    disabled={deletingOrderKeyMap[getOrderKey(order)] === true || savingOrderKeyMap[getOrderKey(order)] === true}
-                                                >
-                                                    {deletingOrderKeyMap[getOrderKey(order)] === true ? "Deleting..." : "Delete"}
-                                                </Button>
-                                            </Stack>
+                                            <Tooltip title={deletingOrderKeyMap[getOrderKey(order)] === true ? "Deleting" : "Delete order"}>
+                                                <span>
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
+                                                        aria-label="delete order"
+                                                        onClick={() => handleDeleteOrder(order)}
+                                                        disabled={deletingOrderKeyMap[getOrderKey(order)] === true || savingOrderKeyMap[getOrderKey(order)] === true}
+                                                    >
+                                                        <DeleteOutlineIcon fontSize="small" />
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
                                         </TableCell>
                                     </TableRow>
                                 ))
