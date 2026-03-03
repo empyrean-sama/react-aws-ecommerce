@@ -1,8 +1,4 @@
 {
-  "ReactAwsEcommerce-ProfileStack": {
-    "ExportsOutputFnGetAttProfileAddressFunction382822CDArn7F939DE2": "arn:aws:lambda:ap-south-1:410772458210:function:AddressFunction",
-    "ExportsOutputFnGetAttAutofillAddressFunction0ED0815FArnB5C9F1C1": "arn:aws:lambda:ap-south-1:410772458210:function:AutofillAddressFunction"
-  },
   "ReactAwsEcommerce-AuthStack": {
     "ExportsOutputFnGetAttReactAwsEcommerceUserPool179A9025ArnF027E14B": "arn:aws:cognito-idp:ap-south-1:410772458210:userpool/ap-south-1_OjuUcu9at",
     "UserPoolClientId": "107v5vukoq728a5iij28b0c5ep",
@@ -12,6 +8,10 @@
     "ExportsOutputFnGetAttReactAwsEcommerceCartTableD53448BFArnCD6CF99C": "arn:aws:dynamodb:ap-south-1:410772458210:table/ReactAwsEcommerce-cart",
     "ExportsOutputRefReactAwsEcommerceUserPoolReactAwsEcommerceUserPoolClient2598305C2BEB1BB0": "107v5vukoq728a5iij28b0c5ep",
     "ExportsOutputRefReactAwsEcommerceCartTableD53448BF38B0A106": "ReactAwsEcommerce-cart"
+  },
+  "ReactAwsEcommerce-ProfileStack": {
+    "ExportsOutputFnGetAttProfileAddressFunction382822CDArn7F939DE2": "arn:aws:lambda:ap-south-1:410772458210:function:AddressFunction",
+    "ExportsOutputFnGetAttAutofillAddressFunction0ED0815FArnB5C9F1C1": "arn:aws:lambda:ap-south-1:410772458210:function:AutofillAddressFunction"
   },
   "ReactAwsEcommerce-MemoryStack": {
     "ExportsOutputFnGetAttGeneratePresignedUploadUrlFunction32129FC0Arn758B4BC0": "arn:aws:lambda:ap-south-1:410772458210:function:GeneratePresignedUploadUrl",

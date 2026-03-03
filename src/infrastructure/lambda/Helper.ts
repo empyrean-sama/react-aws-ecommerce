@@ -46,6 +46,65 @@ export function getClaim(event: APIGatewayProxyEvent, key: string): string | und
 }
 
 /**
+ * Get the user ID of the caller from the API Gateway event
+ * @param event: APIGatewayProxyEvent, The API Gateway event
+ * @returns string | undefined The user ID of the caller (usually the 'sub' claim in the authorizer)
+ * @throws an error if the user ID cannot be determined from the claims
+ */
+export function getCallerUserId(event: APIGatewayProxyEvent): string {
+    const userId = getClaim(event, 'sub');
+    if (!userId) {
+        throw new Error("Unable to determine user ID from claims");
+    }
+    return userId;
+}
+
+/**
+ * Given an API Gateway event, extract the username of the caller from the claims. 
+ * It tries email first, then cognito:username, then phone_number.
+ * @param event: APIGatewayProxyEvent, The API Gateway event
+ * @throws an error if the username cannot be determined from the claims
+ */
+export function getCallerUsername(event: APIGatewayProxyEvent): string {
+    let username = getClaim(event, "email");
+    if(!username) {
+        username = getClaim(event, "cognito:username")?.trim();
+        if(!username) {
+            username = getClaim(event, "phone_number")?.trim();
+        }
+    }
+    if (!username) {
+        throw new Error("Unable to determine username from claims");
+    }
+    return username;
+}
+
+/**
+ * Parse the JSON body of an API Gateway event.
+ * @param event: APIGatewayProxyEvent, The API Gateway event
+ * @param container: An object whose properties will be populated from the parsed JSON body. The keys of this object represent the required properties in the JSON body.
+ * @throws Error if the body is missing or not valid JSON
+ * @throws Error if any required properties (keys of the container) are missing from the parsed JSON body
+ */
+export function parseRequestBody<T extends object>(event: APIGatewayProxyEvent, container: T): void {
+    if (!event.body) {
+        throw new Error("Missing request body");
+    }
+    const parsed = JSON.parse(event.body);
+    if(typeof parsed !== 'object' || parsed === null) {
+        throw new Error("Invalid request body: expected JSON object");
+    }
+    for(const key of Object.getOwnPropertyNames(container)) {
+        if(key in parsed) {
+            (container as any)[key] = parsed[key];
+        }
+        else {
+            throw new Error(`Missing required property in request body: ${key}`);
+        }
+    }
+}
+
+/**
  * Get the groups claim from the API Gateway event authorizer (useful for determining if admin)
  * @param event: APIGatewayProxyEvent, The API Gateway event
  * @returns string[] The list of groups the caller belongs to (will return admin if in admin group)
@@ -57,7 +116,9 @@ export function getGroups(event: APIGatewayProxyEvent): string[] {
     if (typeof groupsRaw === 'string') {
         try {
             const parsed = JSON.parse(groupsRaw);
-            if (Array.isArray(parsed)) return parsed.map(String);
+            if (Array.isArray(parsed)) {
+                return parsed.map(String);
+            }
         } catch {}
         return groupsRaw.split(',').map(s => s.trim()).filter(Boolean);
     }

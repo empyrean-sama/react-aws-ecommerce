@@ -25,7 +25,7 @@ export default class AuthApiStack extends Stack {
 
 		const verifyPasswordLambda = new NodejsFunction(this, 'VerifyPasswordFunction', {
 			functionName: 'VerifyPasswordFunction',
-			entry: path.join(__dirname, '..', 'lambda', 'Auth', 'VerifyPassword.ts'),
+			entry: path.join(__dirname, '..', 'lambda', 'VerifyPassword.ts'),
 			handler: 'Handle',
 			runtime: Lambda.Runtime.NODEJS_22_X,
 			environment: {
