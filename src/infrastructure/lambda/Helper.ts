@@ -96,6 +96,15 @@ export function parseRequestBody<T extends object>(event: APIGatewayProxyEvent, 
     }
     for(const key of Object.getOwnPropertyNames(container)) {
         if(key in parsed) {
+            if(typeof parsed[key] !== typeof (container as any)[key]) {
+                throw new Error(`Invalid type for property ${key}: expected ${typeof (container as any)[key]}`);
+            }
+            if(typeof parsed[key] === 'string' && (parsed[key] as string).trim() === '') {
+                throw new Error(`Invalid value for property ${key}: cannot be empty string`);
+            }
+            if(typeof parsed[key] === 'number' && isNaN(parsed[key])) {
+                throw new Error(`Invalid value for property ${key}: cannot be NaN`);
+            }
             (container as any)[key] = parsed[key];
         }
         else {
