@@ -4,7 +4,7 @@ import { appGlobalStateContext } from '../../App/AppGlobalStateProvider';
 import { Box, Paper, Stack, Typography } from '@mui/material';
 import ProductCard from "./ProductCard";
 
-import placeHolderImageString from 'url:./placeholderImage.png';
+import placeHolderImageString from 'url:./placeholderImage.webp';
 import IAppGlobalStateContextAPI from '../../../interface/IAppGlobalStateContextAPI';
 import ESnackbarMsgVariant from '../../../enum/ESnackbarMsgVariant';
 

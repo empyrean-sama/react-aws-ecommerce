@@ -6,7 +6,7 @@ import { Typography, Box, Paper, Button, Chip, IconButton, Tooltip } from '@mui/
 import red from '@mui/material/colors/red';
 
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
-import placeHolderImageString from 'url:./placeholderImage.png';
+import placeHolderImageString from 'url:./placeholderImage.webp';
 
 import IProductRecord from '../../../interface/product/IProductRecord';
 import IProductVariantRecord from '../../../interface/product/IProductVariantRecord';

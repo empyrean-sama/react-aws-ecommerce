@@ -49,7 +49,7 @@ import ITableField from '../../../interface/product/field/ITableField';
 import EProductFieldType from '../../../enum/EProductFieldType';
 import ESnackbarMsgVariant from '../../../enum/ESnackbarMsgVariant';
 import { getStockStatus } from '../Home/Helper';
-import placeHolderImageString from 'url:../Home/placeholderImage.png';
+import placeHolderImageString from 'url:../Home/placeholderImage.webp';
 import { getProductPath, toProductSlug } from '../../../helper/ProductUrlHelper';
 
 const CURRENCY_SYMBOL = '₹';

@@ -3,13 +3,12 @@ declare module 'url:*' {
   export default value;
 }
 
-declare module '*.png';
-declare module 'url:*' {
+declare module '*.png' {
   const value: string;
   export default value;
 }
 
-declare module '*.png' {
+declare module '*.webp' {
   const value: string;
   export default value;
 }

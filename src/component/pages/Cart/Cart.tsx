@@ -10,7 +10,7 @@ import { ICartEntryItem } from "../../../interface/product/ICartEntry";
 import IAppGlobalStateContextAPI from "../../../interface/IAppGlobalStateContextAPI";
 import ESnackbarMsgVariant from "../../../enum/ESnackbarMsgVariant";
 
-import placeHolderImageString from "url:../Home/placeholderImage.png";
+import placeHolderImageString from "url:../Home/placeholderImage.webp";
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
