@@ -6,7 +6,7 @@
     "start:frontend": "npx parcel src/index.html --dist-dir parcel-debug-cache",
     "build:frontend": "npx parcel build src/index.html --dist-dir public --no-source-maps",
     "deploy:backend": "cdk deploy --all --require-approval never --outputs-file outputs.json",
-    "destroy:backend": "cdk destroy --all"
+    "destroy:backend": "cdk destroy ReactAwsEcommerce-APIStack --force --exclusively && cdk destroy ReactAwsEcommerce-AuthApiStack --force --exclusively && cdk destroy ReactAwsEcommerce-ProductStack ReactAwsEcommerce-ProfileStack ReactAwsEcommerce-MemoryStack --force --exclusively && cdk destroy ReactAwsEcommerce-AuthStack --force --exclusively"
   },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.940.0",

@@ -65,7 +65,7 @@ export default class InfrastructureConstants {
     // API Resource names
     static get addressResourceName(): string { return `address`; }
     static get autofillAddressResourceName(): string { return `autofill-address`; }
-    static get uploadUrlResourceName(): string { return `upload-url`; }
+    static get genPresignedUrlResourceName(): string { return `gen-presignedUrl`; }
     static get verifyPasswordResourceName(): string { return `verify-password`; }
     static get collectionResourceName(): string { return `collection`; }
     static get productResourceName(): string { return `product`; }

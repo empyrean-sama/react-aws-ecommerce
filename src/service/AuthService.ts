@@ -417,10 +417,14 @@ export default class AuthService {
 
         // Request presigned URL
         const requestBody = {
-            fileName: file.name,
-            contentType: type,
-            contentMd5,
-            contentLength: file.size,
+            files: [
+                {
+                    fileName: file.name,
+                    contentType: type,
+                    contentMd5,
+                    contentLength: file.size,
+                }
+            ],
         };
         const presignResponse = await this.authorizedFetch(OutputParser.UploadToMemoryEndPointURL, {
             method: 'POST',
@@ -431,11 +435,15 @@ export default class AuthService {
             const text = await presignResponse.text();
             throw new Error(text || 'Failed to get upload URL');
         }
-        const presignData = await presignResponse.json() as {
+        const presignList = await presignResponse.json() as Array<{
             uploadUrl: string;
             key: string;
             requiredHeaders: { ['Content-Type']: string; ['Content-MD5']: string };
-        };
+        }>;
+        const presignData = Array.isArray(presignList) ? presignList[0] : undefined;
+        if (!presignData) {
+            throw new Error('Failed to get upload URL');
+        }
 
         // PUT the file to S3 using the presigned URL
         const putResp = await fetch(presignData.uploadUrl, {

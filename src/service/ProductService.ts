@@ -422,13 +422,16 @@ export default class ProductService {
         const resp = await AuthService.getInstance().authorizedFetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileName, contentType, contentMd5, contentLength })
+            body: JSON.stringify({ files: [{ fileName, contentType, contentMd5, contentLength }] })
         });
         const json = await resp.json().catch(() => undefined) as any;
         if (!resp.ok) {
             throw new Error(json?.message || 'Failed to get presigned URL');
         }
-        return json;
+        if (!Array.isArray(json) || json.length === 0) {
+            throw new Error('Presigned URL response is empty');
+        }
+        return json[0];
     }
 
     /**

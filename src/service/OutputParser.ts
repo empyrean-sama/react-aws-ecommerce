@@ -84,7 +84,7 @@ export default class OutputParser {
      * Used to request a presigned URL for S3 uploads.
      */
     public static get UploadToMemoryEndPointURL(): URL {
-        return new URL(`${this.ApiEndpoint}${Constants.uploadUrlResourceName}`);
+        return new URL(`${this.ApiEndpoint}${Constants.genPresignedUrlResourceName}`);
     }
 
     /**

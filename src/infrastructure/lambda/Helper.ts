@@ -170,3 +170,20 @@ export async function streamToString(stream: Readable): Promise<string> {
         stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
     });
 }
+
+/**
+ * Sanitize a file name by replacing any characters that are not letters, numbers, dots, underscores or hyphens with underscores. This is to ensure the file name is safe to use in S3 keys and URLs.
+ * @param name the original file name to sanitize
+ * @returns the sanitized file name
+ * @throws an error if the resulting file name is empty after sanitization or if it exceeds a reasonable length (e.g. 100 characters)
+ */
+export function sanitizeFileName(name: string): string {
+    const sanitized = name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    if (sanitized === '') {
+        throw new Error('Sanitized file name is empty');
+    }
+    if (sanitized.length > 100) {
+        throw new Error('Sanitized file name exceeds maximum length');
+    }
+    return sanitized;
+}

@@ -33,6 +33,7 @@ export default class MemoryStack extends Stack {
                 restrictPublicBuckets: false,
             }),
             removalPolicy: RemovalPolicy.DESTROY, // TODO: change to RETAIN for production
+            autoDeleteObjects: true,
             enforceSSL: true,
         });
         this.memoryBucket = bucket;
@@ -65,10 +66,10 @@ export default class MemoryStack extends Stack {
             exportName: Constants.memoryBucketNameOutputKey,
         });
 
-        // Lambda to generate presigned upload URL (admin only)
-        const presignLambda = new NodejsFunction(this, 'GeneratePresignedUploadUrlFunction', {
-            functionName: 'GeneratePresignedUploadUrl',
-            entry: path.join(__dirname, '..', 'lambda', 'Memory', 'PresignUpload.ts'),
+        // Unified memory lambda for presigned URLs, list management, and image deletions.
+        const memoryLambda = new NodejsFunction(this, 'MemoryFunction', {
+            functionName: 'Memory',
+            entry: path.join(__dirname, '..', 'lambda', 'Memory.ts'),
             handler: 'Handle',
             runtime: Lambda.Runtime.NODEJS_22_X,
             environment: {
@@ -77,47 +78,15 @@ export default class MemoryStack extends Stack {
             },
             bundling: { minify: true, sourceMap: true, target: 'node22' },
         });
-        bucket.grantPut(presignLambda);
+        bucket.grantRead(memoryLambda);
+        bucket.grantPut(memoryLambda);
+        bucket.grantDelete(memoryLambda);
 
-        // Expose API endpoint to request presigned URL (Cognito auth enabled by default)
-        const presignIntegration = new LambdaIntegration(presignLambda);
-        props.apiStack.addMethodOnResource('upload-url', 'POST', presignIntegration);
-
-        // Lambda to delete image (admin only)
-        const deleteImageLambda = new NodejsFunction(this, 'DeleteImageFunction', {
-            functionName: 'DeleteImage',
-            entry: path.join(__dirname, '..', 'lambda', 'Memory', 'DeleteImage.ts'),
-            handler: 'Handle',
-            runtime: Lambda.Runtime.NODEJS_22_X,
-            environment: {
-                BUCKET_NAME: bucket.bucketName,
-            },
-            bundling: { minify: true, sourceMap: true, target: 'node22' },
-        });
-        bucket.grantDelete(deleteImageLambda);
-
-        const deleteImageIntegration = new LambdaIntegration(deleteImageLambda);
-        props.apiStack.addMethodOnResource('image', 'DELETE', deleteImageIntegration);
-
-        // Lambda to Get Home Configuration (Public/Admin)
-        const manageLists = new NodejsFunction(this, 'manageListsFunction', {
-            functionName: 'ManageLists',
-            entry: path.join(__dirname, '..', 'lambda', 'Memory', 'ManageLists.ts'),
-            handler: 'Handle',
-            runtime: Lambda.Runtime.NODEJS_22_X,
-            environment: {
-                BUCKET_NAME: bucket.bucketName,
-                FILE_KEY: 'config/home-banners.json' 
-            },
-            bundling: { minify: true, sourceMap: true, target: 'node22' },
-        });
-        bucket.grantRead(manageLists);
-        bucket.grantPut(manageLists);
-        bucket.grantDelete(manageLists);
-
-        const manageListsIntegration = new LambdaIntegration(manageLists);
-        props.apiStack.addMethodOnResource('list', 'GET', manageListsIntegration, false);
-        props.apiStack.addMethodOnResource('list', 'PUT', manageListsIntegration, true);
-        props.apiStack.addMethodOnResource('list', 'DELETE', manageListsIntegration, true);
+        const memoryIntegration = new LambdaIntegration(memoryLambda);
+        props.apiStack.addMethodOnResource(Constants.genPresignedUrlResourceName, 'POST', memoryIntegration, true);
+        props.apiStack.addMethodOnResource(Constants.imageResourceName, 'DELETE', memoryIntegration, true);
+        props.apiStack.addMethodOnResource(Constants.listResourceName, 'GET', memoryIntegration, false);
+        props.apiStack.addMethodOnResource(Constants.listResourceName, 'PUT', memoryIntegration, true);
+        props.apiStack.addMethodOnResource(Constants.listResourceName, 'DELETE', memoryIntegration, true);
     }
 }
