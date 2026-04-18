@@ -1,4 +1,4 @@
-import React, { Suspense, useContext, useEffect } from 'react';
+import React, { Suspense, useContext, useEffect, useMemo } from 'react';
 import { createBrowserRouter, createRoutesFromElements, Outlet, Route, RouterProvider, useLoaderData } from 'react-router';
 import { Box, CircularProgress } from '@mui/material';
 
@@ -90,7 +90,7 @@ function NonAdminLayout() {
 }
 
 export default function AppLayout() {
-    const router = createBrowserRouter(createRoutesFromElements(
+    const router = useMemo(() => createBrowserRouter(createRoutesFromElements(
         <Route path="/" element={<PageEnclosure />} hydrateFallbackElement={<Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100dvh', width: "100vw"}}><CircularProgress /></Box>}>
             <Route element={<NonAdminLayout />}>
                 <Route index element={<Home />} />
@@ -123,7 +123,7 @@ export default function AppLayout() {
                 <Route path="faq" element={<FAQManagement />} />
             </Route>
         </Route>
-    ))
+    )), []);
 
     return (
         <RouterProvider router={router} />

@@ -97,7 +97,7 @@ const itemDetailsPanelContext = createContext<IItemDetailsPanelContextAPI | null
 export default function ProductDetailsPanel() {
 
     // Global API
-    const { selectedCollections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
+    const { selectedCollection } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
     const globalAPI = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const productService = ProductService.getInstance();
     const isMounted = useIsMounted();
@@ -159,7 +159,7 @@ export default function ProductDetailsPanel() {
     // Effects
     useEffect(() => {
         reloadProducts();
-    }, [selectedCollections, globalAPI]);
+    }, [selectedCollection, globalAPI]);
 
     // Private methods
     function handleProductFieldChange<K extends keyof IProductRecord>(productId: string, field: K, value: IProductRecord[K]) {
@@ -196,27 +196,14 @@ export default function ProductDetailsPanel() {
         }
     
         try {
-            const productRecords: EditableProduct[] = [];
-            const seen = new Set<string>(); // This is basically to avoid duplicate products when multiple collections are selected (should not happen according to our data model but just in case)
-            
-            // Batch requests to avoid hitting rate limits or browser connection limits
-            const BATCH_SIZE = 5;
-            for (let i = 0; i < selectedCollections.length; i += BATCH_SIZE) {
-                const batch = selectedCollections.slice(i, i + BATCH_SIZE);
-                const results = await Promise.all(batch.map((id) => productService.getProductsByCollectionId(id)));
-                
-                for (const arr of results) {
-                    for (const p of arr ?? []) {
-                        if (!seen.has(p.productId)) {
-                            seen.add(p.productId);
-                            productRecords.push({ ...p });
-                        }
-                    }
-                }
+            if (!selectedCollection) {
+                return;
             }
 
+            const results = await productService.getProductsByCollectionId(selectedCollection);
+            const productRecords: EditableProduct[] = (results ?? []).map(p => ({ ...p }));
+
             if (isMounted.current) {
-                // Set the products to view and select the first product by default
                 setProducts(productRecords);
                 if (productRecords.length > 0 && !selectedProductId) {
                     setSelectedProductId(productRecords[0].productId);
@@ -225,7 +212,7 @@ export default function ProductDetailsPanel() {
         }
         catch (error) {
             console.error("Failed to load products", error);
-            globalAPI.showMessage("Failed to load items for selected collections", ESnackbarMsgVariant.error);
+            globalAPI.showMessage("Failed to load items for selected collection", ESnackbarMsgVariant.error);
         }
         finally {
             if (isMounted) {
@@ -303,7 +290,7 @@ function Header() {
         >
             <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                 <Typography variant="h5">Product Details</Typography>
-                <Typography variant="body2" color="text.secondary">Product's are filtered by the collections selected.</Typography>
+                <Typography variant="body2" color="text.secondary">Product's are filtered by the collection selected.</Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Chip
@@ -332,7 +319,8 @@ const productDetailsContext = createContext<IProductDetailsContextAPI | null>(nu
 
 function ProductDetails() {
     return (
-        <productDetailsContext.Provider value={{ magicMinPaneHeight: "calc(100dvh - 350px)", magicMaxPaneHeight: "calc(100dvh - 350px)" }}>
+        // todo: figure out why these below magic numbers work 100% and 1px
+        <productDetailsContext.Provider value={{ magicMinPaneHeight: "100%", magicMaxPaneHeight: "1px" }}>
             <Box sx={{flex: "1 1 100%", display: "flex"}}>
                 <PanelGroup direction="horizontal">
                     <SelectProductPane />
@@ -363,20 +351,20 @@ function SelectProductToolbar() {
 
     // Global API
     const { productFilterText, setProductFilterText, setProducts, setSelectedProductId } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
-    const { selectedCollections, collections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
+    const { selectedCollection, collections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
     const globalAPI = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     
     // Handlers
     async function handleAddProduct() {
-        if (selectedCollections.length > 1) {
-            globalAPI.showMessage("Please select a single collection to add a new item", ESnackbarMsgVariant.warning);
+        if (!selectedCollection) {
+            globalAPI.showMessage("Please select a collection to add a new item", ESnackbarMsgVariant.warning);
             return;
         }
 
         const newProductId = `new-${crypto.randomUUID()}`;
         const newProduct: EditableProduct = {
             productId: newProductId,
-            collectionId: selectedCollections[0] || "",
+            collectionId: selectedCollection,
             name: "New Product",
             description: "",
             tags: [],
@@ -438,7 +426,6 @@ function SelectProductList() {
 
     // Global API
     const {magicMinPaneHeight, magicMaxPaneHeight} = React.useContext(productDetailsContext) as IProductDetailsContextAPI;
-    const { collections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
     const { isItemListLoading, productFilterText, filteredProducts, selectedProductId, setSelectedProductId, order, orderBy, setOrder, setOrderBy, handleProductFieldChange, setProducts, products, handleUndoProduct } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
 
     // Computed Properties
@@ -464,14 +451,6 @@ function SelectProductList() {
             >
                 <TableCell>
                     <TextField value={product.name} onChange={(e) => handleProductFieldChange(product.productId,"name", e.target.value)} variant="standard" size="small" disabled={isDeleted}/>
-                </TableCell>
-                <TableCell>
-                    <PickCollection currentCollectionId={product.collectionId} collections={collections}
-                        onCollectionPick={(collectionId: string) =>
-                            handleProductFieldChange(product.productId, "collectionId", collectionId)
-                        }
-                        disabled={isDeleted}
-                    />
                 </TableCell>
                 <TableCell>
                     <Box sx={{ display: "flex", gap: 1 }}>
@@ -544,7 +523,6 @@ function SelectProductList() {
                                         Name
                                     </TableSortLabel>
                                 </TableCell>
-                                <TableCell align="center">Collection</TableCell>
                                 <TableCell align="center">Actions</TableCell>
                             </TableRow>
                         </TableHead>
@@ -552,10 +530,10 @@ function SelectProductList() {
                             {rows}
                             {filteredProducts.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={3} align="center">
+                                <TableCell colSpan={2} align="center">
                                         {productFilterText.trim()
                                             ? "No items match the search"
-                                            : "No items for selected collections"}
+                                            : "No items for selected collection"}
                                 </TableCell>
                             </TableRow>
                             )}

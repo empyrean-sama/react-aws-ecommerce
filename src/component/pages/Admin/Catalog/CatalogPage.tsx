@@ -16,8 +16,8 @@ import ProductDetailsPanel from "./ProductDetailsPanel";
 export interface ICatalogPageContextAPI {
 	collections: ICollectionRecord[];
 
-	selectedCollections: string[];
-	setSelectedCollections: React.Dispatch<React.SetStateAction<string[]>>;
+	selectedCollection: string | null;
+	setSelectedCollection: React.Dispatch<React.SetStateAction<string | null>>;
 
 	isCollectionsPanelLoading: boolean;
 	setIsCollectionsPanelLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -43,7 +43,7 @@ export default function CatalogPage() {
 
 	// State variables
 	const [collections, setCollections] = useState<Array<ICollectionRecord>>([]);
-	const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+	const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
 	const [isCatalogPageLoading, setIsCatalogPageLoading] = useState<boolean>(true); //The use effect will set it to false after loading
 	const [isCollectionsPanelLoading, setIsCollectionsPanelLoading] = useState<boolean>(false);
 	const [isCollapsedPanelOpen, setIsCollapsedPanelOpen] = useState<boolean>(true);
@@ -92,8 +92,8 @@ export default function CatalogPage() {
 	return (
 		<catalogPageContext.Provider value={{
 			collections,
-			selectedCollections,
-			setSelectedCollections,
+			selectedCollection,
+			setSelectedCollection,
 			isCollectionsPanelLoading,
 			setIsCollectionsPanelLoading,
 			isCatalogPageLoading,

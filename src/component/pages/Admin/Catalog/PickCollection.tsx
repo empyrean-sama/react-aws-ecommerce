@@ -32,7 +32,7 @@ export default function PickCollection(props: IPickCollectionProps) {
   };
 
   return (
-    <FormControl sx={{ m: 1, minWidth: 120 }} size="small" disabled={props.disabled}>
+    <FormControl fullWidth size="small" disabled={props.disabled}>
       <InputLabel id="demo-select-small-label">Collection</InputLabel>
       <Select
         labelId="demo-select-small-label"

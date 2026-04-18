@@ -3,7 +3,7 @@ import { SortOrder } from "../../../../helper/SortHelper";
 import Fuse from 'fuse.js';
 
 import PanelShell from "./PanelShell";
-import { Chip, Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, Checkbox, Toolbar, IconButton, Tooltip, TextField, InputAdornment, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, FormControlLabel } from "@mui/material";
+import { Chip, Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel,Checkbox, Toolbar, IconButton, Tooltip, TextField, InputAdornment, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, FormControlLabel } from "@mui/material";
 
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -154,19 +154,22 @@ function Tools() {
     }
 
     async function handleDeleteSelectedCollections() {
-        if (!window.confirm(`Are you sure you want to delete ${catalogPageAPI.selectedCollections.length} collections?`)) {
+        if (!catalogPageAPI.selectedCollection) {
+            return;
+        }
+        if (!window.confirm(`Are you sure you want to delete this collection?`)) {
             return;
         }
         const productService = ProductService.getInstance();
         try {
             catalogPageAPI.setIsCollectionsPanelLoading(true);
-            await Promise.all(catalogPageAPI.selectedCollections.map(id => productService.deleteCollection(id)));
-            globalAPI.showMessage("Collections deleted successfully", ESnackbarMsgVariant.success);
-            catalogPageAPI.setSelectedCollections([]);
+            await productService.deleteCollection(catalogPageAPI.selectedCollection);
+            globalAPI.showMessage("Collection deleted successfully", ESnackbarMsgVariant.success);
+            catalogPageAPI.setSelectedCollection(null);
             await catalogPageAPI.reloadCollections();
         } catch (err) {
             console.error(err);
-            globalAPI.showMessage("Failed to delete collections", ESnackbarMsgVariant.error);
+            globalAPI.showMessage("Failed to delete collection", ESnackbarMsgVariant.error);
         } finally {
             catalogPageAPI.setIsCollectionsPanelLoading(false);
         }
@@ -193,14 +196,14 @@ function Tools() {
                     <AddIcon fontSize="small" />
                 </IconButton>
             </Tooltip>
-            <Tooltip title="Delete selected collections">
+            <Tooltip title="Delete selected collection">
                 <span>
                     <IconButton
                         size="small"
                         color="error"
                         aria-label="delete selected"
                         onClick={handleDeleteSelectedCollections}
-                        disabled={catalogPageAPI.selectedCollections.length === 0}
+                        disabled={!catalogPageAPI.selectedCollection}
                     >
                         <DeleteIcon fontSize="small" />
                     </IconButton>
@@ -245,27 +248,10 @@ function CollectionTable({magicMaxHeight, magicMinHeight}: {magicMaxHeight: stri
     }, [filteredCollections, order, orderBy]);
     
     // Handlers
-    async function handleCollectionClicked(collectionId: string) {
-        const selectedIndex = catalogPageAPI.selectedCollections.indexOf(collectionId);
-        let newSelected: string[] = [];
-
-        if (selectedIndex === -1) {
-            // The index is not in the selected list, add it
-            newSelected = newSelected.concat(catalogPageAPI.selectedCollections, collectionId);
-        } else if (selectedIndex === 0) {
-            // The first item is selected, remove it
-            newSelected = newSelected.concat(catalogPageAPI.selectedCollections.slice(1));
-        } else if (selectedIndex === catalogPageAPI.selectedCollections.length - 1) {
-            // The last item is selected, remove it
-            newSelected = newSelected.concat(catalogPageAPI.selectedCollections.slice(0, -1));
-        } else if (selectedIndex > 0) {
-            // The item is in the middle, remove it
-            newSelected = newSelected.concat(
-                catalogPageAPI.selectedCollections.slice(0, selectedIndex),
-                catalogPageAPI.selectedCollections.slice(selectedIndex + 1),
-            );
-        }
-        catalogPageAPI.setSelectedCollections(newSelected);
+    function handleCollectionClicked(collectionId: string) {
+        catalogPageAPI.setSelectedCollection(
+            catalogPageAPI.selectedCollection === collectionId ? null : collectionId
+        );
     }
 
     async function handleToggleFavouriteCollection(e: React.MouseEvent, collection: ICollectionRecord) {
@@ -305,7 +291,7 @@ function CollectionTable({magicMaxHeight, magicMinHeight}: {magicMaxHeight: stri
 
     // Helpers
     function isSelected(collectionId: string): boolean {
-        return catalogPageAPI.selectedCollections.indexOf(collectionId) !== -1;
+        return catalogPageAPI.selectedCollection === collectionId;
     }
     
     const Rows = filteredSortedCollectionRecords.map((row) => {
@@ -315,19 +301,11 @@ function CollectionTable({magicMaxHeight, magicMinHeight}: {magicMaxHeight: stri
             <TableRow 
                 hover
                 onClick={() => handleCollectionClicked(row.collectionId)}
-                role="checkbox"
-                aria-checked={isItemSelected}
                 tabIndex={-1}
                 key={row.collectionId}
                 selected={isItemSelected}
+                sx={{ cursor: 'pointer' }}
             >
-                <TableCell padding="checkbox">
-                    <Checkbox
-                        color="primary"
-                        checked={isItemSelected}
-                        slotProps={{input: {"aria-labelledby": labelId}}}
-                    />
-                </TableCell>
                 <TableCell sx={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", width: "100%" }} component="th" id={labelId} scope="row">
                     {row.name}
                 </TableCell>
@@ -348,16 +326,6 @@ function CollectionTable({magicMaxHeight, magicMinHeight}: {magicMaxHeight: stri
     });
 
     // Handlers
-    function handleSelectAllCollectionsClick(event: React.ChangeEvent<HTMLInputElement>) {
-        if (event.target.checked) {
-            const newSelects = filteredCollections.map((n) => n.collectionId);
-            catalogPageAPI.setSelectedCollections(newSelects);
-        }
-        else {
-            catalogPageAPI.setSelectedCollections([]);
-        }
-    }
-
     function handleRequestSort(property: keyof ICollectionRecord) {
         const isAsc = orderBy === property && order === 'asc';
         setOrder(isAsc ? 'desc' : 'asc');
@@ -369,15 +337,6 @@ function CollectionTable({magicMaxHeight, magicMinHeight}: {magicMaxHeight: stri
             <Table size="small" stickyHeader aria-label="sticky table">
                 <TableHead>
                     <TableRow>
-                        <TableCell padding="checkbox">
-                            <Checkbox
-                                color="primary"
-                                indeterminate={catalogPageAPI.selectedCollections.length > 0 && catalogPageAPI.selectedCollections.length < filteredCollections.length}
-                                checked={filteredCollections.length > 0 && catalogPageAPI.selectedCollections.length === filteredCollections.length}
-                                onChange={handleSelectAllCollectionsClick}
-                                slotProps={{input: {"aria-label": "select all collections"}}}
-                            />
-                        </TableCell>
                         <TableCell sortDirection={orderBy === "name" ? order : false}>
                             <TableSortLabel
                                 active={orderBy === "name"}
