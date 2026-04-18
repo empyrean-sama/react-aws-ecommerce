@@ -78,4 +78,21 @@ export default interface IAppGlobalStateContextAPI {
      * Updates the cart (patches entries)
      */
     updateCart: (cartEntry: ICartEntry) => Promise<void>;
+
+    /**
+     * Whether the global loading screen is visible
+     */
+    isLoading: boolean;
+
+    /**
+     * Show or hide the global loading screen.
+     * Internally backed by a counter: passing true increments, false decrements.
+     * The loading screen is shown when the counter is above zero.
+     */
+    setIsLoading: (loading: boolean) => void;
+
+    /**
+     * Returns whether the app is currently in a loading state (counter > 0).
+     */
+    getIsLoading: () => boolean;
 }

@@ -98,7 +98,7 @@ export default function Checkout() {
     const productService = ProductService.getInstance();
     const profileService = ProfileService.getInstance();
 
-    const { getLoggedInDetails, authService, setCart, showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { getLoggedInDetails, authService, setCart, showMessage, setIsLoading: setGlobalLoading } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
@@ -121,6 +121,7 @@ export default function Checkout() {
         (async function bootstrapCheckout() {
             try {
                 setIsLoading(true);
+                setGlobalLoading(true);
 
                 const nextItems: ICheckoutDisplayItem[] = [];
 
@@ -212,6 +213,7 @@ export default function Checkout() {
                     showMessage(error?.message || 'Unable to load checkout', ESnackbarMsgVariant.error);
                 }
             } finally {
+                setGlobalLoading(false);
                 if (isMounted) {
                     setIsLoading(false);
                 }
@@ -430,11 +432,7 @@ export default function Checkout() {
     );
 
     if (isLoading) {
-        return (
-            <Box sx={{ width: '100%', minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CircularProgress />
-            </Box>
-        );
+        return null;
     }
 
     return (

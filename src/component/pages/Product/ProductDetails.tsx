@@ -8,7 +8,6 @@ import {
     Button,
     ButtonBase,
     Chip,
-    CircularProgress,
     Container,
     IconButton,
     MenuItem,
@@ -162,7 +161,7 @@ export default function ProductDetails() {
     const navigateTo = useNavigate();
     const productService = ProductService.getInstance();
 
-    const { showMessage, cartState, setCart, getLoggedInDetails } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { showMessage, cartState, setCart, getLoggedInDetails, setIsLoading: setGlobalLoading } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [product, setProduct] = React.useState<IProductRecord | null>(null);
@@ -213,6 +212,7 @@ export default function ProductDetails() {
         (async function loadProduct() {
             try {
                 setIsLoading(true);
+                setGlobalLoading(true);
 
                 if (!collectionSlug || !productSlug) {
                     if (isMounted) {
@@ -265,6 +265,7 @@ export default function ProductDetails() {
                     showMessage('Unable to load product details right now', ESnackbarMsgVariant.error);
                 }
             } finally {
+                setGlobalLoading(false);
                 if (isMounted) {
                     setIsLoading(false);
                 }
@@ -484,11 +485,7 @@ export default function ProductDetails() {
     }
 
     if (isLoading) {
-        return (
-            <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
-                <CircularProgress />
-            </Box>
-        );
+        return null;
     }
 
     if (!product) {

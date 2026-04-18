@@ -1,15 +1,21 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Box } from "@mui/material";
 import { Outlet } from "react-router";
 
 import Nav from "../Nav/Nav";
 import AppDrawer from "../Nav/AppDrawer";
 import Constants from "../../Constants";
+import GlobalLoadingScreen from "../ui/GlobalLoadingScreen";
+import { appGlobalStateContext } from "../App/AppGlobalStateProvider";
+import IAppGlobalStateContextAPI from "../../interface/IAppGlobalStateContextAPI";
 
 export default function PageEnclosure() {
     const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+    const { isLoading } = useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+
     return (
         <Box component="main" sx={{transition: ".3s transform ease-in-out", overflowX: "hidden", willChange: isDrawerOpen ? "transform" : "auto"}}>
+            <GlobalLoadingScreen isLoading={isLoading} />
             <AppDrawer isDrawerOpen={isDrawerOpen} setIsDrawerOpen={setIsDrawerOpen}>
                 
             </AppDrawer>

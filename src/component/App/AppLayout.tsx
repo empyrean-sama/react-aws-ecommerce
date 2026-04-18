@@ -1,14 +1,26 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useContext, useEffect } from 'react';
 import { createBrowserRouter, createRoutesFromElements, Outlet, Route, RouterProvider, useLoaderData } from 'react-router';
 import { Box, CircularProgress } from '@mui/material';
 
 import PageEnclosure from '../pages/PageEnclosure';
 import SiteFooter from '../ui/SiteFooter';
 import AuthService from "../../service/AuthService";
+import { appGlobalStateContext } from './AppGlobalStateProvider';
+import IAppGlobalStateContextAPI from '../../interface/IAppGlobalStateContextAPI';
+
+// Bridge component: sets global loading state while Suspense fallback is shown
+function SuspenseLoadingBridge() {
+    const globalState = useContext(appGlobalStateContext);
+    useEffect(() => {
+        globalState?.setIsLoading(true);
+        return () => { globalState?.setIsLoading(false); };
+    }, []);
+    return null;
+}
 
 // Helper to wrap Lazy components in Suspense
 const Loadable = (Component: React.LazyExoticComponent<any>) => (props: any) => (
-    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100dvh', width: "100dvw" }}><CircularProgress /></Box>}>
+    <Suspense fallback={<SuspenseLoadingBridge />}>
         <Component {...props} />
     </Suspense>
 );

@@ -29,7 +29,7 @@ export default function Cart() {
     const productService = ProductService.getInstance();
     const authService = AuthService.getInstance();
     const navigate = useNavigate();
-    const { showMessage, refreshCart, cartState } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { showMessage, refreshCart, cartState, setIsLoading: setGlobalLoading } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     // State variables
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
@@ -37,6 +37,7 @@ export default function Cart() {
     // Effects
     React.useEffect(() => {
         let isMounted = true;
+        setGlobalLoading(true);
         (async () => {
             try {
                 setIsLoading(true);
@@ -47,6 +48,7 @@ export default function Cart() {
                 showMessage("Failed to load cart items", ESnackbarMsgVariant.error);
             }
             finally {
+                setGlobalLoading(false);
                 if(isMounted) {
                     setIsLoading(false);
                 }
@@ -62,29 +64,15 @@ export default function Cart() {
     
     return (
         <cartPageContext.Provider value={{ isLoading, setIsLoading }}>
-            <LoadingEnclosure isLoading={isLoading}>
-                <Container maxWidth="xl" sx={{ pt: 4, px: { xs: 0, md: 4} }}>
-                    <CartHeader />
-                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 4 }, alignItems: 'flex-start' }}>
-                        <CartItemViewerPanel />
-                        <CartSummaryPanel />
-                    </Box>
-                </Container>
-            </LoadingEnclosure>
+            <Container maxWidth="xl" sx={{ pt: 4, px: { xs: 0, md: 4} }}>
+                <CartHeader />
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 4 }, alignItems: 'flex-start' }}>
+                    <CartItemViewerPanel />
+                    <CartSummaryPanel />
+                </Box>
+            </Container>
         </cartPageContext.Provider>
     );
-}
-
-function LoadingEnclosure(props: { isLoading: boolean, children?: React.ReactNode }) {
-    if (props.isLoading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100%' }}>
-                <CircularProgress />
-            </Box>
-        );
-    } else {
-        return <>{props.children}</>;
-    }
 }
 
 function CartHeader() {

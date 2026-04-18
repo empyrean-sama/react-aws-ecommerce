@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ProductService from "../../../../service/ProductService";
@@ -46,7 +46,7 @@ export default function OrderDetails() {
     const userId = searchParams.get("userId") || "";
     const createdAt = searchParams.get("createdAt") || "";
     const productService = ProductService.getInstance();
-    const { showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { showMessage, setIsLoading: setGlobalLoading } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     const [order, setOrder] = React.useState<IOrderRecord | null>(null);
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
@@ -63,6 +63,7 @@ export default function OrderDetails() {
 
             try {
                 setIsLoading(true);
+                setGlobalLoading(true);
                 let matchedOrder: IOrderRecord | null = null;
                 let nextToken: string | null = null;
 
@@ -89,16 +90,13 @@ export default function OrderDetails() {
                 setOrder(null);
             } finally {
                 setIsLoading(false);
+                setGlobalLoading(false);
             }
         })();
     }, [userId, createdAt]);
 
     if (isLoading) {
-        return (
-            <Box sx={{ width: "100%", display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
-            </Box>
-        );
+        return null;
     }
 
     if (!order) {

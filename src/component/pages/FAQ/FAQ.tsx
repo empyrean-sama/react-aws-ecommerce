@@ -5,7 +5,6 @@ import {
     AccordionDetails,
     AccordionSummary,
     Box,
-    CircularProgress,
     Container,
     Divider,
     InputAdornment,
@@ -17,6 +16,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SearchIcon from '@mui/icons-material/Search';
 import UtilityService from '../../../service/UtilityService';
 import Constants from '../../../Constants';
+import { appGlobalStateContext } from '../../App/AppGlobalStateProvider';
+import IAppGlobalStateContextAPI from '../../../interface/IAppGlobalStateContextAPI';
 
 interface IFAQItem {
     heading: string;
@@ -25,13 +26,14 @@ interface IFAQItem {
 
 export default function FAQ() {
     const utilityService = UtilityService.getInstance();
+    const { setIsLoading, getIsLoading } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     const [items, setItems] = React.useState<IFAQItem[]>([]);
-    const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [search, setSearch] = React.useState<string>('');
     const [expanded, setExpanded] = React.useState<number | false>(false);
 
     React.useEffect(() => {
+        setIsLoading(true);
         (async () => {
             try {
                 const data = await utilityService.getList(Constants.FAQ_LIST_KEY);
@@ -70,11 +72,7 @@ export default function FAQ() {
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
 
-                {isLoading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                        <CircularProgress />
-                    </Box>
-                ) : items.length === 0 ? (
+                {getIsLoading() ? null : items.length === 0 ? (
                     <Typography color="text.secondary">
                         Nothing here yet — check back soon!
                     </Typography>

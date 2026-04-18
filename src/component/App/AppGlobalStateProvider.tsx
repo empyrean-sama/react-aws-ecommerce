@@ -23,6 +23,25 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
     const [favouriteCollections, setFavouriteCollections] = React.useState<ICollectionRecord[]>([]);     
     const lastAdjustedCartSignature = React.useRef<string>('');
     const [cartState, setCartState] = React.useState<IAppGlobalCartState>({cartEntryRecord: null, productIdToProductRecordMap: {}, productIdToVariantsRecordMap: {}});
+    const loadingCounter = React.useRef<number>(0);
+    const [isLoading, setIsLoadingState] = React.useState<boolean>(false);
+
+    function setIsLoading(loading: boolean) {
+        if (loading) {
+            loadingCounter.current += 1;
+        } else {
+            if (loadingCounter.current <= 0) {
+                console.warn('Global loading counter tried to go below zero. This likely indicates a mismatched setIsLoading(true)/setIsLoading(false) pair.');
+            } else {
+                loadingCounter.current -= 1;
+            }
+        }
+        setIsLoadingState(loadingCounter.current > 0);
+    }
+
+    function getIsLoading(): boolean {
+        return loadingCounter.current > 0;
+    }
     
     // Effects
     useEffect(() => {
@@ -156,7 +175,7 @@ export default function AppGlobalStateProvider({ children }: { children: React.R
     const cartItemCount = cartState.cartEntryRecord?.products?.reduce((total, item) => total + (item.quantity || 0), 0) ?? 0;
 
     return (
-        <appGlobalStateContext.Provider value={{ authService, showMessage, getLoggedInDetails, setLoggedInDetails, refreshLoggedInDetails, logout, favouriteCollections, refreshFavouriteCollections, cartState, cartItemCount, refreshCart, setCart: setCartItems, updateCart: updateCartItems }}>
+        <appGlobalStateContext.Provider value={{ authService, showMessage, getLoggedInDetails, setLoggedInDetails, refreshLoggedInDetails, logout, favouriteCollections, refreshFavouriteCollections, cartState, cartItemCount, refreshCart, setCart: setCartItems, updateCart: updateCartItems, isLoading, setIsLoading, getIsLoading }}>
             {children}
         </appGlobalStateContext.Provider>
     );

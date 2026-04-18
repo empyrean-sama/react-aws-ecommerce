@@ -3,7 +3,7 @@ import ProductService from "../../../../service/ProductService";
 import { appGlobalStateContext } from "../../../App/AppGlobalStateProvider";
 
 import CollectionsPanel from "./CollectionsPanel";
-import { Box, Collapse, CircularProgress, IconButton, Tooltip } from "@mui/material";
+import { Box, Collapse, IconButton, Tooltip } from "@mui/material";
 
 import IAppGlobalStateContextAPI from "../../../../interface/IAppGlobalStateContextAPI";
 import ICollectionRecord from "../../../../interface/product/ICollectionRecord";
@@ -59,13 +59,14 @@ export default function CatalogPage() {
 			console.error("Failed to load collections", error);
 			globalAPI.showMessage("Failed to load collections", ESnackbarMsgVariant.error);
 		} finally {
-			setIsCollectionsPanelLoading(true);
+			setIsCollectionsPanelLoading(false);
 		}
 	}
 
 	// Effects
 	useEffect(() => {
 		let isMounted = true;
+		globalAPI.setIsLoading(true);
 		(async function() {
 			try {
 				const result = await productService.listCollections();
@@ -76,6 +77,7 @@ export default function CatalogPage() {
 				console.error("Failed to load collections", error);
 				globalAPI.showMessage("Failed to load collections", ESnackbarMsgVariant.error);
 			} finally {
+				globalAPI.setIsLoading(false);
 				if (isMounted) {
 					setIsCatalogPageLoading(false);
 				}
@@ -128,9 +130,7 @@ function CatalogPageEnclosure({isCatalogPageLoading, children}: PropsWithChildre
 			</Box>
 		);
 	}
-	return(
-		<CircularProgress />
-	);
+	return null;
 }
 
 function CollapsedPanelButton(props: {isCollectionsPanelOpen: boolean, setIsCollectionsPanelOpen: React.Dispatch<React.SetStateAction<boolean>>}) {

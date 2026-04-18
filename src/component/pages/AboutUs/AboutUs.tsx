@@ -1,7 +1,9 @@
 import React from 'react';
-import { Box, CircularProgress, Container, Divider, Paper, Typography, useTheme } from '@mui/material';
+import { Box, Container, Divider, Paper, Typography, useTheme } from '@mui/material';
 import UtilityService from '../../../service/UtilityService';
 import Constants from '../../../Constants';
+import { appGlobalStateContext } from '../../App/AppGlobalStateProvider';
+import IAppGlobalStateContextAPI from '../../../interface/IAppGlobalStateContextAPI';
 
 interface IAboutUsSection {
     heading: string;
@@ -11,11 +13,12 @@ interface IAboutUsSection {
 export default function AboutUs() {
     const utilityService = UtilityService.getInstance();
     const theme = useTheme();
+    const { setIsLoading, getIsLoading } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     const [sections, setSections] = React.useState<IAboutUsSection[]>([]);
-    const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
     React.useEffect(() => {
+        setIsLoading(true);
         (async () => {
             try {
                 const data = await utilityService.getList(Constants.ABOUT_US_LIST_KEY);
@@ -34,11 +37,7 @@ export default function AboutUs() {
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
 
-                {isLoading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                        <CircularProgress />
-                    </Box>
-                ) : sections.length === 0 ? (
+                {getIsLoading() ? null : sections.length === 0 ? (
                     <Typography color="text.secondary">
                         Nothing here yet — check back soon!
                     </Typography>

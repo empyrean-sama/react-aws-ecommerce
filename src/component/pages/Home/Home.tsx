@@ -138,7 +138,7 @@ export default function Home() {
     const [isCarouselLoading, setIsCarouselLoading] = React.useState<boolean>(true);
     
     // Global API & Services
-    const { showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { showMessage, setIsLoading: setGlobalLoading } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     const productService = ProductService.getInstance();
     const utilityService = UtilityService.getInstance();
     const navigateTo = useNavigate();
@@ -154,6 +154,7 @@ export default function Home() {
         (async function loadInitialHomeData() {
             try {
                 setIsLoading(true);
+                setGlobalLoading(true);
                 const data = await loadHomeData(productService);
                 if (isMounted) {
                     setFeaturedProducts(data.featuredProducts);
@@ -173,6 +174,7 @@ export default function Home() {
                     showMessage('An unknown error occurred while loading home products', ESnackbarMsgVariant.error);
                 }
             } finally {
+                setGlobalLoading(false);
                 if (isMounted) {
                     setIsLoading(false);
                 }
@@ -219,7 +221,7 @@ export default function Home() {
             />
 
             <Container maxWidth="xl" sx={{ marginY: isNotMobile ? 6 : 4 }}>
-                <LoadingEnclosure isLoading={isLoading}>
+                {!isLoading && (
                     <Box sx={{ display: "flex", flexDirection: "column", rowGap: 6, width: '100%' }}>
                         <ProductRack
                             label="Featured Products"
@@ -252,7 +254,7 @@ export default function Home() {
                             />
                         ))}
                     </Box>
-                </LoadingEnclosure>
+                )}
             </Container>
         </Box>
     );
@@ -428,21 +430,4 @@ function RackLoadingPlaceholder() {
             ))}
         </Box>
     );
-}
-
-function LoadingEnclosure(props: { isLoading: boolean; children?: React.ReactNode }) {
-    if(props.isLoading) {
-        return (
-            <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
-    else {
-        return (
-            <>
-                {props.children}
-            </>
-        );
-    }
 }

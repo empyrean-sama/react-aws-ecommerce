@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router';
 import {
     Box,
     Checkbox,
-    CircularProgress,
     Container,
     ListItemText,
     MenuItem,
@@ -38,7 +37,7 @@ function getDefaultPrice(variants: IProductVariantRecord[], product: IProductRec
 export default function Results() {
     const [searchParams] = useSearchParams();
     const productService = ProductService.getInstance();
-    const { showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { showMessage, setIsLoading: setGlobalLoading } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [label, setLabel] = React.useState<string>('Results');
@@ -60,6 +59,7 @@ export default function Results() {
         (async function loadResults() {
             try {
                 setIsLoading(true);
+                setGlobalLoading(true);
 
                 let products: IProductRecord[] = [];
                 let computedLabel = 'Results';
@@ -135,6 +135,7 @@ export default function Results() {
                     showMessage('Unable to load results right now', ESnackbarMsgVariant.error);
                 }
             } finally {
+                setGlobalLoading(false);
                 if (isMounted) {
                     setIsLoading(false);
                 }
@@ -203,11 +204,7 @@ export default function Results() {
     }, [items, selectedTags, priceRange, sortBy]);
 
     if (isLoading) {
-        return (
-            <Box sx={{ width: '100%', minHeight: '60vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <CircularProgress />
-            </Box>
-        );
+        return null;
     }
 
     return (

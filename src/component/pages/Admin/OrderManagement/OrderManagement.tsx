@@ -10,7 +10,6 @@ import { useNavigate } from "react-router";
 import {
     Box,
     Button,
-    CircularProgress,
     FormControl,
     IconButton,
     MenuItem,
@@ -53,7 +52,7 @@ function formatDate(timestamp: number): string {
 export default function OrderManagement() {
     const navigateTo = useNavigate();
     const productService = ProductService.getInstance();
-    const { showMessage } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
+    const { showMessage, setIsLoading: setGlobalLoading } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
 
     const [orders, setOrders] = React.useState<IOrderRecord[]>([]);
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
@@ -70,6 +69,7 @@ export default function OrderManagement() {
     async function loadOrdersPage(page: number, startToken: string | null): Promise<void> {
         try {
             setIsLoading(true);
+            setGlobalLoading(true);
             const pagedOrders = await productService.getAdminOrdersPage({
                 limit: ORDERS_PAGE_SIZE,
                 nextToken: startToken,
@@ -85,6 +85,7 @@ export default function OrderManagement() {
             showMessage(error?.message || "Failed to load orders", ESnackbarMsgVariant.error);
         } finally {
             setIsLoading(false);
+            setGlobalLoading(false);
         }
     }
 
@@ -172,11 +173,7 @@ export default function OrderManagement() {
     }, []);
 
     if (isLoading) {
-        return (
-            <Box sx={{ width: "100%", display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
-            </Box>
-        );
+        return null;
     }
 
     return (
