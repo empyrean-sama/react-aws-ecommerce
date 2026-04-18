@@ -37,6 +37,8 @@ const PagePicker = Loadable(React.lazy(() => import('../pages/Admin/PagePicker')
 const PromotionManagement = Loadable(React.lazy(() => import('../pages/Admin/PromotionManagement/PromotionManagement')));
 const OrderManagement = Loadable(React.lazy(() => import('../pages/Admin/OrderManagement/OrderManagement')));
 const OrderDetails = Loadable(React.lazy(() => import('../pages/Admin/OrderManagement/OrderDetails')));
+const AboutUsManagement = Loadable(React.lazy(() => import('../pages/Admin/AboutUsManagement/AboutUsManagement')));
+const AboutUs = Loadable(React.lazy(() => import('../pages/AboutUs/AboutUs')));
 
 type AdminLoaderResult = { allowed: boolean };
 
@@ -83,6 +85,7 @@ export default function AppLayout() {
                 <Route path="cart" element={<Cart />} />
                 <Route path="checkout" element={<Checkout />} />
                 <Route path="order-placed" element={<OrderPlaced />} />
+                <Route path="about" element={<AboutUs />} />
                 <Route path="account" element={<AccountOutlet />}>
                     <Route index element={<Account />} />
                     <Route path="login" element={<Login />} />
@@ -101,6 +104,7 @@ export default function AppLayout() {
                 <Route path="promotions" element={<PromotionManagement />} />
                 <Route path="orders" element={<OrderManagement />} />
                 <Route path="orders/details" element={<OrderDetails />} />
+                <Route path="about" element={<AboutUsManagement />} />
             </Route>
         </Route>
     ))

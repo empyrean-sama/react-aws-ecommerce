@@ -49,6 +49,11 @@ export default function PagePicker() {
                     handleAction={() => navigateTo("/admin/orders")}
                 />
                 <PagePickerCard
+                    heading="About Us Management"
+                    description="Edit the subheadings and paragraphs that appear on the public About Us page."
+                    handleAction={() => navigateTo("/admin/about")}
+                />
+                <PagePickerCard
                     heading="Regenerate Search Indices"
                     description="Rebuild the product search JSON in S3 from all products so clients get the latest searchable names and images."
                     handleAction={() => setIsRegenerateDialogOpen(true)}
