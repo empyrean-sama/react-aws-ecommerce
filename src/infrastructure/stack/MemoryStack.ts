@@ -68,13 +68,12 @@ export default class MemoryStack extends Stack {
 
         // Unified memory lambda for presigned URLs, list management, and image deletions.
         const memoryLambda = new NodejsFunction(this, 'MemoryFunction', {
-            functionName: 'Memory',
             entry: path.join(__dirname, '..', 'lambda', 'Memory.ts'),
             handler: 'Handle',
             runtime: Lambda.Runtime.NODEJS_22_X,
             environment: {
                 BUCKET_NAME: bucket.bucketName,
-                MAX_IMAGE_BYTES: String(ProjectConstants.IMAGE_UPLOAD_MAX_BYTES),
+                MAX_IMAGE_BYTES: String(ProjectConstants.PRODUCT_IMAGE_MAX_BYTES),
             },
             bundling: { minify: true, sourceMap: true, target: 'node22' },
         });

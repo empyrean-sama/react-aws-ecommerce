@@ -1,12 +1,12 @@
 {
   "ReactAwsEcommerce-AuthStack": {
-    "ExportsOutputFnGetAttReactAwsEcommerceUserPool179A9025ArnF027E14B": "arn:aws:cognito-idp:ap-south-1:410772458210:userpool/ap-south-1_xKacEBMOZ",
-    "UserPoolClientId": "5jdmugbo9vbgrt4dmmsapjem99",
-    "UserPoolId": "ap-south-1_xKacEBMOZ",
+    "ExportsOutputFnGetAttReactAwsEcommerceUserPool179A9025ArnF027E14B": "arn:aws:cognito-idp:ap-south-1:410772458210:userpool/ap-south-1_tLkoAtD6H",
+    "UserPoolClientId": "3ei7pbc23jkat1ei5f43ibi7p3",
+    "UserPoolId": "ap-south-1_tLkoAtD6H",
     "UserPoolHostedUiDomain": "https://reactecommerce-auth-410772458210-ap-south-1-c8902df3.auth.ap-south-1.amazoncognito.com",
     "GoogleFederationEnabled": "true",
     "ExportsOutputFnGetAttReactAwsEcommerceCartTableD53448BFArnCD6CF99C": "arn:aws:dynamodb:ap-south-1:410772458210:table/ReactAwsEcommerce-cart",
-    "ExportsOutputRefReactAwsEcommerceUserPoolReactAwsEcommerceUserPoolClient2598305C2BEB1BB0": "5jdmugbo9vbgrt4dmmsapjem99",
+    "ExportsOutputRefReactAwsEcommerceUserPoolReactAwsEcommerceUserPoolClient2598305C2BEB1BB0": "3ei7pbc23jkat1ei5f43ibi7p3",
     "ExportsOutputRefReactAwsEcommerceCartTableD53448BF38B0A106": "ReactAwsEcommerce-cart"
   },
   "ReactAwsEcommerce-ProfileStack": {
@@ -14,10 +14,10 @@
     "ExportsOutputFnGetAttAutofillAddressFunction0ED0815FArnB5C9F1C1": "arn:aws:lambda:ap-south-1:410772458210:function:AutofillAddressFunction"
   },
   "ReactAwsEcommerce-MemoryStack": {
-    "ExportsOutputFnGetAttPublicReadMemoryBucket9749DB2CArn60CBA008": "arn:aws:s3:::reactawsecommerce-memorys-publicreadmemorybucket97-zwnmoqbsahyq",
-    "ExportsOutputRefPublicReadMemoryBucket9749DB2C9FD503BD": "reactawsecommerce-memorys-publicreadmemorybucket97-zwnmoqbsahyq",
-    "ExportsOutputFnGetAttMemoryFunctionA49C2AC5Arn152C7C88": "arn:aws:lambda:ap-south-1:410772458210:function:Memory",
-    "ReactAwsEcommerceMemoryBucketName": "reactawsecommerce-memorys-publicreadmemorybucket97-zwnmoqbsahyq"
+    "ExportsOutputFnGetAttPublicReadMemoryBucket9749DB2CArn60CBA008": "arn:aws:s3:::reactawsecommerce-memorys-publicreadmemorybucket97-zrzspephqxgf",
+    "ExportsOutputRefPublicReadMemoryBucket9749DB2C9FD503BD": "reactawsecommerce-memorys-publicreadmemorybucket97-zrzspephqxgf",
+    "ExportsOutputFnGetAttMemoryFunctionA49C2AC5Arn152C7C88": "arn:aws:lambda:ap-south-1:410772458210:function:ReactAwsEcommerce-MemorySta-MemoryFunctionA49C2AC5-ZYRoyAlYEhzo",
+    "ReactAwsEcommerceMemoryBucketName": "reactawsecommerce-memorys-publicreadmemorybucket97-zrzspephqxgf"
   },
   "ReactAwsEcommerce-ProductStack": {
     "ExportsOutputFnGetAttProductCollectionFunctionA7F7037CArn3C2BFDA2": "arn:aws:lambda:ap-south-1:410772458210:function:ProductCollectionFunction",
@@ -34,7 +34,7 @@
     "ExportsOutputFnGetAttVerifyPasswordFunction13C3FFA7Arn5EFBD3A1": "arn:aws:lambda:ap-south-1:410772458210:function:VerifyPasswordFunction"
   },
   "ReactAwsEcommerce-APIStack": {
-    "ReactAwsEcommerceRestAPIGatewayEndpointE2AAA6E0": "https://o31xccg612.execute-api.ap-south-1.amazonaws.com/prod/",
-    "APIStackEndpoint": "https://o31xccg612.execute-api.ap-south-1.amazonaws.com/prod/"
+    "ReactAwsEcommerceRestAPIGatewayEndpointE2AAA6E0": "https://kktbbls407.execute-api.ap-south-1.amazonaws.com/prod/",
+    "APIStackEndpoint": "https://kktbbls407.execute-api.ap-south-1.amazonaws.com/prod/"
   }
 }

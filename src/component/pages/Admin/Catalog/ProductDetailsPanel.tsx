@@ -21,8 +21,10 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 
 import CryptoJS from 'crypto-js';
+import imageCompression from 'browser-image-compression';
 import OutputParser from "../../../../service/OutputParser";
 import Constants from "../../../../infrastructure/InfrastructureConstants";
+import ProjectConstants from "../../../../Constants";
 
 import sort, { SortOrder } from "../../../../helper/SortHelper";
 import { catalogPageContext, ICatalogPageContextAPI } from "./CatalogPage";
@@ -361,7 +363,7 @@ function SelectProductToolbar() {
 
     // Global API
     const { productFilterText, setProductFilterText, setProducts, setSelectedProductId } = React.useContext(itemDetailsPanelContext) as IItemDetailsPanelContextAPI;
-    const { selectedCollections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
+    const { selectedCollections, collections } = React.useContext(catalogPageContext) as ICatalogPageContextAPI;
     const globalAPI = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
     
     // Handlers
@@ -415,15 +417,18 @@ function SelectProductToolbar() {
                     },
                 }}
             />
-            <Tooltip title="Add new item">
-                <IconButton
-                    size="small"
-                    color="primary"
-                    aria-label="add item"
-                    onClick={handleAddProduct}
-                >
-                    <AddIcon fontSize="small" />
-                </IconButton>
+            <Tooltip title={collections.length === 0 ? "Create a collection first" : "Add new item"}>
+                <span>
+                    <IconButton
+                        size="small"
+                        color="primary"
+                        aria-label="add item"
+                        onClick={handleAddProduct}
+                        disabled={collections.length === 0}
+                    >
+                        <AddIcon fontSize="small" />
+                    </IconButton>
+                </span>
             </Tooltip>
         </Toolbar>
     )
@@ -1018,35 +1023,167 @@ function ProductInspectorImageTab() {
 
     const imageUrls = selectedProduct.imageUrls || [];
 
+    async function optimizeToWebp(file: File): Promise<File> {
+        const baseName = file.name.replace(/\.[^/.]+$/, '');
+        const maxSizeMB = ProjectConstants.PRODUCT_IMAGE_MAX_BYTES / (1024 * 1024);
+
+        const compressed = await imageCompression(file, {
+            maxSizeMB: maxSizeMB,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+            initialQuality: 0.85,
+            fileType: 'image/webp',
+        });
+
+        const webpFile = new File([compressed], `${baseName}.webp`, { type: 'image/webp' });
+        if (webpFile.size > ProjectConstants.PRODUCT_IMAGE_MAX_BYTES) {
+            throw new Error(`\"${file.name}\" cannot be compressed to ${ProjectConstants.PRODUCT_IMAGE_MAX_BYTES / 1024}KB. Please replace it with a smaller image.`);
+        }
+
+        return webpFile;
+    }
+
     async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
-        const file = event.target.files?.[0];
-        if (!file) return;
+        const selectedFiles = Array.from(event.target.files ?? []);
+        if (selectedFiles.length === 0) return;
+
+        // Enforce max 10 files (batch limit from Memory.ts MAX_BATCH_ACTIONS)
+        const MAX_BATCH_SIZE = 10;
+        if (selectedFiles.length > MAX_BATCH_SIZE) {
+            globalAPI.showMessage(`Maximum ${MAX_BATCH_SIZE} images allowed per upload. You selected ${selectedFiles.length}.`, ESnackbarMsgVariant.error);
+            event.target.value = '';
+            return;
+        }
 
         setIsImageProcessing(true);
         try {
-            // Calculate MD5
-            const arrayBuffer = await file.arrayBuffer();
-            const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer as any);
-            const contentMd5 = CryptoJS.enc.Base64.stringify(CryptoJS.MD5(wordArray));
+            // Phase 1: Validate and optimize all selected files upfront
+            // If ANY file fails, abort entire batch before presign
+            const optimizedEntries: { originalName: string; file: File; contentMd5: string }[] = [];
+            const failedFiles: string[] = [];
 
-            // Get presigned URL
-            const { uploadUrl, key, requiredHeaders } = await productService.getPresignedUploadUrl(file.name, file.type, contentMd5, file.size);
+            for (const selectedFile of selectedFiles) {
+                if (!selectedFile.type.startsWith('image/')) {
+                    failedFiles.push(`"${selectedFile.name}" is not an image`);
+                    continue;
+                }
 
-            // Upload to S3
-            await productService.uploadFileToS3(uploadUrl, file, requiredHeaders);
+                try {
+                    const file = await optimizeToWebp(selectedFile);
+                    const arrayBuffer = await file.arrayBuffer();
+                    const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer as any);
+                    const contentMd5 = CryptoJS.enc.Base64.stringify(CryptoJS.MD5(wordArray));
+                    optimizedEntries.push({ originalName: selectedFile.name, file, contentMd5 });
+                } catch (error) {
+                    const baseError = error instanceof Error ? error.message : 'Failed to optimize image';
+                    const errorMessage = baseError.includes(selectedFile.name)
+                        ? baseError
+                        : `Failed to optimize "${selectedFile.name}": ${baseError}`;
+                    failedFiles.push(errorMessage);
+                }
+            }
 
-            // Construct public URL
+            // If any file failed validation/optimization, abort entire batch
+            if (failedFiles.length > 0) {
+                failedFiles.forEach(error => globalAPI.showMessage(error, ESnackbarMsgVariant.error));
+                return;
+            }
+
+            if (optimizedEntries.length === 0) {
+                return;
+            }
+
+            // Phase 2: Get presigned URLs (backend also validates size here)
+            const presignedOutputs = await productService.getPresignedUploadUrls(
+                optimizedEntries.map((entry) => ({
+                    fileName: entry.file.name,
+                    contentType: 'image/webp',
+                    contentMd5: entry.contentMd5,
+                    contentLength: entry.file.size,
+                }))
+            );
+
+            if (presignedOutputs.length !== optimizedEntries.length) {
+                throw new Error('Upload session mismatch. Please try again.');
+            }
+
+            // Phase 3: Upload all files in parallel and track results + S3 keys
             const bucket = OutputParser.MemoryBucketName;
             const region = Constants.region;
-            const publicUrl = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
-            
-            // Update product
-            const newImages = [...imageUrls, publicUrl];
+            const uploadResults = await Promise.allSettled(
+                optimizedEntries.map((entry, index) =>
+                    productService.uploadFileToS3(
+                        presignedOutputs[index].uploadUrl,
+                        entry.file,
+                        presignedOutputs[index].requiredHeaders
+                    )
+                )
+            );
+
+            // Phase 4: Analyze results and handle failure case
+            const successfulKeys: string[] = [];
+            const failedIndexes: number[] = [];
+
+            uploadResults.forEach((result, index) => {
+                if (result.status === 'fulfilled') {
+                    successfulKeys.push(presignedOutputs[index].key);
+                } else {
+                    failedIndexes.push(index);
+                }
+            });
+
+            // If ANY upload failed, rollback ALL successful uploads and abort product update
+            if (failedIndexes.length > 0) {
+                // Attempt cleanup of successful uploads
+                if (successfulKeys.length > 0) {
+                    try {
+                        await productService.deleteImages(successfulKeys);
+                    } catch (deleteError) {
+                        console.error('Cleanup failed during rollback:', deleteError);
+                    }
+                }
+
+                // Show error messages for failed uploads
+                failedIndexes.forEach((index) => {
+                    const uploadResult = uploadResults[index];
+                    const reason = uploadResult.status === 'rejected'
+                        ? uploadResult.reason instanceof Error
+                            ? uploadResult.reason.message
+                            : 'Upload failed'
+                        : 'Upload failed';
+                    globalAPI.showMessage(
+                        `Failed to upload "${optimizedEntries[index].originalName}". ${reason}`,
+                        ESnackbarMsgVariant.error
+                    );
+                });
+
+                // Show rollback status
+                if (successfulKeys.length > 0) {
+                    globalAPI.showMessage(
+                        `Upload cancelled. Rolled back ${successfulKeys.length} uploaded image(s).`,
+                        ESnackbarMsgVariant.warning
+                    );
+                }
+                return;
+            }
+
+            // Phase 5: All uploads succeeded, update product with new image URLs
+            const successfulUrls = successfulKeys.map(
+                (key) => `https://${bucket}.s3.${region}.amazonaws.com/${key}`
+            );
+            const newImages = [...imageUrls, ...successfulUrls];
             handleProductFieldChange(selectedProduct!.productId, "imageUrls", newImages);
+            
+            // Show success message
+            globalAPI.showMessage(
+                `Successfully uploaded ${successfulUrls.length} image(s).`,
+                ESnackbarMsgVariant.success
+            );
             
         } catch (error) {
             console.error(error);
-            globalAPI.showMessage("Failed to upload image", ESnackbarMsgVariant.error);
+            const errorMessage = error instanceof Error ? error.message : 'Failed to upload image(s)';
+            globalAPI.showMessage(errorMessage, ESnackbarMsgVariant.error);
         } finally {
             setIsImageProcessing(false);
             // Reset input
@@ -1100,7 +1237,7 @@ function ProductInspectorImageTab() {
                     disabled={isDeleted || isImageProcessing}
                 >
                     Upload
-                    <input type="file" hidden accept="image/*" onChange={handleUpload} />
+                    <input type="file" hidden accept="image/*" multiple onChange={handleUpload} />
                 </Button>
             </Box>
             

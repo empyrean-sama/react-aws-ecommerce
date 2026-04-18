@@ -40,6 +40,24 @@ export default class APIStack extends Stack {
 			value: this._restAPIGateway.url,
 			exportName: Constants.apiStackEndpointOutputKey
 		});
+
+		// Add CORS headers to API Gateway-level error responses.
+		// When the Cognito authorizer rejects a request (401/403), API Gateway returns
+		// the error directly WITHOUT invoking the Lambda. The Lambda's constructResponse
+		// CORS headers are never added, causing the browser to throw TypeError instead of
+		// receiving a readable error response.
+		const corsResponseHeaders = {
+			'Access-Control-Allow-Origin': "'*'",
+			'Access-Control-Allow-Headers': "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+		};
+		this._restAPIGateway.addGatewayResponse('CorsDefault4xx', {
+			type: APIGateway.ResponseType.DEFAULT_4XX,
+			responseHeaders: corsResponseHeaders,
+		});
+		this._restAPIGateway.addGatewayResponse('CorsDefault5xx', {
+			type: APIGateway.ResponseType.DEFAULT_5XX,
+			responseHeaders: corsResponseHeaders,
+		});
 	}
 
 	public addMethodOnResource(resourceName: string, methodType: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH', lambdaIntegration: APIGateway.LambdaIntegration, addAuthorizer: boolean = true) {

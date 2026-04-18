@@ -27,7 +27,7 @@ const BUCKET_NAME = process.env.BUCKET_NAME;
 const MAX_IMAGE_BYTES = Number(process.env.MAX_IMAGE_BYTES);
 const MAX_BATCH_ACTIONS = 10; // Max number of items allowed in batch operations (like multiple image deletions or presigned URL generations) to prevent abuse and ensure performance
 
-export default async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+export async function Handle(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         if (!BUCKET_NAME) {
             throw new Error('Memory lambda: BUCKET_NAME env var not set');

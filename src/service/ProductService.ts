@@ -12,6 +12,8 @@ import IProductVariant from "../interface/product/IProductVariant";
 import IProductVariantRecord from "../interface/product/IProductVariantRecord";
 import { ICheckoutConfirmInput, ICheckoutCreateInput, ICheckoutCreateResult } from "../interface/order/ICheckoutSession";
 import IOrderRecord from "../interface/order/IOrderRecord";
+import IPresignUploadInput from "../interface/IPresignUploadInput";
+import IPresignUploadOutput from "../interface/IPresignUploadOutput";
 
 type IReviewWriteInput = Omit<IReview, 'userId' | 'orderReference' | 'reviewerName' | 'reviewerUsername'>;
 type IReviewAverage = { productId: string; averageScore: number; reviewCount: number };
@@ -410,6 +412,27 @@ export default class ProductService {
     // Images
 
     /**
+     * Get presigned URLs for uploading images in a single batch request.
+     * @param files The list of files metadata to presign
+     */
+    public async getPresignedUploadUrls(files: IPresignUploadInput[]): Promise<IPresignUploadOutput[]> {
+        const url = OutputParser.UploadToMemoryEndPointURL;
+        const resp = await AuthService.getInstance().authorizedFetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ files })
+        });
+        const json = await resp.json().catch(() => undefined) as any;
+        if (!resp.ok) {
+            throw new Error(json?.message || 'Failed to get presigned URLs');
+        }
+        if (!Array.isArray(json) || json.length === 0) {
+            throw new Error('Presigned URL response is empty');
+        }
+        return json as IPresignUploadOutput[];
+    }
+
+    /**
      * Get a presigned URL for uploading an image.
      * @param fileName The name of the file
      * @param contentType The MIME type of the file
@@ -418,20 +441,10 @@ export default class ProductService {
      * @returns The presigned URL and other details
      */
     public async getPresignedUploadUrl(fileName: string, contentType: string, contentMd5: string, contentLength: number): Promise<{ uploadUrl: string, bucket: string, key: string, requiredHeaders: Record<string, string> }> {
-        const url = OutputParser.UploadToMemoryEndPointURL;
-        const resp = await AuthService.getInstance().authorizedFetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ files: [{ fileName, contentType, contentMd5, contentLength }] })
-        });
-        const json = await resp.json().catch(() => undefined) as any;
-        if (!resp.ok) {
-            throw new Error(json?.message || 'Failed to get presigned URL');
-        }
-        if (!Array.isArray(json) || json.length === 0) {
-            throw new Error('Presigned URL response is empty');
-        }
-        return json[0];
+        const presigned = await this.getPresignedUploadUrls([
+            { fileName, contentType: contentType as 'image/webp', contentMd5, contentLength }
+        ]);
+        return presigned[0];
     }
 
     /**
@@ -464,14 +477,49 @@ export default class ProductService {
      */
     public async deleteImage(key: string): Promise<void> {
         const url = new URL(OutputParser.ImageEndPointURL);
+        url.searchParams.set('key', key);
         const resp = await AuthService.getInstance().authorizedFetch(url, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key })
         });
         if (!resp.ok) {
             const json = await resp.json().catch(() => undefined) as any;
             throw new Error(json?.message || 'Failed to delete image');
+        }
+    }
+
+    /**
+     * Delete multiple images from S3 in batches (max 10 per batch).
+     * Best-effort cleanup; failures are non-fatal for rollback scenarios.
+     * @param keys Array of S3 keys to delete
+     */
+    public async deleteImages(keys: string[]): Promise<void> {
+        if (!keys || keys.length === 0) {
+            return; // No-op if empty
+        }
+
+        const MAX_BATCH_SIZE = 10; // Match Memory.ts MAX_BATCH_ACTIONS
+        const batches: string[][] = [];
+
+        // Chunk keys into batches of max 10
+        for (let i = 0; i < keys.length; i += MAX_BATCH_SIZE) {
+            batches.push(keys.slice(i, i + MAX_BATCH_SIZE));
+        }
+
+        // Send each batch, but don't throw on error (best-effort cleanup)
+        for (const batch of batches) {
+            try {
+                const url = new URL(OutputParser.ImageEndPointURL);
+                const resp = await AuthService.getInstance().authorizedFetch(url, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keys: batch })
+                });
+                if (!resp.ok) {
+                    console.warn(`Failed to delete batch of ${batch.length} images during rollback`);
+                }
+            } catch (error) {
+                console.warn('Error during batch image deletion:', error);
+            }
         }
     }
 

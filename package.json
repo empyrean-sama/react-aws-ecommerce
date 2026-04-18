@@ -44,6 +44,7 @@
     "@mui/icons-material": "^7.3.5",
     "@mui/material": "^7.3.5",
     "aws-amplify": "^6.15.8",
+    "browser-image-compression": "^2.0.2",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "fuse.js": "^6.6.2",
