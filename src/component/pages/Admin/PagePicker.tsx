@@ -54,6 +54,11 @@ export default function PagePicker() {
                     handleAction={() => navigateTo("/admin/about")}
                 />
                 <PagePickerCard
+                    heading="Contact Us Management"
+                    description="Set the business address, phone, email and map location shown on the public Contact Us page."
+                    handleAction={() => navigateTo("/admin/contact")}
+                />
+                <PagePickerCard
                     heading="FAQ Management"
                     description="Add, edit and reorder questions and answers shown on the public FAQ page."
                     handleAction={() => navigateTo("/admin/faq")}
