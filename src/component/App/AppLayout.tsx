@@ -39,6 +39,8 @@ const OrderManagement = Loadable(React.lazy(() => import('../pages/Admin/OrderMa
 const OrderDetails = Loadable(React.lazy(() => import('../pages/Admin/OrderManagement/OrderDetails')));
 const AboutUsManagement = Loadable(React.lazy(() => import('../pages/Admin/AboutUsManagement/AboutUsManagement')));
 const AboutUs = Loadable(React.lazy(() => import('../pages/AboutUs/AboutUs')));
+const FAQManagement = Loadable(React.lazy(() => import('../pages/Admin/FAQManagement/FAQManagement')));
+const FAQ = Loadable(React.lazy(() => import('../pages/FAQ/FAQ')));
 
 type AdminLoaderResult = { allowed: boolean };
 
@@ -86,6 +88,7 @@ export default function AppLayout() {
                 <Route path="checkout" element={<Checkout />} />
                 <Route path="order-placed" element={<OrderPlaced />} />
                 <Route path="about" element={<AboutUs />} />
+                <Route path="faq" element={<FAQ />} />
                 <Route path="account" element={<AccountOutlet />}>
                     <Route index element={<Account />} />
                     <Route path="login" element={<Login />} />
@@ -105,6 +108,7 @@ export default function AppLayout() {
                 <Route path="orders" element={<OrderManagement />} />
                 <Route path="orders/details" element={<OrderDetails />} />
                 <Route path="about" element={<AboutUsManagement />} />
+                <Route path="faq" element={<FAQManagement />} />
             </Route>
         </Route>
     ))

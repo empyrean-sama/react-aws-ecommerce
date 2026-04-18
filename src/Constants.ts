@@ -10,6 +10,7 @@ export default class Constants {
 
     static readonly PROMOTION_BANNER_LIST_KEY: string = "promotion-banners-list";
     static readonly ABOUT_US_LIST_KEY: string = "about-us-sections-list";
+    static readonly FAQ_LIST_KEY: string = "faq-sections-list";
 
     static readonly SUPPORT_CONTACT_EMAIL: string = "support@srividhyafoods.com";
     static readonly SUPPORT_CONTACT_PHONE: string = "+91-00000-00000";

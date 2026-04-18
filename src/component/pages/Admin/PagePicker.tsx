@@ -54,6 +54,11 @@ export default function PagePicker() {
                     handleAction={() => navigateTo("/admin/about")}
                 />
                 <PagePickerCard
+                    heading="FAQ Management"
+                    description="Add, edit and reorder questions and answers shown on the public FAQ page."
+                    handleAction={() => navigateTo("/admin/faq")}
+                />
+                <PagePickerCard
                     heading="Regenerate Search Indices"
                     description="Rebuild the product search JSON in S3 from all products so clients get the latest searchable names and images."
                     handleAction={() => setIsRegenerateDialogOpen(true)}

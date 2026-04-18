@@ -31,6 +31,15 @@ export default function SiteFooter() {
             >
                 About Us
             </Link>
+            <Link
+                component={RouterLink}
+                to="/faq"
+                variant="body2"
+                underline="hover"
+                sx={{ color: 'common.white' }}
+            >
+                FAQ
+            </Link>
         </Box>
     );
 }
