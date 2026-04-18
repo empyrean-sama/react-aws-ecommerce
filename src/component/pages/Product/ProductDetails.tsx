@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router';
+import { TransformWrapper, TransformComponent, useControls } from 'react-zoom-pan-pinch';
 import {
     Accordion,
     AccordionDetails,
@@ -153,6 +154,14 @@ function ProductFieldRenderer(props: { field: IProductField; index: number }) {
         );
     }
 
+    return null;
+}
+
+function ZoomResetOnImageChange({ imageIndex }: { imageIndex: number }) {
+    const { resetTransform } = useControls();
+    React.useEffect(() => {
+        resetTransform(0);
+    }, [imageIndex]);
     return null;
 }
 
@@ -509,12 +518,26 @@ export default function ProductDetails() {
         <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 }, pb: { xs: 12, md: 3 }, display: 'flex', flexDirection: 'column', gap: 2.5  }}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1.1fr) minmax(0, 0.9fr)' }, gap: 2 }}>
                 <Paper sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    <Box
-                        component="img"
-                        src={selectedImage}
-                        alt={`${product.name} image`}
-                        sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', borderRadius: 1 }}
-                    />
+                    <TransformWrapper
+                        key={selectedImageIndex}
+                        initialScale={1}
+                        minScale={1}
+                        maxScale={4}
+                        doubleClick={{ mode: 'toggle', step: 1.5, animationTime: 300 }}
+                        wheel={{ disabled: true }}
+                        panning={{ velocityDisabled: false }}
+                        zoomAnimation={{ animationTime: 300, animationType: 'easeOutCubic' }}
+                    >
+                        <ZoomResetOnImageChange imageIndex={selectedImageIndex} />
+                        <TransformComponent wrapperStyle={{ width: '100%', cursor: 'zoom-in' }} contentStyle={{ width: '100%' }}>
+                            <Box
+                                component="img"
+                                src={selectedImage}
+                                alt={`${product.name} image`}
+                                sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', borderRadius: 1, userSelect: 'none', pointerEvents: 'none' }}
+                            />
+                        </TransformComponent>
+                    </TransformWrapper>
 
                     {images.length > 1 && (
                         <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 0.5 }}>
