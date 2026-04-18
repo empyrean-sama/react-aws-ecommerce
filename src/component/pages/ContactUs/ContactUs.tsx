@@ -43,6 +43,14 @@ function hasCoordinates(data: IContactUsData): boolean {
     return data.latitude !== 0 || data.longitude !== 0;
 }
 
+function getGoogleMapsUrl(data: IContactUsData, addressLines: string[]): string {
+    if (hasCoordinates(data)) {
+        return `https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`;
+    }
+
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressLines.join(', '))}`;
+}
+
 export default function ContactUs() {
     const utilityService = UtilityService.getInstance();
     const { setIsLoading, getIsLoading } = React.useContext(appGlobalStateContext) as IAppGlobalStateContextAPI;
@@ -83,6 +91,8 @@ export default function ContactUs() {
 
     const addressLines = formatAddressLines(contactData);
     const showMap = hasCoordinates(contactData);
+    const showGoogleMapsLink = showMap || addressLines.length > 0;
+    const googleMapsUrl = showGoogleMapsLink ? getGoogleMapsUrl(contactData, addressLines) : '';
     const mapSrc = showMap
         ? `https://www.openstreetmap.org/export/embed.html?bbox=${contactData.longitude - 0.005}%2C${contactData.latitude - 0.003}%2C${contactData.longitude + 0.005}%2C${contactData.latitude + 0.003}&layer=mapnik&marker=${contactData.latitude}%2C${contactData.longitude}`
         : '';
@@ -197,16 +207,16 @@ export default function ContactUs() {
                             )}
 
                             {/* Directions link */}
-                            {showMap && (
+                            {showGoogleMapsLink && (
                                 <Link
-                                    href={`https://www.openstreetmap.org/?mlat=${contactData.latitude}&mlon=${contactData.longitude}#map=17/${contactData.latitude}/${contactData.longitude}`}
+                                    href={googleMapsUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     underline="hover"
                                     sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 1 }}
                                 >
                                     <LocationOnIcon fontSize="small" />
-                                    <Typography variant="body2">View on OpenStreetMap</Typography>
+                                    <Typography variant="body2">View on Google Maps</Typography>
                                 </Link>
                             )}
                         </Stack>
