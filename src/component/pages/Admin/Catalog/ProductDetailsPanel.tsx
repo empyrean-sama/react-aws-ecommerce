@@ -453,7 +453,7 @@ function SelectProductList() {
                     <TextField value={product.name} onChange={(e) => handleProductFieldChange(product.productId,"name", e.target.value)} variant="standard" size="small" disabled={isDeleted}/>
                 </TableCell>
                 <TableCell>
-                    <Box sx={{ display: "flex", gap: 1 }}>
+                    <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
                         <Tooltip title="Undo changes">
                             <span>
                                 <IconButton size="small" color="primary" aria-label="undo changes" disabled={product.isNew || (!product.isEdited && !product.isDeleted)} onClick={(e) => { e.stopPropagation(); handleUndoProduct(product.productId); }}>
