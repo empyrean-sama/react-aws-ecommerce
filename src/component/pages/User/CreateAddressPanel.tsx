@@ -52,6 +52,10 @@ export interface CreateAddressPanelProps {
     isEmbedded?: boolean;
     showFormModeChip?: boolean;
     showLabelField?: boolean;
+    showManualCoordinateFields?: boolean;
+    alwaysShowCoordinatesEditor?: boolean;
+    layout?: "vertical" | "horizontal";
+    defaultLocation?: [number, number];
 }
 
 export default function CreateAddressPanel(props: CreateAddressPanelProps) {
@@ -59,10 +63,16 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
     const isEmbedded = props.isEmbedded ?? false;
     const showFormModeChip = props.showFormModeChip ?? true;
     const showLabelField = props.showLabelField ?? true;
+    const showManualCoordinateFields = props.showManualCoordinateFields ?? false;
+    const alwaysShowCoordinatesEditor = props.alwaysShowCoordinatesEditor ?? false;
+    const layout = props.layout ?? "vertical";
+    const defaultLocation = props.defaultLocation ?? [48.8566, 2.3522];
 
     // State for this component
     const [suggestionText, setSuggestionText] = React.useState<string>("");
-    const [areCoordinatesAvailable, setAreCoordinatesAvailable] = React.useState<boolean>((props.formMode === "Editing Address")? props.addressToEdit.latitude !== undefined && props.addressToEdit.longitude !== undefined : false);
+    const [areCoordinatesAvailable, setAreCoordinatesAvailable] = React.useState<boolean>(
+        alwaysShowCoordinatesEditor || ((props.formMode === "Editing Address") ? props.addressToEdit.latitude !== undefined && props.addressToEdit.longitude !== undefined : false)
+    );
 
     const [labelError, setLabelError] = React.useState<string>("");
     const [phoneError, setPhoneError] = React.useState<string>("");
@@ -73,6 +83,21 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
     const [cityError, setCityError] = React.useState<string>("");
     const [stateError, setStateError] = React.useState<string>("");
     const [countryError, setCountryError] = React.useState<string>("");
+
+    const mapLocation = React.useMemo<[number, number]>(() => {
+        const { latitude, longitude } = props.addressToEdit;
+        if (latitude !== undefined && longitude !== undefined) {
+            return [latitude, longitude];
+        }
+
+        return defaultLocation;
+    }, [defaultLocation, props.addressToEdit]);
+
+    React.useEffect(() => {
+        if (alwaysShowCoordinatesEditor) {
+            setAreCoordinatesAvailable(true);
+        }
+    }, [alwaysShowCoordinatesEditor]);
 
     // Private Routines
     async function fetchSuggestions(trimmedInput: string): Promise<ISuggestion[]> {
@@ -109,6 +134,167 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
         });
     }
 
+    function handleCoordinateInputChange(field: "latitude" | "longitude", value: string) {
+        const trimmedValue = value.trim();
+        props.setAddressToEdit(prevValue => {
+            const parsedValue = trimmedValue === '' ? undefined : Number(trimmedValue);
+            return {
+                ...prevValue,
+                [field]: Number.isNaN(parsedValue) ? undefined : parsedValue,
+            };
+        });
+
+        if (!areCoordinatesAvailable && trimmedValue !== '') {
+            setAreCoordinatesAvailable(true);
+        }
+    }
+
+    const locationEditorSection = (
+        <Stack spacing={2} sx={{ minWidth: 0 }}>
+            <AutofillTextField 
+                label="Search address"
+                size="small"
+                fullWidth
+                value={suggestionText}
+                onTextInputChange={setSuggestionText}
+                tryFetchSuggestions={fetchSuggestions}
+                onSuggestionSelected={handleSuggestionSelected}
+            />
+
+            {areCoordinatesAvailable ?
+                <SelectLocation 
+                    location={mapLocation}
+                    setLocationChange={(coords) => props.setAddressToEdit({ ...props.addressToEdit, latitude: coords[0], longitude: coords[1] })}
+                    handleOnClose={alwaysShowCoordinatesEditor ? undefined : () => setAreCoordinatesAvailable(false)}
+                />                   : 
+                <AskToGetCoordinatesNotice setAreGettingCoordinates={setAreCoordinatesAvailable} />
+            }
+
+            {showManualCoordinateFields && (
+                <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" } }}>
+                    <TextField
+                        label="Latitude"
+                        size="small"
+                        fullWidth
+                        type="number"
+                        value={props.addressToEdit.latitude ?? ''}
+                        onChange={(e) => handleCoordinateInputChange("latitude", e.target.value)}
+                        slotProps={{ htmlInput: { step: 'any' } }}
+                    />
+                    <TextField
+                        label="Longitude"
+                        size="small"
+                        fullWidth
+                        type="number"
+                        value={props.addressToEdit.longitude ?? ''}
+                        onChange={(e) => handleCoordinateInputChange("longitude", e.target.value)}
+                        slotProps={{ htmlInput: { step: 'any' } }}
+                    />
+                </Box>
+            )}
+        </Stack>
+    );
+
+    const addressFieldsSection = (
+        <Stack spacing={2} sx={{ minWidth: 0 }}>
+            <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" } }}>
+                {showLabelField && (
+                    <TextField
+                        label="Label"
+                        size="small"
+                        placeholder="Home, Work, Parents, etc."
+                        fullWidth
+                        value={props.addressToEdit.userLabel ?? ''}
+                        onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, userLabel: e.target.value })}
+                        error={!!labelError}
+                        helperText={labelError}
+                    />
+                )}
+                <TextField
+                    label="Phone"
+                    size="small"
+                    fullWidth
+                    value={props.addressToEdit.phoneNumber ?? ''}
+                    onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, phoneNumber: e.target.value })}
+                    error={!!phoneError}
+                    helperText={phoneError}
+                    placeholder="+91XXXXXXXXXX"
+                />
+                <TextField
+                    label="Postcode"
+                    size="small"
+                    fullWidth
+                    value={props.addressToEdit.postcode ?? ''}
+                    onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, postcode: e.target.value })}
+                    error={!!postCodeError}
+                    helperText={postCodeError}
+                />
+            </Box>
+
+            <TextField
+                label="Flat / door / building"
+                size="small"
+                fullWidth
+                value={props.addressToEdit.specificAddress ?? ''}
+                onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, specificAddress: e.target.value })}
+                error={!!specificAddressError}
+                helperText={specificAddressError}
+            />
+
+            <TextField
+                label="Street / locality"
+                size="small"
+                fullWidth
+                value={props.addressToEdit.street ?? ''}
+                onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, street: e.target.value })}
+                error={!!streetError}
+                helperText={streetError}
+            />
+
+            <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" } }}>
+                <TextField
+                    label="Area"
+                    size="small"
+                    fullWidth
+                    value={props.addressToEdit.area ?? ''}
+                    onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, area: e.target.value })}
+                    error={!!areaError}
+                    helperText={areaError}
+                />
+                <TextField
+                    label="City"
+                    size="small"
+                    fullWidth
+                    value={props.addressToEdit.city ?? ''}
+                    onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, city: e.target.value })}
+                    error={!!cityError}
+                    helperText={cityError}
+                />
+            </Box>
+
+            <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" } }}>
+                <TextField
+                    label="State"
+                    size="small"
+                    fullWidth
+                    value={props.addressToEdit.state ?? ''}
+                    onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, state: e.target.value })}
+                    error={!!stateError}
+                    helperText={stateError}
+                />
+                <TextField
+                    label="Country"
+                    size="small"
+                    fullWidth
+                    value={props.addressToEdit.country ?? ''}
+                    onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, country: e.target.value })}
+                    error={!!countryError}
+                    helperText={countryError}
+                />
+            </Box>
+        </Stack>
+    );
+
     return (
         <Paper
             elevation={0}
@@ -133,120 +319,24 @@ export default function CreateAddressPanel(props: CreateAddressPanelProps) {
                     )}
                 </Box>
 
-                <AutofillTextField 
-                    label="Search address"
-                    size="small"
-                    fullWidth
-                    value={suggestionText}
-                    onTextInputChange={setSuggestionText}
-                    tryFetchSuggestions={fetchSuggestions}
-                    onSuggestionSelected={handleSuggestionSelected}
-                />
-                
-                {areCoordinatesAvailable ?
-                    <SelectLocation 
-                        location={[props.addressToEdit.latitude || 0, props.addressToEdit.longitude || 0]}
-                        setLocationChange={(coords) => props.setAddressToEdit({ ...props.addressToEdit, latitude: coords[0], longitude: coords[1] })}
-                        handleOnClose={() => setAreCoordinatesAvailable(false)}
-                    />                   : 
-                    <AskToGetCoordinatesNotice setAreGettingCoordinates={setAreCoordinatesAvailable} />
-                }
-                
-                <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" } }}>
-                    {showLabelField && (
-                        <TextField
-                            label="Label"
-                            size="small"
-                            placeholder="Home, Work, Parents, etc."
-                            fullWidth
-                            value={props.addressToEdit.userLabel ?? ''}
-                            onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, userLabel: e.target.value })}
-                            error={!!labelError}
-                            helperText={labelError}
-                        />
-                    )}
-                    <TextField
-                        label="Phone"
-                        size="small"
-                        fullWidth
-                        value={props.addressToEdit.phoneNumber ?? ''}
-                        onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, phoneNumber: e.target.value })}
-                        error={!!phoneError}
-                        helperText={phoneError}
-                        placeholder="+91XXXXXXXXXX"
-                    />
-                    <TextField
-                        label="Postcode"
-                        size="small"
-                        fullWidth
-                        value={props.addressToEdit.postcode ?? ''}
-                        onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, postcode: e.target.value })}
-                        error={!!postCodeError}
-                        helperText={postCodeError}
-                    />
-                </Box>
-
-                <TextField
-                    label="Flat / door / building"
-                    size="small"
-                    fullWidth
-                    value={props.addressToEdit.specificAddress ?? ''}
-                    onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, specificAddress: e.target.value })}
-                    error={!!specificAddressError}
-                    helperText={specificAddressError}
-                />
-
-                <TextField
-                    label="Street / locality"
-                    size="small"
-                    fullWidth
-                    value={props.addressToEdit.street ?? ''}
-                    onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, street: e.target.value })}
-                    error={!!streetError}
-                    helperText={streetError}
-                />
-
-                <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" } }}>
-                    <TextField
-                        label="Area"
-                        size="small"
-                        fullWidth
-                        value={props.addressToEdit.area ?? ''}
-                        onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, area: e.target.value })}
-                        error={!!areaError}
-                        helperText={areaError}
-                    />
-                    <TextField
-                        label="City"
-                        size="small"
-                        fullWidth
-                        value={props.addressToEdit.city ?? ''}
-                        onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, city: e.target.value })}
-                        error={!!cityError}
-                        helperText={cityError}
-                    />
-                </Box>
-
-                <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" } }}>
-                    <TextField
-                        label="State"
-                        size="small"
-                        fullWidth
-                        value={props.addressToEdit.state ?? ''}
-                        onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, state: e.target.value })}
-                        error={!!stateError}
-                        helperText={stateError}
-                    />
-                    <TextField
-                        label="Country"
-                        size="small"
-                        fullWidth
-                        value={props.addressToEdit.country ?? ''}
-                        onChange={(e) => props.setAddressToEdit({ ...props.addressToEdit, country: e.target.value })}
-                        error={!!countryError}
-                        helperText={countryError}
-                    />
-                </Box>
+                {layout === "horizontal" ? (
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: { xs: "1fr", lg: "minmax(320px, 1fr) minmax(420px, 1.25fr)" },
+                            gap: 2,
+                            alignItems: "start",
+                        }}
+                    >
+                        {locationEditorSection}
+                        {addressFieldsSection}
+                    </Box>
+                ) : (
+                    <>
+                        {locationEditorSection}
+                        {addressFieldsSection}
+                    </>
+                )}
 
                 {showActionButtons && (
                     <>

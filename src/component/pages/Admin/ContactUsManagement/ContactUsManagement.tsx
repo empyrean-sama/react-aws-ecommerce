@@ -35,6 +35,24 @@ interface IContactUsData {
     longitude: number;
 }
 
+const PARIS_COORDINATES = {
+    latitude: 48.8566,
+    longitude: 2.3522,
+};
+
+function normalizeCoordinates(data: IContactUsData): IContactUsData {
+    const hasCoordinates = data.latitude !== 0 || data.longitude !== 0;
+    if (hasCoordinates) {
+        return data;
+    }
+
+    return {
+        ...data,
+        latitude: PARIS_COORDINATES.latitude,
+        longitude: PARIS_COORDINATES.longitude,
+    };
+}
+
 function createEmptyContactData(): IContactUsData {
     return {
         businessName: '',
@@ -47,8 +65,8 @@ function createEmptyContactData(): IContactUsData {
         country: '',
         phoneNumber: '',
         email: '',
-        latitude: 0,
-        longitude: 0,
+        latitude: PARIS_COORDINATES.latitude,
+        longitude: PARIS_COORDINATES.longitude,
     };
 }
 
@@ -116,7 +134,7 @@ export default function ContactUsManagement() {
             try {
                 const data = await utilityService.getList(Constants.CONTACT_US_KEY);
                 if (data.length > 0) {
-                    const loaded = data[0] as IContactUsData;
+                    const loaded = normalizeCoordinates(data[0] as IContactUsData);
                     setContactData(loaded);
                     setSavedData(loaded);
                 }
@@ -176,24 +194,31 @@ export default function ContactUsManagement() {
                             />
 
                             <Divider />
-                            <Typography variant="h6">Address & Location</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Search for an address to auto-fill, then fine-tune. Drag the map to adjust the pin location.
-                            </Typography>
 
-                            <CreateAddressPanel
-                                formMode="Editing Address"
-                                isLoading={isSaving}
-                                setIsLoading={setIsSaving}
-                                addressToEdit={addressForPanel}
-                                setAddressToEdit={setAddressForPanel}
-                                onCancelForm={() => {}}
-                                onSaveAddress={() => {}}
-                                showActionButtons={false}
-                                isEmbedded={true}
-                                showFormModeChip={false}
-                                showLabelField={false}
-                            />
+                            <Box>
+                                <Typography variant="h6">Address & Location</Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 0 }}>
+                                    Search for an address to auto-fill, then fine-tune. Drag the map to adjust the pin location. <br />
+                                    Alternatively, you can get the coordinates from Google Maps and enter them manually. If no coordinates are provided, the location will default to Paris, France.
+                                </Typography>
+                                <CreateAddressPanel
+                                    formMode="Editing Address"
+                                    isLoading={isSaving}
+                                    setIsLoading={setIsSaving}
+                                    addressToEdit={addressForPanel}
+                                    setAddressToEdit={setAddressForPanel}
+                                    onCancelForm={() => {}}
+                                    onSaveAddress={() => {}}
+                                    showActionButtons={false}
+                                    isEmbedded={true}
+                                    showFormModeChip={false}
+                                    showLabelField={false}
+                                    showManualCoordinateFields={true}
+                                    alwaysShowCoordinatesEditor={true}
+                                    layout="horizontal"
+                                    defaultLocation={[PARIS_COORDINATES.latitude, PARIS_COORDINATES.longitude]}
+                                />
+                            </Box>
                         </Stack>
                     )}
 
